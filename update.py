@@ -49,8 +49,11 @@ class Installer:
     else:
       self.url = 'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=release&platform=linux-' + platform.machine() + '&version=' + self.version
 
-    self.usr = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'usr'))
-    if os.path.exists(self.usr): shutil.rmtree(self.usr)
+    self.root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    self.packagedir = os.path.join(self.root, 'build')
+    if os.path.exists(self.packagedir): shutil.rmtree(self.packagedir)
+
+    self.usr = os.path.join(self.packagedir, 'usr')
 
     if self.version == 'beta':
       self.client_release = self.client + '-beta'
@@ -70,9 +73,8 @@ class Installer:
       print('Unexpected architecture ' + architecture)
       sys.exit(1)
 
-    self.packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
     self.packagename = '_'.join([self.client, self.version, self.architecture]) + '.deb'
-    self.package = os.path.join(self.packagedir, '..', self.packagename)
+    self.package = os.path.join(self.root, self.packagename)
 
     self.download()
     self.make_desktop_entry()
@@ -122,8 +124,9 @@ class Installer:
       desktop.write("StartupNotify=true\n")
 
   def build(self):
-    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'control')), 'w') as f:
-
+    debian = os.path.join(self.packagedir, 'DEBIAN')
+    os.system('mkdir -p ' + self.shellquote(debian))
+    with open(os.path.abspath(os.path.join(debian, 'control')), 'w') as f:
       f.write("Package: " + self.client_release + "\n")
       f.write("Architecture: " + self.architecture + "\n")
       f.write("Maintainer: @retorquere\n")
@@ -137,11 +140,11 @@ class Installer:
 
     if os.path.exists(self.package): os.remove(self.package)
 
-    os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
+    os.chdir(os.path.dirname(self.packagedir))
     os.system('dpkg-deb --build -Zgzip ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
 
   def release(self):
-    os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
+    os.chdir(os.path.dirname(self.packagedir))
 
     release = 'github-release release '
     release += '--user retorquere '

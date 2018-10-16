@@ -1,3 +1,4 @@
-DEBIAN/control
+build
 usr
 .env
+*.deb
