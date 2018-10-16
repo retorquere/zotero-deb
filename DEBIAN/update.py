@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
 import platform
 import glob
 import argparse
@@ -260,4 +263,23 @@ if args.deb:
 
   os.chdir(os.path.abspath(os.path.join(packagedir, '..')))
   os.system('dpkg-deb --build ' + shellquote(os.path.basename(packagedir)) + ' ' + shellquote(packagename))
+
+  release = 'github-release release '
+  release += '--user retorquere '
+  release += '--repo zotero_deb '
+  release += '--tag ' + shellquote(args.client + '-' + args.version) + ' '
+  release += '--name ' + shellquote(args.client + ' ' + args.version) + ' '
+  release += '--description ' + shellquote(args.client + ' ' + args.version) + ' '
+  print(release)
+  os.system(release)
+
+  release = 'github-release upload '
+  release += '--user retorquere '
+  release += '--repo zotero_deb '
+  release += '--tag ' + shellquote(args.client + '-' + args.version) + ' '
+  release += '--name ' + shellquote(packagename) + ' '
+  release += '--file ' + shellquote(package) + ' '
+  print(release)
+  os.system(release)
+
   os.system('package_cloud push retorquere/zotero/ubuntu/bionic ' + shellquote(packagename))
