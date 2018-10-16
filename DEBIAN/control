@@ -1,0 +1,6 @@
+Package: zotero
+Architecture: amd64
+Maintainer: @retorquere
+Priority: optional
+Version: 5.0.56
+Description: Zotero
