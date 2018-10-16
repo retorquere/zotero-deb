@@ -32,7 +32,10 @@ class Installer:
   def __init__(self):
     parser = argparse.ArgumentParser()
     parser.add_argument('--deb', choices=['zotero', 'zotero-beta', 'jurism'], required=True, help='prepare deb package for Zotero client, either Zotero or Juris-M')
+    parser.add_argument('--dist', choices=['bionic', 'trusty'], default='bionic')
     args = parser.parse_args()
+
+    self.dist = args.dist
 
     if args.deb == 'zotero-beta':
       self.client = 'zotero'
@@ -136,7 +139,7 @@ class Installer:
     if os.path.exists(self.package): os.remove(self.package)
 
     os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
-    os.system('dpkg-deb --build ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
+    os.system('dpkg-deb --build -Zgzip ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
 
   def release(self):
     release = 'github-release release '
@@ -155,6 +158,6 @@ class Installer:
     release += '--file ' + self.shellquote(self.package) + ' '
     os.system(release)
 
-    os.system('package_cloud push retorquere/zotero/ubuntu/bionic ' + self.shellquote(self.packagename))
+    os.system('package_cloud push retorquere/zotero/ubuntu/' + self.dist + ' ' + self.shellquote(self.packagename))
 
 Installer()
