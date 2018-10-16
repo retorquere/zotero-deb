@@ -27,6 +27,8 @@ The installer figures out what the latest version is, downloads it and installs 
 
 you now have an installable .deb package
 
+## make it apt-gettable
+
 For apt-gettable you can either upload it to packagecloud using
 
 ```
@@ -34,6 +36,8 @@ package_cloud push zotero/zotero/ubuntu/bionic zotero_5.0.56_amd64.deb
 ```
 
 or if you want to host it yourself you can create a disk layout as described at https://blog.packagecloud.io/eng/2015/08/04/apt-repository-internals/ and host it via https. Downside: more work + hosting costs, upside: download tracking.
+
+## hosting the .debs on Githib
 
 For uploading binaries to GH releases I usually have my own scripts, but for this repo I used https://github.com/aktau/github-release:
 
@@ -44,7 +48,7 @@ github-release upload --user retorquere --repo zotero_deb --tag 'zotero-5.0.56' 
 
 The python script on my repo automates all this including figuring out what the latest Zotero (or Juris-M when it comes back online) is, downloading it, laying it out, updating the control file and package name, and running the `dpkg-deb`, `package_cloud` and `github-release` commands.
 
-Control file:
+## Control file
 
 ```
 Package: zotero
