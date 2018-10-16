@@ -12,7 +12,8 @@ import os
 import sys
 import tempfile
 import socket
-import subprocess
+import collections
+import shutil
 
 if sys.version_info[0] >= 3:
   from urllib.request import urlopen
@@ -27,259 +28,133 @@ else:
   input = raw_input
   ConnectionRefusedError = socket.error
 
-def zotero_latest():
-  response = urlopen('https://www.zotero.org/download/').read()
-  if type(response) is bytes: response = response.decode("utf-8")
-  for line in response.split('\n'):
-    if not '"standaloneVersions"' in line: continue
-    line = re.sub(r'.*Downloads,', '', line)
-    line = re.sub(r'\),', '', line)
-    versions = json.loads(line)
-    return versions['standaloneVersions']['linux-' + platform.machine()]
+class Installer:
+  def __init__(self):
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--deb', choices=['zotero', 'zotero-beta', 'jurism'], required=True, help='prepare deb package for Zotero client, either Zotero or Juris-M')
+    args = parser.parse_args()
 
-def jurism_latest():
-  release = HTTPSConnection('our.law.nagoya-u.ac.jp')
-  try:
-    release.request('GET', '/jurism/dl?channel=release&platform=linux-' + platform.machine())
-  except ConnectionRefusedError as e:
-    if args.cache is not None:
-      return 'cached'
+    if args.deb == 'zotero-beta':
+      self.client = 'zotero'
+      self.version = 'beta'
     else:
-      raise e
+      self.client = args.deb
+      self.version = self.get_version()
 
-  release = release.getresponse()
-  release = release.getheader('Location')
+    if self.client == 'zotero':
+      if self.version == 'beta':
+        self.url = "https://www.zotero.org/download/client/dl?channel=beta&platform=linux-" + platform.machine()
+      else:
+        self.url = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-" + platform.machine() + '&version=' + self.version
+    else:
+      self.url = 'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=release&platform=linux-' + platform.machine() + '&version=' + self.version
 
-  if release is None and args.cache is not None: return 'cached'
+    self.usr = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'usr'))
+    if os.path.exists(self.usr): shutil.rmtree(self.usr)
 
-  return release.split('/')[-2]
+    if self.version == 'beta':
+      self.client_release = self.client + '-beta'
+    else:
+      self.client_release = self.client
+    self.installdir = os.path.join('/usr/lib', self.client)
 
-def validate(name, value, options, allowpath = False):
-  if allowpath and value[0] in ['/', '.', '~']: return os.path.abspath(os.path.expanduser(value))
+    self.usr_lib_app = os.path.join(self.usr, 'lib', self.client_release)
+    os.system('mkdir -p ' + self.shellquote(self.usr_lib_app))
+    self.usr_share_applications = os.path.join(self.usr, 'share', 'applications')
+    os.system('mkdir -p ' + self.shellquote(self.usr_share_applications))
 
-  value = re.sub(r"[^a-z0-9]", '', value.lower())
+    self.download()
+    self.make_desktop_entry()
+    self.build()
+    self.release()
 
-  for option in options:
-    if option[:len(value)] == value: return option
+  def get_version(self):
+    if self.client == 'zotero':
+      response = urlopen('https://www.zotero.org/download/').read()
+      if type(response) is bytes: response = response.decode("utf-8")
+      for line in response.split('\n'):
+        if not '"standaloneVersions"' in line: continue
+        line = re.sub(r'.*Downloads,', '', line)
+        line = re.sub(r'\),', '', line)
+        versions = json.loads(line)
+        return versions['standaloneVersions']['linux-' + platform.machine()]
 
-  options = ['"' + option + '"' for option in options]
-  if allowpath: options.push('a path of your choosing')
-  raise Exception('Unexpected ' + name + ' "' + value + '", expected ' + ' / '.join(options))
+    else:
+      release = HTTPSConnection('our.law.nagoya-u.ac.jp')
+      release.request('GET', '/jurism/dl?channel=release&platform=linux-' + platform.machine())
+      release = release.getresponse()
+      release = release.getheader('Location')
+      return release.split('/')[-2]
 
-class DataDirAction(argparse.Action):
-  options = ['profile', 'home']
-
-  def __call__(self, parser, namespace, values, option_string=None):
-    try:
-      setattr(namespace, self.dest, self.__class__.validate(values))
-    except Exception as err:
-      parser.error(err)
-
-  @classmethod
-  def validate(cls, value):
-    return validate('data directory', value, cls.options)
-
-class LocationAction(argparse.Action):
-  options = ['local', 'global']
-
-  def __call__(self, parser, namespace, values, option_string=None):
-    try:
-      setattr(namespace, self.dest, self.__class__.validate(values))
-    except Exception as err:
-      parser.error(err)
-
-  @classmethod
-  def validate(cls, value):
-    return validate('install location', value, cls.options, True)
-
-class ClientAction(argparse.Action):
-  options = ['zotero', 'jurism']
-
-  def __call__(self, parser, namespace, values, option_string=None):
-    try:
-      setattr(namespace, self.dest, self.__class__.validate(values))
-    except Exception as err:
-      parser.error(err)
-
-  @classmethod
-  def validate(cls, value):
-    return validate('client', value, cls.options)
-
-installdir_local = os.path.expanduser('~/bin')
-installdir_global = '/opt'
-
-parser = argparse.ArgumentParser()
-parser.add_argument('-c', '--client', action=ClientAction, help='select Zotero client to download and install, either Zotero or Juris-M')
-parser.add_argument('--deb', action=ClientAction, help='prepare deb package for Zotero client, either Zotero or Juris-M')
-parser.add_argument('-v', '--version', default='latest', help='install the given version rather than the latest')
-parser.add_argument('-l', '--location', action=LocationAction, help="location to install, either 'local' (" + installdir_local + ") or 'global' (" + installdir_global + ')')
-parser.add_argument('-r', '--replace', action='store_true', help='replace Zotero at selected install location if it exists there')
-parser.add_argument('-p', '--picker', action='store_true', help='Start Zotero with the profile picker')
-parser.add_argument('-d', '--datadir', default='home', action=DataDirAction, help="Zotero data location, either 'profile' or 'home'")
-parser.add_argument('--cache', help='cache downloaded installer in this directory. Use this if you expect to re-install Zotero often')
-
-args = parser.parse_args()
-
-if args.deb and args.client:
-  print('use either --client or --deb but not both')
-  sys.exit(1)
-
-if args.deb:
-  args.client = args.deb
-  args.location = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'usr', 'lib'))
-  args.replace = True
-  args.menudir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'usr', 'share', 'applications'))
-  args.installdir = os.path.join('/usr/lib', args.client)
-else:
-  args.control = None
-  args.menudir = None
-  args.installdir = None
-
-if args.client is None:
-  args.client = ClientAction.validate(input("Client to install ('zotero'* or 'juris-m'): ") or 'zotero')
-
-if args.version == 'latest' or args.version is None:
-  version = zotero_latest() if args.client == 'zotero' else jurism_latest()
-  if args.version is None:
-    args.version = input(args.client + ' version (' + version + '): ') or version
-  else:
-    args.version = version
-
-if args.datadir is None:
-  if args.client == 'jurism':
-    args.datadir = 'home'
-  else:
-    args.datadir = DataDirAction.validate(input("Data directory ('home'* or 'profile'): ") or 'home')
-if args.datadir == 'profile' and args.client == 'jurism': raise Exception('datadir profile not supported by Juris-M')
-
-if args.location is None:
-  args.location = LocationAction.validate(input("Location to install ('local'*, 'global', or absolute path): ") or 'local')
-if args.location == 'local':
-  installdir = os.path.join(installdir_local, args.client)
-  args.menudir = os.path.expanduser('~/.local/share/applications')
-elif args.location == 'global':
-  installdir = os.path.join(installdir_global, args.client)
-  args.menudir = '/usr/share/applications'
-else:
-  installdir = os.path.join(args.location, args.client)
-
-if args.cache is not None and not os.path.exists(args.cache):
-  print(args.cache + ' does not exist')
-  sys.exit(1)
-
-if args.client == 'zotero':
-  if args.version == 'beta':
-    args.url = "https://www.zotero.org/download/client/dl?channel=beta&platform=linux-" + platform.machine()
-  else:
-    args.url = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-" + platform.machine() + '&version=' + args.version
-else:
-  args.url = 'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=release&platform=linux-' + platform.machine() + '&version=' + args.version
-
-if args.version == 'cached':
-  tarball = None
-  for candidate in glob.glob(os.path.join(args.cache, args.client + '-*.tar.bz2')):
-    tarball = candidate
-  if tarball is None:
-    raise Exception('No cached ' + args.client + ' found in ' + args.cache)
-  print('Using cached ' + tarball + ' without checking for newer versions')
-else:
-  if args.cache is None:
+  def download(self):
     tarball = tempfile.NamedTemporaryFile().name
-  else:
-    tarball = args.client + '-' + platform.machine() + '-' + args.version + '.tar.bz2'
-    print('Looking for ' + tarball)
-    for junk in glob.glob(os.path.join(args.cache, args.client + '-*.tar.bz2')):
-      if os.path.basename(junk) != tarball:
-        print('Removing obsolete ' + junk)
-        os.remove(junk)
-    tarball = os.path.join(args.cache, tarball)
+    print("Downloading " + self.client + ' ' + self.version + ' for ' + platform.machine() + ' from ' + self.url + ' to ' + tarball)
+    urlretrieve(self.url, tarball)
 
-  if os.path.exists(tarball):
-    print('Retaining ' + tarball)
-  else:
-    print("Downloading " + args.client + ' ' + args.version + ' for ' + platform.machine() + ' from ' + args.url + ' to ' + tarball)
-    # python on Travis is positively ancient and cannot download https files...
-    urlretrieve(args.url, tarball)
-    # print(subprocess.check_output(['curl', '-L', '-o', tarball, args.url]))
+    os.system('tar --strip 1 -xpf ' + self.shellquote(tarball) + ' -C ' + self.shellquote(self.usr_lib_app))
 
-if os.path.exists(installdir) and not args.replace: raise Exception('Installation directory "' + installdir + '" exists')
+  def shellquote(self, s):
+    return "'" + s.replace("'", "'\\''") + "'"
 
-extracted = tempfile.mkdtemp()
+  def make_desktop_entry(self):
+    with open(os.path.join(self.usr_share_applications, self.client_release + '.desktop'), 'w') as desktop:
+      desktop.write("[Desktop Entry]\n")
+      if self.client == 'zotero':
+        desktop.write("Name=Zotero\n")
+      else:
+        desktop.write("Name=Juris-M\n")
 
-def shellquote(s):
-  return "'" + s.replace("'", "'\\''") + "'"
-os.system('tar --strip 1 -xpf ' + shellquote(tarball) + ' -C ' + shellquote(extracted))
+      desktop.write("Comment=Open-source reference manager\n")
+      desktop.write("Exec=" + self.installdir + '/' + self.client + "\n")
+      desktop.write("Icon=" + self.installdir + "/chrome/icons/default/default48.png\n")
+      desktop.write("Type=Application\n")
+      desktop.write("StartupNotify=true")
 
-if os.path.exists(installdir): os.system('rm -rf ' + shellquote(installdir))
-os.system('mkdir -p ' + shellquote(os.path.dirname(installdir)))
-os.system('mv ' + shellquote(extracted) + ' ' + shellquote(installdir))
+  def build(self):
+    with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'control')), 'w') as f:
+      architecture = platform.machine()
+      if architecture == 'x86_64':
+        architecture = 'amd64'
+      else:
+        print('Unexpected architecture ' + architecture)
+        sys.exit(1)
 
-if not args.menudir is None:
-  if not os.path.exists(args.menudir): os.system('mkdir -p ' + shellquote(args.menudir))
-  with open(os.path.join(args.menudir, args.client + '.desktop'), 'w') as desktop:
-    if args.installdir: installdir = args.installdir
+      f.write("Package: " + self.client_release + "\n")
+      f.write("Architecture: " + architecture + "\n")
+      f.write("Maintainer: @retorquere\n")
+      f.write("Priority: optional\n")
+      f.write("Version: " + self.version + "\n")
+      if self.client == 'zotero':
+        description = 'Zotero ' + self.version
+      else:
+        description = 'Juris-M ' + self.version
+      f.write("Description: " + description + " is a free, easy-to-use tool to help you collect, organize, cite, and share research\n")
 
-    desktop.write("[Desktop Entry]\n")
-    if args.client == 'zotero':
-      desktop.write("Name=Zotero\n")
-    else:
-      desktop.write("Name=Juris-M\n")
+    self.packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
+    self.packagename = '_'.join([self.client, self.version, architecture]) + '.deb'
+    self.package = os.path.join(self.packagedir, '..', self.packagename)
+    if os.path.exists(self.package): os.remove(self.package)
 
-    client = args.client
-    if args.datadir == 'profile':
-      client = client + ' -datadir profile'
-    if args.picker:
-      client = client + ' -P'
-    desktop.write("Comment=Open-source reference manager\n")
-    desktop.write("Exec=" + installdir + '/' + client + "\n")
-    desktop.write("Icon=" + installdir + "/chrome/icons/default/default48.png\n")
-    desktop.write("Type=Application\n")
-    desktop.write("StartupNotify=true")
+    os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
+    os.system('dpkg-deb --build ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
 
-if args.deb:
-  with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'control')), 'w') as f:
-    architecture = platform.machine()
-    if architecture == 'x86_64':
-      architecture = 'amd64'
-    else:
-      print('Unexpected architecture ' + architecture)
-      sys.exit(1)
+  def release(self):
+    release = 'github-release release '
+    release += '--user retorquere '
+    release += '--repo zotero_deb '
+    release += '--tag ' + self.shellquote(self.client + '-' + self.version) + ' '
+    release += '--name ' + self.shellquote(self.client + ' ' + self.version) + ' '
+    release += '--description ' + self.shellquote(self.client + ' ' + self.version) + ' '
+    os.system(release)
 
-    f.write("Package: " + args.client + "\n")
-    f.write("Architecture: " + architecture + "\n")
-    f.write("Maintainer: @retorquere\n")
-    f.write("Priority: optional\n")
-    f.write("Version: " + args.version + "\n")
-    if args.client == 'zotero':
-      client = 'Zotero ' + args.version
-    else:
-      client = 'Juris-M ' + args.version
-    f.write("Description: " + client + " is a free, easy-to-use tool to help you collect, organize, cite, and share research\n")
+    release = 'github-release upload '
+    release += '--user retorquere '
+    release += '--repo zotero_deb '
+    release += '--tag ' + self.shellquote(self.client + '-' + self.version) + ' '
+    release += '--name ' + self.shellquote(self.packagename) + ' '
+    release += '--file ' + self.shellquote(self.package) + ' '
+    os.system(release)
 
-  packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
-  packagename = '_'.join([args.client, args.version, architecture]) + '.deb'
-  package = os.path.join(packagedir, '..', packagename)
-  if os.path.exists(package): os.remove(package)
+    os.system('package_cloud push retorquere/zotero/ubuntu/bionic ' + self.shellquote(self.packagename))
 
-  os.chdir(os.path.abspath(os.path.join(packagedir, '..')))
-  os.system('dpkg-deb --build ' + shellquote(os.path.basename(packagedir)) + ' ' + shellquote(packagename))
-
-  release = 'github-release release '
-  release += '--user retorquere '
-  release += '--repo zotero_deb '
-  release += '--tag ' + shellquote(args.client + '-' + args.version) + ' '
-  release += '--name ' + shellquote(args.client + ' ' + args.version) + ' '
-  release += '--description ' + shellquote(args.client + ' ' + args.version) + ' '
-  print(release)
-  os.system(release)
-
-  release = 'github-release upload '
-  release += '--user retorquere '
-  release += '--repo zotero_deb '
-  release += '--tag ' + shellquote(args.client + '-' + args.version) + ' '
-  release += '--name ' + shellquote(packagename) + ' '
-  release += '--file ' + shellquote(package) + ' '
-  print(release)
-  os.system(release)
-
-  os.system('package_cloud push retorquere/zotero/ubuntu/bionic ' + shellquote(packagename))
+Installer()
