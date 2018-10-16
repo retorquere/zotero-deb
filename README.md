@@ -15,7 +15,7 @@ Packaging binary .debs turns out to be simple if you don't use a PPA. From what 
 
 The bulk of the work in this repo is a rather flexible zotero-installer that can also be used for manual installs on your system rather than using the package hosted here.
 
-The installer figures out what the latest version is, downloads it and installs it (in the case of this .deb packager) in place. I use this script as part of my tests of Better BibTeX but all or at least most of this script could be ditched if it were to be part of the zotero build process. I don't know exactly how the zotero build process works, but after Zotero is built, here's what I do:
+The installer figures out what the latest version is, downloads it and installs it (in the case of this .deb packager) in place. I use this script as part of my tests of Better BibTeX but all or at least most of this script could be ditched if it were to be part of the zotero build process. I don't know exactly how the zotero build process works, but after I have the packaged Zotero, here's what I do:
 
 1. create an empty directory (let's say `<deb>`) for packaging
 2. Unpack the zotero .tar.bz2 into `<deb>/usr/lib/zotero` (in the case of the Zotero build it could probably just copy the build layout there)
