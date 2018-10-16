@@ -108,7 +108,7 @@ class Installer:
       desktop.write("Exec=" + self.installdir + '/' + self.client + "\n")
       desktop.write("Icon=" + self.installdir + "/chrome/icons/default/default48.png\n")
       desktop.write("Type=Application\n")
-      desktop.write("StartupNotify=true")
+      desktop.write("StartupNotify=true\n")
 
   def build(self):
     with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'control')), 'w') as f:
