@@ -46,7 +46,7 @@ github-release release --user retorquere --repo zotero_deb --tag 'zotero-5.0.56'
 github-release upload --user retorquere --repo zotero_deb --tag 'zotero-5.0.56' --name 'zotero_5.0.56_amd64.deb' --file '/home/emile/github/ppa/../zotero_5.0.56_amd64.deb"
 ```
 
-The python script on my repo automates all this including figuring out what the latest Zotero (or Juris-M when it comes back online) is, downloading it, laying it out, updating the control file and package name, and running the `dpkg-deb`, `package_cloud` and `github-release` commands.
+The python script on this repo automates all this including figuring out what the latest Zotero (or Juris-M when it comes back online) is, downloading it, laying it out, updating the control file and package name, and running the `dpkg-deb`, `package_cloud` and `github-release` commands.
 
 ## Control file
 
