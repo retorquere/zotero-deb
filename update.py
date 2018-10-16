@@ -162,6 +162,22 @@ class Installer:
     release += '--file ' + self.shellquote(self.package) + ' '
     os.system(release)
 
-    os.system('package_cloud push retorquere/zotero/ubuntu/' + self.dist + ' ' + self.shellquote(self.packagename))
+    for d in ['incoming', 'conf', 'key']:
+      os.system('mkdir -p ' + self.shellquote('apt/' + d))
+    os.system('gpg --armor --export username emiliano.heyns@iris-advies.com > apt/key/deb.gpg.key')
+
+    with open('apt/conf/distributions', 'w') as f:
+      f.write("Origin: Emiliano Heyns\n")
+      f.write("Label: Zotero/Juris-M\n")
+      f.write("Suite: stable\n")
+      f.write("Codename: bionic\n")
+      f.write("Version: 18.04\n")
+      f.write("Architectures: amd64\n")
+      f.write("Components: universe\n")
+      f.write("Description: Zotero/Juris-M\n")
+      f.write("SignWith: yes\n")
+
+    os.system('reprepro -Vb apt -S Science includedeb bionic ' + self.shellquote(self.packagename))
+    os.system('rsync -avP -e ssh apt/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb/repo')
 
 Installer()

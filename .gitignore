@@ -2,3 +2,4 @@ build
 usr
 .env
 *.deb
+apt

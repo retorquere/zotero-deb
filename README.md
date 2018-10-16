@@ -1,10 +1,23 @@
-Packaged version of Zotero and Juris-M. Install the repo using 
+# Packaged version of Zotero and Juris-M.
+
+## Installation
+
+One-time installation of the repo:
 
 ```
-curl -s https://packagecloud.io/install/repositories/retorquere/zotero/script.deb.sh | os=ubuntu dist=bionic sudo bash
+curl --silent -L -A "Debian APT-HTTP/1.3" https://sourceforge.net/projects/zotero-deb/files/repo/key/deb.gpg.key | sudo apt-key add -
+
+cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
+deb https://sourceforge.net/projects/zotero-deb/files/repo bionic universe
+EOF
 ```
 
-once, after that you can just use the regular apt tools to install and upgrade the package `zotero`/`jurism`.
+after this you can install and update in the usual way:
+
+```
+sudo apt-get update
+sudo apt-get install zotero
+```
 
 ## How this was packaged (you can skip this if you're not a developer)
 
@@ -29,13 +42,7 @@ you now have an installable .deb package
 
 ## make it apt-gettable
 
-For apt-gettable you can either upload it to packagecloud using
-
-```
-package_cloud push zotero/zotero/ubuntu/bionic zotero_5.0.56_amd64.deb
-```
-
-or if you want to host it yourself you can create a disk layout as described at https://blog.packagecloud.io/eng/2015/08/04/apt-repository-internals/ and host it via https. Downside: more work + hosting costs, upside: download tracking.
+(being reworked for sourceforge -- can't believe SF is the best choice right now)
 
 ## hosting the .debs on Github
 
