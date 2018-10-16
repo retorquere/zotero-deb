@@ -248,9 +248,10 @@ if args.deb:
     f.write("Priority: optional\n")
     f.write("Version: " + args.version + "\n")
     if args.client == 'zotero':
-      f.write("Description: Zotero\n")
+      client = 'Zotero ' + args.version
     else:
-      f.write("Description: Juris-M\n")
+      client = 'Juris-M ' + args.version
+    f.write("Description: " + client + " is a free, easy-to-use tool to help you collect, organize, cite, and share research\n")
 
   packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
   packagename = '_'.join([args.client, args.version, architecture]) + '.deb'
@@ -259,3 +260,4 @@ if args.deb:
 
   os.chdir(os.path.abspath(os.path.join(packagedir, '..')))
   os.system('dpkg-deb --build ' + shellquote(os.path.basename(packagedir)) + ' ' + shellquote(packagename))
+  os.system('package_cloud push retorquere/zotero/ubuntu/bionic ' + shellquote(packagename))
