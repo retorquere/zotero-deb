@@ -3,3 +3,4 @@ usr
 .env
 *.deb
 apt
+*.swp
