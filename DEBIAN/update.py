@@ -1,8 +1,5 @@
 #!/usr/bin/env python
 
-from dotenv import load_dotenv, find_dotenv
-load_dotenv(find_dotenv())
-
 import platform
 import glob
 import argparse
@@ -66,6 +63,17 @@ class Installer:
     self.usr_share_applications = os.path.join(self.usr, 'share', 'applications')
     os.system('mkdir -p ' + self.shellquote(self.usr_share_applications))
 
+    self.architecture = platform.machine()
+    if self.architecture == 'x86_64':
+      self.architecture = 'amd64'
+    else:
+      print('Unexpected architecture ' + architecture)
+      sys.exit(1)
+
+    self.packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
+    self.packagename = '_'.join([self.client, self.version, self.architecture]) + '.deb'
+    self.package = os.path.join(self.packagedir, '..', self.packagename)
+
     self.download()
     self.make_desktop_entry()
     self.build()
@@ -115,15 +123,9 @@ class Installer:
 
   def build(self):
     with open(os.path.abspath(os.path.join(os.path.dirname(__file__), 'control')), 'w') as f:
-      architecture = platform.machine()
-      if architecture == 'x86_64':
-        architecture = 'amd64'
-      else:
-        print('Unexpected architecture ' + architecture)
-        sys.exit(1)
 
       f.write("Package: " + self.client_release + "\n")
-      f.write("Architecture: " + architecture + "\n")
+      f.write("Architecture: " + self.architecture + "\n")
       f.write("Maintainer: @retorquere\n")
       f.write("Priority: optional\n")
       f.write("Version: " + self.version + "\n")
@@ -133,15 +135,14 @@ class Installer:
         description = 'Juris-M ' + self.version
       f.write("Description: " + description + " is a free, easy-to-use tool to help you collect, organize, cite, and share research\n")
 
-    self.packagedir = os.path.abspath(os.path.join(os.path.dirname(os.path.join(__file__)), '..'))
-    self.packagename = '_'.join([self.client, self.version, architecture]) + '.deb'
-    self.package = os.path.join(self.packagedir, '..', self.packagename)
     if os.path.exists(self.package): os.remove(self.package)
 
     os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
     os.system('dpkg-deb --build -Zgzip ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
 
   def release(self):
+    os.chdir(os.path.abspath(os.path.join(self.packagedir, '..')))
+
     release = 'github-release release '
     release += '--user retorquere '
     release += '--repo zotero_deb '
