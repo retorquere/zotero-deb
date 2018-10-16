@@ -1,10 +1,10 @@
-Packaged version of Zotero. Install the repo using 
+Packaged version of Zotero and Juris-M. Install the repo using 
 
 ```
 curl -s https://packagecloud.io/install/repositories/retorquere/zotero/script.deb.sh | sudo bash
 ```
 
-once, after that you can just use the regular apt tools to install and upgrade the package `zotero`.
+once, after that you can just use the regular apt tools to install and upgrade the package `zotero`/`jurism`.
 
 ## How this was packaged (you can skip this if you're not a developer)
 
