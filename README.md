@@ -42,7 +42,51 @@ you now have an installable .deb package
 
 ## make it apt-gettable
 
-(being reworked for sourceforge -- can't believe SF is the best choice right now)
+install the build tools:
+
+```
+sudo apt-get install reprepro gnupg
+```
+
+generate your gpg key if you don't have one already
+
+```
+gpg --gen-key
+```
+
+create the layout
+```
+mkdir -p apt/incoming
+mkdir -p apt/conf
+mkdir -p apt/key
+gpg --armor --export username <your email> > apt/key/deb.gpg.key
+
+cat << EOF > apt/conf/distributions
+Origin: Emiliano Heyns
+Label: Zotero/Juris-M
+Suite: stable
+Codename: bionic
+Version: 18.04
+Architectures: amd64
+Components: universe
+Description: Zotero/Juris-M
+SignWith: yes
+EOF
+
+reprepro --ask-passphrase -Vb apt export
+```
+
+add the package
+
+```
+reprepro -Vb apt -S Science includedeb bionic zotero_5.0.56_amd64.deb
+```
+
+and send it to sourceforge
+
+```
+rsync -avP -e ssh apt/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb/repo
+```
 
 ## hosting the .debs on Github
 
