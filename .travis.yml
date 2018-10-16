@@ -1,9 +1,0 @@
-script: "./DEBIAN/update.py --deb zotero\n"
-deploy:
-  provider: packagecloud
-  repository: zotero
-  username: retorquere
-  token:
-    secure: JxgFvKWrtzpeKx91TwlhPb/IvgqGHl3hFFM+CxjsL2BvEKMKwvgL8fPcVhOs9SVamt0DadssA1aWPqlTgSyM2jYbMMDIgk/Zgg8EIphzhmdDovIgQeBIxR9D3kl6xLW/p1pIjbi8uQh64040zzGOp31tr8aoMc/nxFStwjC0ZXj3rPJwvmLbArvwxJ+1RmdI/ArXbsoIQPjGFss3Vrdy0guYmXBuzbTcMLwV7Iaox/Ros5dKZv2jVZpA9R//YNxvzEsDETjOXkL1UyaDEDXi2JOx1LAVbtu4c4LELC3rOdfvEGWJiws1n7TNx10uASILdXZhuOLedT7xgJ2lRxnAnOONfFNglUXlPR9VgDnBg6Y5C/95RWKMewhlKclLEaNE/rMYIXQkahxttk5l5MindGF1sjBnuitKzxO7OKJjN182fOFzmpAfwoyM/gbjRuR6Q6sso9caD/NX7yZEvhiEDLYFpjGri6+kI3QbeTokDTwyz7uQhASWyge4Ah5KtFIFVbFk1ssZL81vpx65Ydpx10cakZAGyBVJKP5b1CGfjtfIBc/lf40kqi+Dz5K35tLHx/KuWzprosm3tHz6oshoTL/VWKx+060L2TollUMT+RDTYyiAwnYuCflCGfT+gQKAAWgPlk7pksnjHuZl62OlnykzqYUsDN54qAJf7zo2Z0M=
-  dist: ubuntu/bionic
-  local-dir: ..
