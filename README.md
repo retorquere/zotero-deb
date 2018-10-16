@@ -37,7 +37,7 @@ package_cloud push zotero/zotero/ubuntu/bionic zotero_5.0.56_amd64.deb
 
 or if you want to host it yourself you can create a disk layout as described at https://blog.packagecloud.io/eng/2015/08/04/apt-repository-internals/ and host it via https. Downside: more work + hosting costs, upside: download tracking.
 
-## hosting the .debs on Githib
+## hosting the .debs on Github
 
 For uploading binaries to GH releases I usually have my own scripts, but for this repo I used https://github.com/aktau/github-release:
 
