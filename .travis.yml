@@ -1,0 +1,9 @@
+script: |
+  ./DEBIAN/update.py --deb zotero
+
+deploy:
+  provider: packagecloud
+  repository: "zotero"
+  username: "retorquere"
+  token: "YOUR TOKEN"
+  dist: "YOUR DIST" # like 'ubuntu/precise', or 'centos/5', if pushing deb or rpms
