@@ -166,6 +166,9 @@ class Installer:
       os.system('mkdir -p ' + self.shellquote('apt/' + d))
     os.system('gpg --armor --export username emiliano.heyns@iris-advies.com > apt/key/deb.gpg.key')
 
+    with open('apt/zotero.list', 'w') as f:
+      f.write("deb https://sourceforge.net/projects/zotero-deb/files/repo bionic universe\n")
+
     with open('apt/conf/distributions', 'w') as f:
       f.write("Origin: Emiliano Heyns\n")
       f.write("Label: Zotero/Juris-M\n")
