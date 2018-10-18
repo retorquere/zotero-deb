@@ -1,5 +1,6 @@
 build
 .env
 *.deb
-apt
+*.tar.bz2
 *.swp
+sf

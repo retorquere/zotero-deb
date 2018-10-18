@@ -1,16 +1,12 @@
 #!/usr/bin/env python
 
 import platform
-import glob
-import argparse
 import re
 import json
 import os
 import sys
-import tempfile
-import socket
-import collections
-import shutil
+
+maintainer = 'emiliano.heyns@iris-advies.com'
 
 if sys.version_info[0] >= 3:
   from urllib.request import urlopen
@@ -22,165 +18,121 @@ else:
   from HTMLParser import HTMLParser
   from urllib import urlretrieve
   from httplib import HTTPSConnection
-  input = raw_input
-  ConnectionRefusedError = socket.error
 
-class Installer:
-  def __init__(self):
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--deb', choices=['zotero', 'zotero-beta', 'jurism'], required=True, help='prepare deb package for Zotero client, either Zotero or Juris-M')
-    parser.add_argument('--dist', choices=['bionic', 'trusty'], default='bionic')
-    args = parser.parse_args()
+def run(cmd):
+  print("\n$ " + cmd)
+  os.system(cmd)
 
-    self.dist = args.dist
+def write(filename, lines):
+  print('# writing ' + filename + "\n")
 
-    if args.deb == 'zotero-beta':
-      self.client = 'zotero'
-      self.version = 'beta'
-    else:
-      self.client = args.deb
-      self.version = self.get_version()
+  with open(filename, 'w') as f:
+    for line in lines:
+      f.write(line + "\n")
 
-    if self.client == 'zotero':
-      if self.version == 'beta':
-        self.url = "https://www.zotero.org/download/client/dl?channel=beta&platform=linux-" + platform.machine()
-      else:
-        self.url = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-" + platform.machine() + '&version=' + self.version
-    else:
-      self.url = 'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=release&platform=linux-' + platform.machine() + '&version=' + self.version
+def build(client, arch, version, url):
+  packagename = 'sf/' + '_'.join([client, version, arch]) + '.deb'
+  if os.path.exists(packagename):
+    print('# not rebuilding ' + packagename + "\n")
+    return
 
-    self.root = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-    self.packagedir = os.path.join(self.root, 'build')
-    if os.path.exists(self.packagedir): shutil.rmtree(self.packagedir)
+  print('# Building ' + packagename + "\n")
 
-    self.usr = os.path.join(self.packagedir, 'usr')
+  run('rm -rf build client.tar.bz2 ' + packagename)
+  run('mkdir -p build/usr/lib/' + client + ' build/usr/share/applications build/DEBIAN')
+  run('curl -L -o client.tar.bz2 "' + url + '"')
+  run('tar --strip 1 -xpf client.tar.bz2 -C build/usr/lib/' + client)
 
-    if self.version == 'beta':
-      self.client_release = self.client + '-beta'
-    else:
-      self.client_release = self.client
-    self.installdir = os.path.join('/usr/lib', self.client)
+  write('build/usr/share/applications/' + client + '.desktop', [
+    '[Desktop Entry]',
+    'Name=Zotero',
+    'Name=' + ({'zotero': 'Zotero', 'jurism': 'Juris-M'}[client]),
+    'Comment=Open-source reference manager',
+    'Exec=/usr/lib/' + client + '/' + client,
+    'Icon=/usr/lib/' + client + '/chrome/icons/default/default48.png',
+    'Type=Application',
+    'StartupNotify=true',
+  ])
 
-    self.usr_lib_app = os.path.join(self.usr, 'lib', self.client_release)
-    os.system('mkdir -p ' + self.shellquote(self.usr_lib_app))
-    self.usr_share_applications = os.path.join(self.usr, 'share', 'applications')
-    os.system('mkdir -p ' + self.shellquote(self.usr_share_applications))
+  write('build/DEBIAN/control', [
+    'Package: ' + client,
+    'Architecture: ' + arch,
+    'Maintainer: ' + maintainer,
+    'Section: Science',
+    'Priority: optional',
+    'Version: ' + version,
+    'Description: ' + ({'zotero': 'Zotero', 'jurism': 'Juris-M'}[client]) + ' is a free, easy-to-use tool to help you collect, organize, cite, and share research',
+  ])
 
-    self.architecture = platform.machine()
-    if self.architecture == 'x86_64':
-      self.architecture = 'amd64'
-    else:
-      print('Unexpected architecture ' + architecture)
-      sys.exit(1)
+  run('dpkg-deb --build -Zgzip build ' + ' ' + packagename)
 
-    self.packagename = '_'.join([self.client, self.version, self.architecture]) + '.deb'
-    self.package = os.path.join(self.root, self.packagename)
+run('mkdir -p sf')
 
-    self.download()
-    self.make_desktop_entry()
-    self.build()
-    self.release()
+response = urlopen('https://www.zotero.org/download/').read()
+if type(response) is bytes: response = response.decode("utf-8")
+for line in response.split('\n'):
+  if not '"standaloneVersions"' in line: continue
+  line = re.sub(r'.*Downloads,', '', line)
+  line = re.sub(r'\),', '', line)
+  versions = json.loads(line)
+  zotero = versions['standaloneVersions']['linux-' + platform.machine()]
+  break
 
-  def get_version(self):
-    if self.client == 'zotero':
-      response = urlopen('https://www.zotero.org/download/').read()
-      if type(response) is bytes: response = response.decode("utf-8")
-      for line in response.split('\n'):
-        if not '"standaloneVersions"' in line: continue
-        line = re.sub(r'.*Downloads,', '', line)
-        line = re.sub(r'\),', '', line)
-        versions = json.loads(line)
-        return versions['standaloneVersions']['linux-' + platform.machine()]
+build('zotero', 'amd64', zotero, 'https://www.zotero.org/download/client/dl?channel=release&platform=linux-x86_64&version=' + zotero)
+build('zotero', 'i386', zotero, 'https://www.zotero.org/download/client/dl?channel=release&platform=linux-i686&version=' + zotero)
 
-    else:
-      release = HTTPSConnection('our.law.nagoya-u.ac.jp')
-      release.request('GET', '/jurism/dl?channel=release&platform=linux-' + platform.machine())
-      release = release.getresponse()
-      release = release.getheader('Location')
-      return release.split('/')[-2]
+release = HTTPSConnection('our.law.nagoya-u.ac.jp')
+release.request('GET', '/jurism/dl?channel=release&platform=linux-' + platform.machine())
+release = release.getresponse()
+release = release.getheader('Location')
+jurism = release.split('/')[-2]
 
-  def download(self):
-    tarball = tempfile.NamedTemporaryFile().name
-    print("Downloading " + self.client + ' ' + self.version + ' for ' + platform.machine() + ' from ' + self.url + ' to ' + tarball)
-    urlretrieve(self.url, tarball)
+build('jurism', 'amd64', jurism, 'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F' + jurism + '/Jurism-' + jurism + '_linux-x86_64.tar.bz2')
+build('jurism', 'i386', jurism, 'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F' + jurism + '/Jurism-' + jurism + '_linux-i686.tar.bz2')
 
-    os.system('tar --strip 1 -xpf ' + self.shellquote(tarball) + ' -C ' + self.shellquote(self.usr_lib_app))
-
-  def shellquote(self, s):
-    return "'" + s.replace("'", "'\\''") + "'"
-
-  def make_desktop_entry(self):
-    with open(os.path.join(self.usr_share_applications, self.client_release + '.desktop'), 'w') as desktop:
-      desktop.write("[Desktop Entry]\n")
-      if self.client == 'zotero':
-        desktop.write("Name=Zotero\n")
-      else:
-        desktop.write("Name=Juris-M\n")
-
-      desktop.write("Comment=Open-source reference manager\n")
-      desktop.write("Exec=" + self.installdir + '/' + self.client + "\n")
-      desktop.write("Icon=" + self.installdir + "/chrome/icons/default/default48.png\n")
-      desktop.write("Type=Application\n")
-      desktop.write("StartupNotify=true\n")
-
-  def build(self):
-    debian = os.path.join(self.packagedir, 'DEBIAN')
-    os.system('mkdir -p ' + self.shellquote(debian))
-    with open(os.path.abspath(os.path.join(debian, 'control')), 'w') as f:
-      f.write("Package: " + self.client_release + "\n")
-      f.write("Architecture: " + self.architecture + "\n")
-      f.write("Maintainer: @retorquere\n")
-      f.write("Priority: optional\n")
-      f.write("Version: " + self.version + "\n")
-      if self.client == 'zotero':
-        description = 'Zotero ' + self.version
-      else:
-        description = 'Juris-M ' + self.version
-      f.write("Description: " + description + " is a free, easy-to-use tool to help you collect, organize, cite, and share research\n")
-
-    if os.path.exists(self.package): os.remove(self.package)
-
-    os.chdir(os.path.dirname(self.packagedir))
-    os.system('dpkg-deb --build -Zgzip ' + self.shellquote(os.path.basename(self.packagedir)) + ' ' + self.shellquote(self.packagename))
-
-  def release(self):
-    os.chdir(os.path.dirname(self.packagedir))
-
-    release = 'github-release release '
-    release += '--user retorquere '
-    release += '--repo zotero_deb '
-    release += '--tag ' + self.shellquote(self.client + '-' + self.version) + ' '
-    release += '--name ' + self.shellquote(self.client + ' ' + self.version) + ' '
-    release += '--description ' + self.shellquote(self.client + ' ' + self.version) + ' '
-    os.system(release)
-
-    release = 'github-release upload '
-    release += '--user retorquere '
-    release += '--repo zotero_deb '
-    release += '--tag ' + self.shellquote(self.client + '-' + self.version) + ' '
-    release += '--name ' + self.shellquote(self.packagename) + ' '
-    release += '--file ' + self.shellquote(self.package) + ' '
-    os.system(release)
-
+for dist in ['bionic', 'trusty']:
+  if not os.path.exists('sf/repo/' + dist):
     for d in ['incoming', 'conf', 'key']:
-      os.system('mkdir -p ' + self.shellquote('apt/' + d))
-    os.system('gpg --armor --export username emiliano.heyns@iris-advies.com > apt/key/deb.gpg.key')
+      run('mkdir -p sf/repo/' + dist + '/' + d)
 
-    with open('apt/zotero.list', 'w') as f:
-      f.write("deb https://sourceforge.net/projects/zotero-deb/files/repo bionic universe\n")
+    run('gpg --armor --export username ' + maintainer + ' > sf/repo/' + dist + '/key/deb.gpg.key')
 
-    with open('apt/conf/distributions', 'w') as f:
-      f.write("Origin: Emiliano Heyns\n")
-      f.write("Label: Zotero/Juris-M\n")
-      f.write("Suite: stable\n")
-      f.write("Codename: bionic\n")
-      f.write("Version: 18.04\n")
-      f.write("Architectures: amd64\n")
-      f.write("Components: universe\n")
-      f.write("Description: Zotero/Juris-M\n")
-      f.write("SignWith: yes\n")
+    write('sf/repo/' + dist + '/conf/distributions', [
+      'Origin: ' + maintainer,
+      'Label: Zotero/Juris-M',
+      'Suite: stable',
+      'Codename: ' + dist,
+      'Components: main',
+      'Version: ' + ({'bionic': '18.04', 'trusty': '14.04'}[dist]),
+      'Architectures: amd64 i386',
+      'Description: Zotero/Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research',
+      'SignWith: yes',
+    ])
 
-    os.system('reprepro -Vb apt -S Science includedeb bionic ' + self.shellquote(self.packagename))
-    os.system('rsync -avP -e ssh apt/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb/repo')
+    run('reprepro --ask-passphrase -Vb sf/repo/' + dist + ' export')
+    run('reprepro -b sf/repo/' + dist + 'createsymlinks')
 
-Installer()
+  write('sf/repo/' + dist + '/install.sh', [
+    'curl --silent -L https://sourceforge.net/projects/zotero-deb/files/repo/' + dist + '/key/deb.gpg.key | sudo apt-key add -',
+    ''
+    'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+    'deb https://sourceforge.net/projects/zotero-deb/files/repo/' + dist + ' ' + dist + ' main',
+    'EOF'
+  ])
+
+  for arch in ['i386', 'amd64']:
+    pkg = 'zotero_' + zotero + '_' + arch + '.deb'
+    if os.path.exists('sf/repo/' + dist + '/pool/main/z/zotero/' + pkg):
+      print(pkg + ' exists in ' + dist)
+    else:
+      run('reprepro -Vb sf/repo/' + dist + ' includedeb ' + dist + ' sf/' + pkg)
+
+    pkg = 'jurism_' + jurism + '_' + arch + '.deb'
+    if os.path.exists('sf/repo/' + dist + '/pool/main/j/jurism/' + pkg):
+      print(pkg + ' exists in ' + dist)
+    else:
+      run('reprepro -Vb sf/repo/' + dist + ' includedeb ' + dist + ' sf/' + pkg)
+
+run('cp README.md sf')
+
+run('rsync -avP -e ssh sf/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')

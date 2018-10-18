@@ -4,20 +4,19 @@
 
 One-time installation of the repo:
 
-```
-curl --silent -L -A "Debian APT-HTTP/1.3" https://sourceforge.net/projects/zotero-deb/files/repo/key/deb.gpg.key | sudo apt-key add -
+for `bionic`:
 
-cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb https://sourceforge.net/projects/zotero-deb/files/repo bionic universe
-EOF
-```
+`$ curl --silent -L https://sourceforge.net/projects/zotero-deb/files/repo/bionic/install.sh | sudo bash`
+
+for `trusty`:
+
+`$ curl --silent -L https://sourceforge.net/projects/zotero-deb/files/repo/trusty/install.sh | sudo bash`
 
 after this you can install and update in the usual way:
 
-```
-sudo apt-get update
-sudo apt-get install zotero
-```
+`$ sudo apt-get update`
+
+`$ sudo apt-get install zotero jurism`
 
 ## How this was packaged (you can skip this if you're not a developer)
 
