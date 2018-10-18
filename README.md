@@ -18,3 +18,4 @@ after this you can install and update in the usual way:
 
 `$ sudo apt-get install zotero jurism`
 
+If you want to manually install the packages you can download them at https://sourceforge.net/projects/zotero-deb/files/
