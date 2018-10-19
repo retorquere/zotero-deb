@@ -11,6 +11,7 @@ maintainer = 'emiliano.heyns@iris-advies.com'
 component = 'main'
 distros = {'bionic': '18.04', 'trusty': '14.04'}
 architectures = ['i386', 'amd64']
+gpg = 'dpkg'
 
 script = len(sys.argv) == 2 and {'script': True}[sys.argv[1]]
 
@@ -29,6 +30,10 @@ def run(cmd):
   print("\n" + cmd)
   if not script: os.system(cmd)
 
+def chdir(d):
+  print("\n cd " + d)
+  if not script: os.chdir(d)
+
 def write(filename, lines):
   if script:
     print()
@@ -46,60 +51,22 @@ def write(filename, lines):
 
 class Repo:
   def create(self):
-    if not os.path.exists('sf/repo/'):
-      for d in ['incoming', 'conf', 'key']:
-        run(f'mkdir -p sf/repo/{d}')
+    run('mkdir -p sf')
+    chdir('sf')
+    run(f'gpg --armor --export {gpg} > deb.gpg.key')
+    run('apt-ftparchive packages . > Packages')
+    run('bzip2 -kf Packages')
+    run('apt-ftparchive release . > Release')
+    run(f'gpg --yes -abs -u {gpg} -o Release.gpg Release')
 
-      run(f'gpg --armor --export username {maintainer} > sf/repo/key/deb.gpg.key')
-
-      write('sf/repo/conf/distributions', sum([[
-        f'Origin: {maintainer}',
-        'Label: Zotero/Juris-M',
-        'Suite: stable',
-        f'Codename: {dist}',
-        f'Components: {component}',
-        f'Version: {version}',
-        f'Architectures: {" ".join(architectures)}',
-        'Description: Zotero/Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research',
-        'SignWith: yes',
-        '',
-      ] for dist, version in distros.items()], []))
-
-      run('reprepro --ask-passphrase -Vb sf/repo export')
-      run('reprepro -b sf/repo/ createsymlinks')
-
-    for dist in distros.keys():
-      write(f'sf/repo/install-{dist}.sh', [
-        'curl --silent -L https://sourceforge.net/projects/zotero-deb/files/repo/key/deb.gpg.key | sudo apt-key add -',
-        '',
-        'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
-        f'deb https://sourceforge.net/projects/zotero-deb/files/repo {dist} {component}',
-        'EOF'
-      ])
-
-  def install(self, clients):
-    installed = []
-    for packages in glob.glob(f'sf/repo/dists/*/{component}/binary*/Packages'):
-      dist = packages.split('/')[3]
-
-      with open(packages) as f:
-        for line in f.readlines():
-          if line.strip() == '': continue
-
-          key, value = [v.strip() for v in line.split(':', 1)]
-
-          if key == 'Filename': installed.append(f'{dist}/{value.split("/")[-1]}')
-
-    for arch in architectures:
-      for dist in distros.keys():
-        for client in clients:
-          deb = client.deb(arch)
-          if f'{dist}/{os.path.basename(deb)}' in installed:
-            print(f'## {os.path.basename(deb)} exists in {dist}')
-          else:
-            run(f'reprepro -C {component} -Vb sf/repo includedeb {dist} {deb}')
-
-    run('cp README.md sf')
+    write(f'install.sh', [
+      'curl --silent -L https://sourceforge.net/projects/zotero-deb/files/deb.gpg.key | sudo apt-key add -',
+      '',
+      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+      f'deb https://sourceforge.net/projects/zotero-deb/files/ ./',
+      'EOF'
+    ])
+    chdir('..')
 
   def publish(self):
     run('rsync -avP -e ssh sf/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
@@ -153,6 +120,7 @@ class Package:
     ])
 
     run(f'dpkg-deb --build -Zgzip build {deb}')
+    run(f'dpkg-sig -k {gpg} --sign builder {deb}')
 
 class Zotero(Package):
   def __init__(self):
@@ -193,5 +161,4 @@ for arch in architectures:
 print("\n# publishing repo")
 repo = Repo()
 repo.create()
-repo.install([zotero, jurism])
 repo.publish()
