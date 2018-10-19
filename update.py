@@ -85,7 +85,7 @@ class Package:
 
     deb = self.deb(arch)
 
-    if os.path.exists(deb):
+    if not script and os.path.exists(deb):
       print(f"# not rebuilding {deb}\n")
       return
 
