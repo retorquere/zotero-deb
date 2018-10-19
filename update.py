@@ -6,14 +6,11 @@ import json
 import os
 import sys
 import glob
+from github import Github
 
 maintainer = 'emiliano.heyns@iris-advies.com'
-component = 'main'
-distros = {'bionic': '18.04', 'trusty': '14.04'}
 architectures = ['i386', 'amd64']
 gpg = 'dpkg'
-
-script = len(sys.argv) == 2 and {'script': True}[sys.argv[1]]
 
 if sys.version_info[0] >= 3:
   from urllib.request import urlopen
@@ -28,70 +25,68 @@ else:
 
 def run(cmd):
   print("\n" + cmd)
-  if not script: os.system(cmd)
-
-def chdir(d):
-  print("\n cd " + d)
-  if not script: os.chdir(d)
+  os.system(cmd)
 
 def write(filename, lines):
-  if script:
-    print()
-    print(f'cat << E_O_F > {filename}')
+  print(f"\n# writing {filename}\n")
+
+  with open(filename, 'w') as f:
     for line in lines:
-      print(line)
-    print('E_O_F')
-
-  else:
-    print(f"\n# writing {filename}\n")
-
-    with open(filename, 'w') as f:
-      for line in lines:
-        f.write(line + "\n")
+      f.write(line + "\n")
 
 class Repo:
-  def create(self):
-    run('mkdir -p sf')
-    chdir('sf')
-    run(f'gpg --armor --export {gpg} > deb.gpg.key')
-    run('apt-ftparchive packages . > Packages')
-    run('bzip2 -kf Packages')
-    run('apt-ftparchive release . > Release')
-    run(f'gpg --yes -abs -u {gpg} -o Release.gpg Release')
-
-    write(f'install.sh', [
-      'curl --silent -L https://sourceforge.net/projects/zotero-deb/files/deb.gpg.key | sudo apt-key add -',
-      '',
-      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
-      f'deb https://sourceforge.net/projects/zotero-deb/files/ ./',
-      'EOF'
-    ])
-    chdir('..')
+  def __init__(self):
+    self.repo = 'repo'
 
   def publish(self):
-    run('rsync -avP -e ssh sf/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
+    run(f'mkdir -p {self.repo}')
+    run(f'gpg --armor --export {gpg} > {self.repo}/deb.gpg.key')
+    run(f'cd {self.repo} && apt-ftparchive packages . > Packages')
+    run(f'bzip2 -kf {self.repo}/Packages')
+    run(f'cd {self.repo} && apt-ftparchive release . > Release')
+    run(f'gpg --yes -abs -u {gpg} -o {self.repo}/Release.gpg {self.repo}/Release')
+
+    write(f'{self.repo}/install.sh', [
+      'curl --silent -L https://github.com/retorquere/zotero_deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
+      '',
+      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+      'deb https://github.com/retorquere/zotero_deb/releases/download/apt-get/ ./',
+      'EOF'
+    ])
+
+    description = """
+    One-time installation of the repo: 
+    'curl --silent -L https://sourceforge.net/projects/zotero-deb/files/install.sh | sudo bash'. 
+    after this you can install and update in the usual way: 
+    'sudo apt-get update; sudo apt-get install zotero jurism'
+    """.replace("\n", ' ')
+
+    run(f'github-release release --user retorquere --repo zotero_deb --tag apt-get --name "Debian packages for Zotero/Juris-M" --description "{description}"')
+    for f in os.listdir(self.repo):
+      run(f'cd {self.repo} && github-release upload --user retorquere --repo zotero_deb --tag apt-get --name {f} --file {f} --replace')
 
 class Package:
-  def __init__(self, client, name):
+  def __init__(self, client, name, repo):
     self.machine = {'amd64': 'x86_64', 'i386': 'i686'}
     self.client = client
     self.name = name
+    self.repo = repo
 
   def deb(self, arch):
-    return f'sf/{"_".join([self.client, self.version, arch])}.deb'
+    return f'{self.repo}/{"_".join([self.client, self.version, arch])}.deb'
 
   def build(self, arch):
     print()
 
     deb = self.deb(arch)
 
-    if not script and os.path.exists(deb):
+    if os.path.exists(deb):
       print(f"# not rebuilding {deb}\n")
       return
 
     print(f"# Building {deb}\n")
 
-    run('mkdir -p sf')
+    run(f'mkdir -p {self.repo}')
 
     run(f'rm -rf build client.tar.bz2 {deb}')
     run(f'mkdir -p build/usr/lib/{self.client} build/usr/share/applications build/DEBIAN')
@@ -123,8 +118,8 @@ class Package:
     run(f'dpkg-sig -k {gpg} --sign builder {deb}')
 
 class Zotero(Package):
-  def __init__(self):
-    super().__init__('zotero', 'Zotero') 
+  def __init__(self, repo):
+    super().__init__('zotero', 'Zotero', repo) 
 
     response = urlopen('https://www.zotero.org/download/').read()
     if type(response) is bytes: response = response.decode("utf-8")
@@ -140,8 +135,8 @@ class Zotero(Package):
     return f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{self.machine[arch]}&version={self.version}'
 
 class JurisM(Package):
-  def __init__(self):
-    super().__init__('jurism', 'Juris-M') 
+  def __init__(self, repo):
+    super().__init__('jurism', 'Juris-M', repo) 
 
     release = HTTPSConnection('our.law.nagoya-u.ac.jp')
     release.request('GET', f'/jurism/dl?channel=release&platform=linux-{platform.machine()}')
@@ -152,13 +147,14 @@ class JurisM(Package):
   def url(self, arch):
     return f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{self.version}/Jurism-{self.version}_linux-{self.machine[arch]}.tar.bz2'
 
-zotero = Zotero()
-jurism = JurisM()
+print("\n# creating repo")
+repo = Repo()
+
+zotero = Zotero(repo.repo)
+jurism = JurisM(repo.repo)
 for arch in architectures:
   zotero.build(arch)
   jurism.build(arch)
 
 print("\n# publishing repo")
-repo = Repo()
-repo.create()
 repo.publish()

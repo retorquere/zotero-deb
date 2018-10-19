@@ -3,4 +3,4 @@ build
 *.deb
 *.tar.bz2
 *.swp
-sf
+repo
