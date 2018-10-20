@@ -38,7 +38,8 @@ class Repo:
   def __init__(self):
     self.repo = 'repo'
 
-  def publish(self, target='github'):
+  def publish(self):
+    # general prep
     run(f'mkdir -p {self.repo}')
     run(f'gpg --armor --export {gpg} > {self.repo}/deb.gpg.key')
     run(f'cd {self.repo} && apt-ftparchive packages . > Packages')
@@ -46,32 +47,32 @@ class Repo:
     run(f'cd {self.repo} && apt-ftparchive release . > Release')
     run(f'gpg --yes -abs -u {gpg} -o {self.repo}/Release.gpg {self.repo}/Release')
 
-    if target == 'github':
-      write(f'{self.repo}/install.sh', [
-        'curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
-        '',
-        'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
-        'deb https://github.com/retorquere/zotero-deb/releases/download/apt-get/ ./',
-        'EOF'
-      ])
+    # github
+    write(f'{self.repo}/install.sh', [
+      'curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
+      '',
+      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+      'deb https://github.com/retorquere/zotero-deb/releases/download/apt-get/ ./',
+      'EOF'
+    ])
 
-      with open('README.md') as f:
-        description = f.read()
-      run(f'github-release release --user retorquere --repo zotero-deb --tag apt-get --name "Debian packages for Zotero/Juris-M" --description {shlex.quote(description)}')
+    with open('README.md') as f:
+      description = f.read()
+    run(f'github-release release --user retorquere --repo zotero-deb --tag apt-get --name "Debian packages for Zotero/Juris-M" --description {shlex.quote(description)}')
 
-      for f in os.listdir(self.repo):
-        run(f'cd {self.repo} && github-release upload --user retorquere --repo zotero-deb --tag apt-get --name {f} --file {f} --replace')
+    for f in os.listdir(self.repo):
+      run(f'cd {self.repo} && github-release upload --user retorquere --repo zotero-deb --tag apt-get --name {f} --file {f} --replace')
 
-    else:
-      write(f'{self.repo}/install.sh', [
-        'curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | sudo apt-key add -',
-        '',
-        'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
-        'deb https://downloads.sourceforge.net/project/zotero-deb/ ./',
-        'EOF'
-      ])
+    # sourceforge
+    write(f'{self.repo}/install.sh', [
+      'curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | sudo apt-key add -',
+      '',
+      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+      'deb https://downloads.sourceforge.net/project/zotero-deb/ ./',
+      'EOF'
+    ])
       
-      run('rsync -avP -e ssh repo/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
+    run('rsync -avP -e ssh repo/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
 
 class Package:
   def __init__(self, client, name, repo):
