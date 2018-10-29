@@ -45,7 +45,7 @@ class Repo:
     run(f'cd {self.repo} && apt-ftparchive packages . > Packages')
     run(f'bzip2 -kf {self.repo}/Packages')
     run(f'cd {self.repo} && apt-ftparchive release . > Release')
-    run(f'gpg --yes -abs -u {gpg} -o {self.repo}/Release.gpg {self.repo}/Release')
+    run(f'gpg --yes -abs -u {gpg} -o {self.repo}/Release.gpg --digest-algo sha256 {self.repo}/Release')
 
     # github
     write(f'{self.repo}/install.sh', [
@@ -60,7 +60,7 @@ class Repo:
       description = f.read()
     run(f'github-release release --user retorquere --repo zotero-deb --tag apt-get --name "Debian packages for Zotero/Juris-M" --description {shlex.quote(description)}')
 
-    for f in os.listdir(self.repo):
+    for f in sorted(os.listdir(self.repo)):
       run(f'cd {self.repo} && github-release upload --user retorquere --repo zotero-deb --tag apt-get --name {f} --file {f} --replace')
 
     # sourceforge
@@ -147,11 +147,9 @@ class JurisM(Package):
   def __init__(self, repo):
     super().__init__('jurism', 'Juris-M', repo) 
 
-    release = HTTPSConnection('our.law.nagoya-u.ac.jp')
-    release.request('GET', f'/jurism/dl?channel=release&platform=linux-{platform.machine()}')
-    release = release.getresponse()
-    release = release.getheader('Location')
-    self.version = release.split('/')[-2]
+    response = urlopen('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').read()
+    if type(response) is bytes: response = response.decode("utf-8")
+    self.version = sorted(response.split('\n'))[-1]
 
   def url(self, arch):
     return f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{self.version}/Jurism-{self.version}_linux-{self.machine[arch]}.tar.bz2'
