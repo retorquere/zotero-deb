@@ -22,6 +22,7 @@ after this you can install and update in the usual way:
 
 ```
 $ sudo apt-get update
-$ sudo apt-get install zotero jurism
+$ sudo apt-get install zotero # if you want Zotero
+$ sudo apt-get install jurism # if you want Juris-M
 ```
 
