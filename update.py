@@ -37,8 +37,13 @@ def write(filename, lines):
 class Repo:
   def __init__(self):
     self.repo = 'repo'
+    self.updated = False
 
   def publish(self):
+    if not self.updated:
+      print('publish: nothing to do')
+      return
+
     # general prep
     run(f'mkdir -p {self.repo}')
     run(f'gpg --armor --export {gpg} > {self.repo}/deb.gpg.key')
@@ -82,7 +87,7 @@ class Package:
     self.repo = repo
 
   def deb(self, arch):
-    return f'{self.repo}/{"_".join([self.client, self.version, arch])}.deb'
+    return f'{self.repo.repo}/{"_".join([self.client, self.version, arch])}.deb'
 
   def build(self, arch):
     print()
@@ -95,7 +100,7 @@ class Package:
 
     print(f"# Building {deb}\n")
 
-    run(f'mkdir -p {self.repo}')
+    run(f'mkdir -p {self.repo.repo}')
 
     run(f'rm -rf build client.tar.bz2 {deb}')
     run(f'mkdir -p build/usr/lib/{self.client} build/usr/share/applications build/DEBIAN')
@@ -125,6 +130,8 @@ class Package:
 
     run(f'dpkg-deb --build -Zgzip build {deb}')
     run(f'dpkg-sig -k {gpg} --sign builder {deb}')
+
+    self.repo.updated = True
 
 class Zotero(Package):
   def __init__(self, repo):
@@ -157,8 +164,8 @@ class JurisM(Package):
 print("\n# creating repo")
 repo = Repo()
 
-zotero = Zotero(repo.repo)
-jurism = JurisM(repo.repo)
+zotero = Zotero(repo)
+jurism = JurisM(repo)
 for arch in architectures:
   zotero.build(arch)
   jurism.build(arch)
