@@ -86,13 +86,16 @@ class Package:
     self.name = name
     self.repo = repo
 
-  def deb(self, arch):
-    return f'{self.repo.repo}/{"_".join([self.client, self.version, arch])}.deb'
+  def deb(self, arch, version = None):
+    return f'{self.repo.repo}/{"_".join([self.client, version or self.version, arch])}.deb'
 
   def build(self, arch):
     print()
 
     deb = self.deb(arch)
+    for old in glob.glob(self.deb(arch, '*')):
+      if old == deb: continue
+      os.remove(old)
 
     if os.path.exists(deb):
       print(f"# not rebuilding {deb}\n")
