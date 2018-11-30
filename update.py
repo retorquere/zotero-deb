@@ -42,7 +42,7 @@ class Repo:
   def publish(self):
     if not self.updated:
       print('publish: nothing to do')
-      return
+      #return
 
     # general prep
     run(f'mkdir -p {self.repo}')
@@ -51,6 +51,7 @@ class Repo:
     run(f'bzip2 -kf {self.repo}/Packages')
     run(f'cd {self.repo} && apt-ftparchive release . > Release')
     run(f'gpg --yes -abs -u {gpg} -o {self.repo}/Release.gpg --digest-algo sha256 {self.repo}/Release')
+    run(f'gpg --yes -abs -u {gpg} --clearsign -o {self.repo}/InRelease --digest-algo sha256 {self.repo}/Release')
 
     # github
     write(f'{self.repo}/install.sh', [
