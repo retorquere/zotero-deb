@@ -7,6 +7,12 @@ import os
 import sys
 import glob
 import shlex
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--publish', action='store_true')
+parser.add_argument('--rebuild', action='store_true')
+args = parser.parse_args()
 
 maintainer = 'emiliano.heyns@iris-advies.com'
 architectures = ['i386', 'amd64']
@@ -40,9 +46,9 @@ class Repo:
     self.updated = False
 
   def publish(self):
-    if not self.updated:
+    if not args.publish and not self.updated:
       print('publish: nothing to do')
-      #return
+      return
 
     # general prep
     run(f'mkdir -p {self.repo}')
@@ -95,7 +101,7 @@ class Package:
 
     deb = self.deb(arch)
     for old in glob.glob(self.deb(arch, '*')):
-      if old == deb: continue
+      if old == deb and not args.rebuild: continue
       os.remove(old)
 
     if os.path.exists(deb):
