@@ -131,6 +131,7 @@ class Package:
     write('build/DEBIAN/control', [
       f'Package: {self.client}',
       f'Architecture: {arch}',
+      'Depends: libnss3-dev',
       f'Maintainer: {maintainer}',
       'Section: Science',
       'Priority: optional',
