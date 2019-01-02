@@ -2,19 +2,26 @@
 
 One-time installation of the repo:
 
+If you have `wget` installed:
+
 ```
-$ curl --silent --location https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+$ wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+```
+
+or if you have `curl` installed:
+
+```
+$ curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 ```
 
 <!--
 
-or 
+or if the sourceforge CND is faster for you and actually works (which is approximately 3 out of four tries for me), one of
 
 ```
-curl --silent --location https://downloads.sourceforge.net/project/zotero-deb/install.sh
+$ curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh
+$ wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh
 ```
-
-if the sourceforge CND is faster for you and actually works (which is approximately 3 out of four tries for me).
 
 -->
 
