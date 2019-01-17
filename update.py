@@ -15,7 +15,7 @@ parser.add_argument('--rebuild', action='store_true')
 args = parser.parse_args()
 
 maintainer = 'emiliano.heyns@iris-advies.com'
-architectures = ['i386', 'amd64']
+architectures = [ 'amd64', 'i386' ]
 gpg = 'dpkg'
 
 if sys.version_info[0] >= 3:
@@ -33,12 +33,13 @@ def run(cmd):
   print("\n" + cmd)
   os.system(cmd)
 
-def write(filename, lines):
+def write(filename, content):
   print(f"\n# writing {filename}\n")
 
+  if type(content) == list: content = '\n'.join(content)
+
   with open(filename, 'w') as f:
-    for line in lines:
-      f.write(line + "\n")
+    f.write(content + "\n")
 
 class Repo:
   def __init__(self):
@@ -113,9 +114,11 @@ class Package:
     run(f'mkdir -p {self.repo.repo}')
 
     run(f'rm -rf build client.tar.bz2 {deb}')
-    run(f'mkdir -p build/usr/lib/{self.client} build/usr/share/applications build/DEBIAN')
+    run(f'mkdir -p build/usr/lib/{self.client}/distribution build/usr/share/applications build/DEBIAN')
     run(f'curl -L -o client.tar.bz2 "{self.url(arch)}"')
     run(f'tar --strip 1 -xpf client.tar.bz2 -C build/usr/lib/{self.client}')
+
+    write(f'build/usr/lib/{self.client}/distribution/policies.json', json.dumps({ "policies": { "DisableAppUpdate": True } }))
 
     write(f'build/usr/share/applications/{self.client}.desktop', [
       '[Desktop Entry]',
@@ -128,6 +131,19 @@ class Package:
       'StartupNotify=true',
     ])
 
+    # fix ownership because I previously forgot --root-owner-group
+    write('build/DEBIAN/postinst', [
+      '#!/bin/bash',
+      f'rm -f /usr/lib/{self.client}/active-update.xml',
+      f'rm -f /usr/lib/{self.client}/precomplete',
+      f'rm -f /usr/lib/{self.client}/removed-files',
+      f'rm -f /usr/lib/{self.client}/updates',
+      f'rm -f /usr/lib/{self.client}/updates.xml',
+      f'chown -R root:root /usr/lib/{self.client}',
+      f'chown -R root:root /usr/share/applications/{self.client}.desktop',
+    ])
+    run('chmod +x build/DEBIAN/postinst')
+
     write('build/DEBIAN/control', [
       f'Package: {self.client}',
       f'Architecture: {arch}',
@@ -139,7 +155,7 @@ class Package:
       f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research',
     ])
 
-    run(f'dpkg-deb --build -Zgzip build {deb}')
+    run(f'dpkg-deb --root-owner-group --build -Zgzip build {deb}')
     run(f'dpkg-sig -k {gpg} --sign builder {deb}')
 
     self.repo.updated = True
