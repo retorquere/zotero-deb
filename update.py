@@ -8,7 +8,11 @@ import sys
 import glob
 import shlex
 import argparse
+import subprocess
 from shutil import copyfile
+
+import os
+from github import Github
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--publish', action='store_true')
@@ -32,7 +36,10 @@ else:
 
 def run(cmd):
   print("\n" + cmd)
-  os.system(cmd)
+
+  if subprocess.call(cmd, shell=True) != 0:
+    print(f'{cmd} exited with an error')
+    sys.exit(1)
 
 def write(filename, content):
   print(f"\n# writing {filename}\n")
@@ -46,6 +53,29 @@ class Repo:
   def __init__(self):
     self.repo = 'repo'
     self.updated = False
+
+    gh = Github(os.environ['GITHUB_TOKEN'])
+
+    user = gh.get_user()
+    repo = user.get_repo('zotero-deb')
+
+    if 'apt-get' in [rel.tag_name for rel in repo.get_releases()]:
+      self.release = repo.get_release('apt-get')
+    else:
+      with open('README.md') as f:
+        description = f.read()
+      self.release = repo.create_git_release('apt-get', 'Debian packages for Zotero/Juris-M', description)
+    self.assets = [asset.name for asset in self.release.get_assets()]
+
+  def upload(self, path):
+    action = 'uploading'
+    for asset in self.release.get_assets():
+      if asset.name == os.path.basename(path):
+        asset.delete_asset()
+        action = 'replacing'
+
+    print(f'{action} {path}')
+    self.release.upload_asset(path)
 
   def publish(self):
     if not args.publish and not self.updated:
@@ -70,12 +100,8 @@ class Repo:
       'EOF'
     ])
 
-    with open('README.md') as f:
-      description = f.read()
-    run(f'github-release release --user retorquere --repo zotero-deb --tag apt-get --name "Debian packages for Zotero/Juris-M" --description {shlex.quote(description)}')
-
     for f in sorted(os.listdir(self.repo)):
-      run(f'cd {self.repo} && github-release upload --user retorquere --repo zotero-deb --tag apt-get --name {f} --file {f} --replace')
+      self.upload(f'{self.repo}/{f}')
 
     # sourceforge
     write(f'{self.repo}/install.sh', [
@@ -123,7 +149,6 @@ class Package:
 
     write(f'build/usr/share/applications/{self.client}.desktop', [
       '[Desktop Entry]',
-      'Name=Zotero',
       f'Name={self.name}',
       'Comment=Open-source reference manager',
       f'Exec=/usr/lib/{self.client}/{self.client} --url %u',
@@ -146,11 +171,11 @@ class Package:
     ])
     run('chmod +x build/DEBIAN/postinst')
 
-    copyfile('mimeapps', 'build/DEBIAN/preinst')
-    run('chmod +x build/DEBIAN/preinst')
-
-    copyfile('mimeapps', 'build/DEBIAN/postrm')
-    run('chmod +x build/DEBIAN/postrm')
+    for f in ['preinst', 'postrm']:
+      target = f'build/DEBIAN/{f}'
+      print(f'Copying {target}')
+      copyfile('mimeapps', target)
+      run(f'chmod +x {target}')
 
     write('build/DEBIAN/control', [
       f'Package: {self.client}',

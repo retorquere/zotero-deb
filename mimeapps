@@ -4,7 +4,7 @@ import ConfigParser
 import sys
 import os
 
-event = os.path.basename(__file__)
+event = os.path.basename(__file__).split('.')[-1]
 
 mimeapps = '/usr/share/applications/mimeapps.list'
 section = 'Default Applications'
