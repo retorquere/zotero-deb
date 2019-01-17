@@ -16,7 +16,7 @@ if os.path.exists(mimeapps): config.read(mimeapps)
 
 if not config.has_section(section): config.add_section(section)
 
-if event == 'postinst':
+if event == 'preinst':
   config.set(section, option, value)
 elif event == 'postrm':
   config.remove_option(section, option)
