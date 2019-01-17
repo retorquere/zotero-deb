@@ -1,0 +1,28 @@
+#!/usr/bin/python
+
+import ConfigParser
+import sys
+import os
+
+event = os.path.basename(__file__)
+
+mimeapps = '/usr/share/applications/mimeapps.list'
+section = 'Default Applications'
+option = 'x-scheme-handler/zotero'
+value = 'zotero.desktop'
+
+config = ConfigParser.RawConfigParser()
+if os.path.exists(mimeapps): config.read(mimeapps)
+
+if not config.has_section(section): config.add_section(section)
+
+if event == 'postinst':
+  config.set(section, option, value)
+elif event == 'postrm':
+  config.remove_option(section, option)
+else:
+  print 'Unexpected event "' + event + "'"
+  sys.exit(1)
+
+with open(mimeapps, 'w') as f:
+  config.write(f)

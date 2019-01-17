@@ -8,6 +8,7 @@ import sys
 import glob
 import shlex
 import argparse
+from shutil import copyfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--publish', action='store_true')
@@ -125,10 +126,11 @@ class Package:
       'Name=Zotero',
       f'Name={self.name}',
       'Comment=Open-source reference manager',
-      f'Exec=/usr/lib/{self.client}/{self.client}',
+      f'Exec=/usr/lib/{self.client}/{self.client} --url %u',
       f'Icon=/usr/lib/{self.client}/chrome/icons/default/default48.png',
       'Type=Application',
       'StartupNotify=true',
+      'MimeType=x-scheme-handler/zotero',
     ])
 
     # fix ownership because I previously forgot --root-owner-group
@@ -143,6 +145,12 @@ class Package:
       f'chown -R root:root /usr/share/applications/{self.client}.desktop',
     ])
     run('chmod +x build/DEBIAN/postinst')
+
+    copyfile('mimeapps', 'build/DEBIAN/preinst')
+    run('chmod +x build/DEBIAN/preinst')
+
+    copyfile('mimeapps', 'build/DEBIAN/postrm')
+    run('chmod +x build/DEBIAN/postrm')
 
     write('build/DEBIAN/control', [
       f'Package: {self.client}',
