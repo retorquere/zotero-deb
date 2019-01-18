@@ -93,7 +93,14 @@ class Repo:
 
     # github
     write(f'{self.repo}/install.sh', [
-      'curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
+      'if [ -x "$(command -v curl)" ]; then',
+      '  curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
+      'elif [ -x "$(command -v wget)" ]; then',
+      '  wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -',
+      'else',
+      '  echo "Error: need wget or curl installed." >&2',
+      '  exit 1',
+      'fi',
       '',
       'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
       'deb https://github.com/retorquere/zotero-deb/releases/download/apt-get/ ./',
@@ -104,15 +111,14 @@ class Repo:
       self.upload(f'{self.repo}/{f}')
 
     # sourceforge
-    write(f'{self.repo}/install.sh', [
-      'curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | sudo apt-key add -',
-      '',
-      'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
-      'deb https://downloads.sourceforge.net/project/zotero-deb/ ./',
-      'EOF'
-    ])
-      
-    run('rsync -avP -e ssh repo/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
+    #write(f'{self.repo}/install.sh', [
+    #  'curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | sudo apt-key add -',
+    #  '',
+    #  'cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list',
+    #  'deb https://downloads.sourceforge.net/project/zotero-deb/ ./',
+    #  'EOF'
+    #])
+    #run('rsync -avP -e ssh repo/ retorquere@frs.sourceforge.net:/home/pfs/project/zotero-deb')
 
 class Package:
   def __init__(self, client, name, repo):
