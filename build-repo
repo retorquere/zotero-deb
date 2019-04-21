@@ -192,7 +192,7 @@ class Package:
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
 
-    run(f'dpkg-deb --root-owner-group --build -Zgzip build repo/{deb}')
+    run(f'sudo dpkg-deb --build -Zgzip build repo/{deb}')
     run(f'dpkg-sig -k {GPGKEY} --sign builder repo/{deb}')
 
   def patch_global_menu(self, installdir):
