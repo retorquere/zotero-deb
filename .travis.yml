@@ -5,6 +5,7 @@ python:
 
 before_install:
 - openssl aes-256-cbc -K $encrypted_fe0b4cce96b5_key -iv $encrypted_fe0b4cce96b5_iv -in dpkg.priv.key.enc -d | gpg --import
+- sudo apt-get update
 - sudo apt-get install dpkg-sig
 
 script:
