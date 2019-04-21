@@ -22,6 +22,11 @@ $ sudo apt-get install zotero # if you want Zotero
 $ sudo apt-get install jurism # if you want Juris-M
 ```
 
-## PPA's
+# Updating the packages
 
-Some may prefer the [PPA packages](https://github.com/retorquere/zotero-jurism-ppa). These PPA's do not include Zotero/Juris-M, but only a lightweight downloader that fetches the official binaries and installs them on your system. To use these, remove the file `/etc/apt/sources.list.d/zotero.list` if you previously used the instructions above, and then follow the instruction on https://github.com/retorquere/zotero-jurism-ppa. This will replace your Zotero/Juris-M binaries -- it will *not* touch your Zotero library.
+The update script expects a gpg key by the name `dpkg` to be available. For Travis builds, you can do the following:
+
+```
+$ gpg --export-secret-keys dpkg > dpkg.priv.key
+$ travis encrypt-file dpkg.priv.key --add
+```
