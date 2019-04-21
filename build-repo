@@ -192,11 +192,7 @@ class Package:
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
 
-    run(f'sudo chown -R root:root /usr/lib/{self.package}')
-    run(f'sudo chown -R root:root /usr/share/applications/{self.package}.desktop')
-    run(f'dpkg-deb --build -Zgzip build repo/{deb}')
-
-    #run(f'dpkg-deb --root-owner-group --build -Zgzip build repo/{deb}')
+    run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
     run(f'dpkg-sig -k {GPGKEY} --sign builder repo/{deb}')
 
   def patch_global_menu(self, installdir):
