@@ -4,3 +4,4 @@ build
 *.tar.bz2
 *.swp
 repo
+*.key

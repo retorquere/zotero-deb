@@ -1,0 +1,319 @@
+#!/usr/bin/env python3
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+import mimetypes
+mimetypes.init()
+
+import os
+import sys
+import subprocess
+import glob
+import argparse
+import shutil
+import json
+from github3 import login
+from munch import Munch
+import packaging.version
+from urllib.request import urlopen
+from urllib.request import urlretrieve
+import xml.etree.ElementTree as ET
+import re
+import tarfile
+import configparser
+import textwrap
+import zipfile
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--bump', action='store_true')
+parser.add_argument('--force', action='store_true')
+parser.add_argument('--global-menu', action='store_true')
+args = parser.parse_args()
+
+PACKAGES = ['zotero', 'jurism']
+MAINTAINER = 'emiliano.heyns@iris-advies.com'
+GPGKEY = 'dpkg'
+
+def run(cmd):
+  print(f'\n  {cmd}')
+  if os.system(cmd) != 0:
+    print(f'  {cmd} exited with an error')
+    sys.exit(1)
+
+def rm_rf(*paths):
+  for path in paths:
+    if os.path.isdir(path): shutil.rmtree(path)
+    if os.path.isfile(path): os.remove(path)
+
+class Package:
+  def __init__(self, repo, binary_url, package, assets, name, dependencies, global_menu):
+    # find current version
+    feed = f'https://github.com/{repo}/releases.atom'
+    response = urlopen(feed).read()
+    if type(response) is bytes: response = response.decode("utf-8")
+    root = ET.fromstring(response)
+    version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
+    self.version = version.split('/')[-1]
+
+    self.binary_url = binary_url
+    self.package = package
+    self.name = name
+    self.dependencies = dependencies
+    self.global_menu = global_menu
+
+    self.public = Munch.fromDict({arch: None for arch in ARCHS})
+
+    for asset in assets:
+      m = re.match(f'{self.package}_([0-9m.]+)(?:-([0-9]+))?_([a-z0-9]+)\\.deb$', asset)
+      if m:
+        version = m.group(1)
+
+        bump = m.group(2)
+        bump = int(bump) if bump else 0
+
+        arch = m.group(3)
+        assert arch in ARCHS
+        assert arch not in self.public or self.public[arch] is None, f'{asset} already known as {self.public[arch]}'
+
+        self.public[arch] = Munch(version=version, bump=bump)
+
+    self.needs_update = False
+    if args.bump or args.force:
+      self.needs_update = True
+    for arch in ARCHS:
+      if not self.public[arch]:
+        self.needs_update = True
+        break
+      if packaging.version.parse(self.public[arch].version.replace('m', '.')) < packaging.version.parse(self.version.replace('m', '.')):
+        self.needs_update = True
+
+  def deb(self, arch):
+    if self.public[arch] is None: # first build for version, don't bump
+      bump = ''
+    elif args.bump:
+      bump = f'-{self.public[arch].bump + 1}'
+    elif self.public[arch].bump > 0:
+      bump = f'-{self.public[arch].bump}'
+    else:
+      bump = ''
+    return f'{self.package}_{self.version}{bump}_{arch}.deb'
+
+  def build(self, arch):
+    deb = self.deb(arch)
+    print(f'building {deb}')
+
+    rm_rf('build', 'client.tar.bz2', deb)
+    os.makedirs(f'build/usr/lib/{self.package}/distribution')
+    os.makedirs('build/usr/share/applications')
+    os.makedirs('build/DEBIAN')
+    url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.version)
+    print(f'  downloading {url}')
+    urlretrieve(url, 'client.tar.bz2')
+
+    tar = tarfile.open('client.tar.bz2')
+    members = [member for member in tar.getmembers() if member.isreg()] # skip if the TarInfo is not files
+    for member in tar.getmembers():
+      if not member.isreg(): continue
+      member.name = re.sub(r'^.+?\/', '', member.name) # strip leading directory
+
+      if member.name in ['active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
+        continue
+
+      tar.extract(member, f'build/usr/lib/{self.package}')
+    tar.close()
+
+    self.patch_global_menu(f'build/usr/lib/{self.package}')
+
+    with open(f'build/usr/lib/{self.package}/distribution/policies.json', 'w') as f:
+      f.write(json.dumps({ "policies": { "DisableAppUpdate": True } }))
+
+    desktop = configparser.RawConfigParser()
+    desktop.add_section('Desktop Entry')
+    desktop.set('Desktop Entry', 'Name', self.name)
+    if self.global_menu:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager (global menu support)')
+    else:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
+    desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.package}/{self.package} --url %u')
+    desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default48.png')
+    desktop.set('Desktop Entry', 'Type', 'Application')
+    desktop.set('Desktop Entry', 'StartupNotify', 'true')
+    desktop.set('Desktop Entry', 'MimeType', ';'.join([
+      'x-scheme-handler/zotero',
+
+      # Research Information Systems Document
+      'ris',
+      'application/x-research-info-systems',
+      'application/x-endnote-refer',
+      'text/x-research-info-systems',
+      'text/application/x-research-info-systems',
+      'text/ris',
+
+      # ISI Common Export Format Document
+      'ciw',
+      'isi',
+      'application/x-inst-for-Scientific-info',
+
+      # Metadata Object Description Schema Document
+      'mods',
+      'application/mods+xml',
+
+      # Resource Description Framework Document
+      'rdf',
+      'application/rdf+xml',
+
+      # BibTeX Document
+      'bib',
+      'bibtex',
+      'application/x-bibtex',
+      'text/x-bibtex',
+
+      # MARC Record
+      'mrc',
+      'marc',
+      'application/marc',
+
+      # CSL Citation Style
+      'csl',
+      'vnd.citationstyles.style+xml',
+    ]))
+
+    with open(f'build/usr/share/applications/{self.package}.desktop', 'w') as f:
+      desktop.write(f, space_around_delimiters=False)
+
+    with open('build/DEBIAN/control', 'w') as f:
+      print(f'Package: {self.package}', file=f)
+      print(f'Architecture: {arch}', file=f)
+      print(f'Depends: libnss3-dev{self.dependencies}'.strip(), file=f)
+      print(f'Maintainer: {MAINTAINER}', file=f)
+      print('Section: Science', file=f)
+      print('Priority: optional', file=f)
+      print(f'Version: {self.version}', file=f)
+      print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
+
+    run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
+    run(f'dpkg-sig -k {GPGKEY} --sign builder repo/{deb}')
+
+  def patch_global_menu(self, installdir):
+    if not self.global_menu: return
+    print('  patching for global menu')
+
+    url = urlopen('https://github.com/ripefig/Firefox-ESR-52-Global-Menu/releases/latest').geturl().replace('/tag/', '/download/') + '/libxul.so'
+    urlretrieve(url, f'{installdir}/libxul.so')
+
+    jar = os.path.join(installdir, self.package + '.jar')
+    jar_gm = os.path.join(self.package + '.jar')
+    with zipfile.ZipFile(jar, 'r') as zj:
+      with zipfile.ZipFile(jar_gm, 'w') as zjgm:
+        for item in zj.infolist():
+          data = zj.read(item.filename)
+          if item.filename == 'chrome/skin/default/zotero/zotero.css':
+            data = data.decode('utf-8') + textwrap.dedent('''
+              window[shellshowingmenubar="true"] menubar {
+                display: none !important;
+              }
+
+              window[shellshowingmenubar="true"]
+              toolbar[type="menubar"]:not([customizing="true"]) {
+                min-height: 0 !important;
+                border: 0 !important;
+              }
+            ''')
+          zjgm.writestr(item, data)
+    os.remove(jar)
+    os.rename(jar_gm, jar)
+
+# let's get it started
+gh = login(token=os.getenv('GITHUB_TOKEN'))
+repo = repo = gh.repository('retorquere', 'zotero-deb')
+
+for global_menu in [False, True]:
+  if global_menu:
+    ARCHS = ['amd64']
+    RELEASE_REPO = 'global-menu'
+  else:
+    ARCHS = ['i386', 'amd64']
+    RELEASE_REPO = 'apt-get'
+    #RELEASE_REPO = 'test'
+  print(f'Building {RELEASE_REPO}')
+
+  release = repo.release_from_tag(RELEASE_REPO)
+  assets = release.assets()
+
+  packages = Munch(
+    zotero = Package(
+      repo='zotero/zotero',
+      package='zotero',
+      name='Zotero',
+      binary_url='https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}',
+      assets=[asset.name for asset in assets],
+      dependencies='',
+      global_menu=global_menu
+    ),
+    jurism = Package(
+      repo='Juris-M/zotero',
+      package='jurism',
+      name='Juris-M',
+      binary_url='https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2',
+      assets=[asset.name for asset in assets],
+      dependencies=', default-jre, libreoffice-java-common',
+      global_menu=global_menu
+    )
+  )
+
+  if not packages.zotero.needs_update and not packages.jurism.needs_update:
+    print('nothing to do')
+    break
+
+  rm_rf('repo')
+  os.mkdir('repo')
+
+  for asset in assets:
+    asset.delete()
+  #  if asset.name.startswith('zotero') and packages.zotero.needs_update:
+  #    #asset.delete()
+  #    continue
+  #  if asset.name.startswith('jurism') and packages.jurism.needs_update:
+  #    #asset.delete()
+  #    continue
+  #  print(f'Downloading {asset.name}')
+  #  with open(os.path.join('repo', asset.name), 'wb') as f:
+  #    asset.download(f)
+
+  for package in PACKAGES:
+    for arch in ARCHS:
+      packages[package].build(arch)
+
+  run(f'gpg --armor --export {GPGKEY} > repo/deb.gpg.key')
+  run(f'cd repo && apt-ftparchive packages . > Packages')
+  run(f'bzip2 -kf repo/Packages')
+  run(f'cd repo && apt-ftparchive release . > Release')
+  run(f'gpg --yes -abs -u {GPGKEY} -o repo/Release.gpg --digest-algo sha256 repo/Release')
+  run(f'gpg --yes -abs -u {GPGKEY} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
+
+  with open('repo/install.sh', 'w') as f:
+    print(textwrap.dedent(f'''
+      if [ -x "$(command -v curl)" ]; then
+        curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/{RELEASE_REPO}/deb.gpg.key | sudo apt-key add -
+      elif [ -x "$(command -v wget)" ]; then
+        wget -qO- https://github.com/retorquere/zotero-deb/releases/download/{RELEASE_REPO}/deb.gpg.key | sudo apt-key add -
+      else
+        echo "Error: need wget or curl installed." >&2
+        exit 1
+      fi
+
+      cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
+      deb https://github.com/retorquere/zotero-deb/releases/download/{RELEASE_REPO}/ ./
+      EOF
+    '''), file=f)
+
+  for asset in sorted(glob.glob('repo/*')):
+    content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
+    print(f'  Uploading {asset} ({content_type})')
+    with open(asset, 'rb') as f:
+      release.upload_asset(
+        asset=f,
+        name=os.path.basename(asset),
+        content_type=content_type
+      )
