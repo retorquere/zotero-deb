@@ -264,7 +264,7 @@ for global_menu in [False, True]:
 
   if not packages.zotero.needs_update and not packages.jurism.needs_update:
     print('nothing to do')
-    break
+    continue
 
   rm_rf('repo')
   os.mkdir('repo')
