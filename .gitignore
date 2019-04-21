@@ -5,3 +5,4 @@ build
 *.swp
 repo
 *.key
+*.jar
