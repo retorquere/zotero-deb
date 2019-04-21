@@ -24,7 +24,24 @@ $ sudo apt-get install jurism # if you want Juris-M
 
 # Updating the packages
 
-The update script expects a gpg key by the name `dpkg` to be available. For Travis builds, you can do the following:
+The update script expects a gpg key by the name `dpkg` to be available:
+
+Set up gpg
+
+```
+cat << EOF | gpg --gen-key --batch
+%no-protection
+Key-Type: RSA
+Key-Length: 4096
+Key-Usage: sign
+Name-Real: dpkg
+Name-Email: dpkg@iris-advies.com
+Expire-Date: 0
+%commit
+EOF
+```
+
+For Travis builds, you can do the following:
 
 ```
 $ gpg --export-secret-keys dpkg > dpkg.priv.key
