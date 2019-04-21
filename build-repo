@@ -37,7 +37,7 @@ GPGKEY = 'dpkg'
 
 def run(cmd):
   print(f'\n  {cmd}')
-  if subprocess.call(cmd, shell=True) != 0:
+  if os.system(cmd) != 0:
     print(f'  {cmd} exited with an error')
     sys.exit(1)
 
