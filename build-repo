@@ -3,6 +3,9 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+import mimetypes
+mimetypes.init()
+
 import os
 import sys
 import subprocess
@@ -20,27 +23,29 @@ import re
 import tarfile
 import configparser
 import textwrap
+import zipfile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
 parser.add_argument('--force', action='store_true')
-parser.add_argument('--general-menu', action='store_true')
+parser.add_argument('--global-menu', action='store_true')
 args = parser.parse_args()
 
-if args.general_menu:
+if args.global_menu:
   ARCHS = ['amd64']
-  RELEASE_REPO = 'gm'
+  RELEASE_REPO = 'global-menu'
 else:
   ARCHS = ['i386', 'amd64']
-  RELEASE_REPO = 'apt-get'
+  #RELEASE_REPO = 'apt-get'
+  RELEASE_REPO = 'test'
 PACKAGES = ['zotero', 'jurism']
 MAINTAINER = 'emiliano.heyns@iris-advies.com'
 GPGKEY = 'dpkg'
 
 def run(cmd):
-  print("\n" + cmd)
+  print(f'\n  {cmd}')
   if subprocess.call(cmd, shell=True) != 0:
-    print(f'{cmd} exited with an error')
+    print(f'  {cmd} exited with an error')
     sys.exit(1)
 
 def rm_rf(*paths):
@@ -89,7 +94,7 @@ class Package:
         self.needs_update = True
 
   def deb(self, arch):
-    if not arch in self.public: # first build for version, don't bump
+    if self.public[arch] is None: # first build for version, don't bump
       bump = ''
     elif args.bump:
       bump = f'-{self.public[arch].bump + 1}'
@@ -108,7 +113,7 @@ class Package:
     os.makedirs('build/usr/share/applications')
     os.makedirs('build/DEBIAN')
     url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.version)
-    print(f'downloading {url}')
+    print(f'  downloading {url}')
     urlretrieve(url, 'client.tar.bz2')
 
     tar = tarfile.open('client.tar.bz2')
@@ -123,13 +128,18 @@ class Package:
       tar.extract(member, f'build/usr/lib/{self.package}')
     tar.close()
 
+    self.global_menu(f'build/usr/lib/{self.package}')
+
     with open(f'build/usr/lib/{self.package}/distribution/policies.json', 'w') as f:
       f.write(json.dumps({ "policies": { "DisableAppUpdate": True } }))
 
     desktop = configparser.RawConfigParser()
     desktop.add_section('Desktop Entry')
     desktop.set('Desktop Entry', 'Name', self.name)
-    desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
+    if args.global_menu:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager (global menu support)')
+    else:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
     desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.package}/{self.package} --url %u')
     desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default48.png')
     desktop.set('Desktop Entry', 'Type', 'Application')
@@ -190,6 +200,34 @@ class Package:
     run(f'dpkg-deb --root-owner-group --build -Zgzip build repo/{deb}')
     run(f'dpkg-sig -k {GPGKEY} --sign builder repo/{deb}')
 
+  def global_menu(self, installdir):
+    if not args.global_menu: return
+
+    url = urlopen('https://github.com/ripefig/Firefox-ESR-52-Global-Menu/releases/latest').geturl().replace('/tag/', '/download/') + '/libxul.so'
+    urlretrieve(url, f'{installdir}/libxul.so')
+
+    jar = os.path.join(installdir, self.package + '.jar')
+    jar_gm = os.path.join(self.package + '.jar')
+    with zipfile.ZipFile(jar, 'r') as zj:
+      with zipfile.ZipFile(jar_gm, 'w') as zjgm:
+        for item in zj.infolist():
+          data = zj.read(item.filename)
+          if item.filename == 'chrome/skin/default/zotero/zotero.css':
+            data = data.decode('utf-8') + textwrap.dedent('''
+              window[shellshowingmenubar="true"] menubar {
+                display: none !important;
+              }
+
+              window[shellshowingmenubar="true"]
+              toolbar[type="menubar"]:not([customizing="true"]) {
+                min-height: 0 !important;
+                border: 0 !important;
+              }
+            ''')
+          zjgm.writestr(item, data)
+    os.remove(jar)
+    os.rename(jar_gm, jar)
+
 # let's get it started
 gh = login(token=os.getenv('GITHUB_TOKEN'))
 repo = repo = gh.repository('retorquere', 'zotero-deb')
@@ -221,18 +259,18 @@ rm_rf('repo')
 os.mkdir('repo')
 
 for asset in assets:
-  if asset.name.startswith('zotero') and packages.zotero.needs_update:
-    #asset.delete()
-    continue
-  if asset.name.startswith('jurism') and packages.jurism.needs_update:
-    #asset.delete()
-    continue
-  print(f'Downloading {asset.name}')
-  with open(os.path.join('repo', asset.name), 'wb') as f:
-    asset.download(f)
+  asset.delete()
+#  if asset.name.startswith('zotero') and packages.zotero.needs_update:
+#    #asset.delete()
+#    continue
+#  if asset.name.startswith('jurism') and packages.jurism.needs_update:
+#    #asset.delete()
+#    continue
+#  print(f'Downloading {asset.name}')
+#  with open(os.path.join('repo', asset.name), 'wb') as f:
+#    asset.download(f)
 
 for package in PACKAGES:
-  if not packages[package].needs_update: continue
   for arch in ARCHS:
     packages[package].build(arch)
 
@@ -259,13 +297,12 @@ with open('repo/install.sh', 'w') as f:
     EOF
   '''), file=f)
 
-#if action == 'stash':
-#  for asset in glob.glob('xpi/*.xpi') + generated:
-#    print(f'Uploading {asset}')
-#    with open(asset, 'rb') as f:
-#      release.upload_asset(
-#        asset=f,
-#        name=name_prefix + asset.replace('/', '-'),
-#        label=label_prefix + asset,
-#        content_type=('application/x-xpinstall' if asset.endswith('.xpi') else 'application/json')
-#      )
+for asset in sorted(glob.glob('repo/*')):
+  content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
+  print(f'  Uploading {asset} ({content_type})')
+  with open(asset, 'rb') as f:
+    release.upload_asset(
+      asset=f,
+      name=os.path.basename(asset),
+      content_type=content_type
+    )
