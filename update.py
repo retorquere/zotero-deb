@@ -10,6 +10,7 @@ import shlex
 import argparse
 import subprocess
 from shutil import copyfile
+import xml.etree.ElementTree as ET
 
 import os
 from github import Github
@@ -127,6 +128,16 @@ class Package:
     self.name = name
     self.repo = repo
 
+
+  def set_version(self, owner):
+    feed = 'https://github.com/' + owner + '/zotero/releases.atom'
+
+    response = urlopen(feed).read()
+    if type(response) is bytes: response = response.decode("utf-8")
+    root = ET.fromstring(response)
+    version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
+    self.version = version.split('/')[-1]
+
   def deb(self, arch, version = None):
     return f'{self.repo.repo}/{"_".join([self.client, version or self.version, arch])}.deb'
 
@@ -203,15 +214,7 @@ class Zotero(Package):
   def __init__(self, repo):
     super().__init__('zotero', 'Zotero', repo) 
 
-    response = urlopen('https://www.zotero.org/download/').read()
-    if type(response) is bytes: response = response.decode("utf-8")
-    for line in response.split('\n'):
-      if not '"standaloneVersions"' in line: continue
-      line = re.sub(r'.*Downloads,', '', line)
-      line = re.sub(r'\),', '', line)
-      versions = json.loads(line)
-      self.version = versions['standaloneVersions'][f'linux-{platform.machine()}']
-      break
+    self.set_version('zotero')
 
   def url(self, arch):
     return f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{self.machine[arch]}&version={self.version}'
@@ -220,9 +223,7 @@ class JurisM(Package):
   def __init__(self, repo):
     super().__init__('jurism', 'Juris-M', repo) 
 
-    response = urlopen('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').read()
-    if type(response) is bytes: response = response.decode("utf-8")
-    self.version = sorted(response.split('\n'))[-1]
+    self.set_version('Juris-M')
 
   def url(self, arch):
     return f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{self.version}/Jurism-{self.version}_linux-{self.machine[arch]}.tar.bz2'
