@@ -234,8 +234,8 @@ for global_menu in [False, True]:
     RELEASE_REPO = 'global-menu'
   else:
     ARCHS = ['i386', 'amd64']
-    #RELEASE_REPO = 'apt-get'
-    RELEASE_REPO = 'test'
+    RELEASE_REPO = 'apt-get'
+    #RELEASE_REPO = 'test'
   print(f'Building {RELEASE_REPO}')
 
   release = repo.release_from_tag(RELEASE_REPO)
