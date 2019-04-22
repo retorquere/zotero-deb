@@ -25,6 +25,7 @@ import configparser
 import textwrap
 import zipfile
 from termcolor import colored
+import toml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
@@ -32,10 +33,8 @@ parser.add_argument('--force', action='store_true')
 parser.add_argument('--test', action='store_true')
 args = parser.parse_args()
 
-PACKAGES = ['zotero', 'jurism']
-MAINTAINER = 'emiliano.heyns@iris-advies.com'
-GPGKEY = 'dpkg'
-REPO='retorquere/zotero-deb'
+with open(os.path.join(os.path.dirname(__file__), 'config.toml')) as f:
+  config = toml.load(f, _dict=Munch)
 
 COLORS = Munch(
   repo='yellow',
@@ -58,24 +57,24 @@ def rm_rf(*paths):
     if os.path.isfile(path): os.remove(path)
 
 class Package:
-  def __init__(self, repo, binary_url, package, assets, name, dependencies, global_menu):
+  def __init__(self, package):
     # find current version
-    feed = f'https://github.com/{repo}/releases.atom'
+    feed = f'https://github.com/{package.repo}/releases.atom'
     response = urlopen(feed).read()
     if type(response) is bytes: response = response.decode("utf-8")
     root = ET.fromstring(response)
     version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
     self.version = version.split('/')[-1]
 
-    self.binary_url = binary_url
-    self.package = package
-    self.name = name
-    self.dependencies = dependencies
-    self.global_menu = global_menu
+    self.binary_url = package.download
+    self.package = package.package
+    self.name = package.name
+    self.dependencies = ', '.join(package.dependencies)
+    self.global_menu = package.global_menu
 
-    self.public = Munch.fromDict({arch: None for arch in ARCHS})
+    self.public = Munch.fromDict({arch: None for arch in package.archs})
 
-    for asset in assets:
+    for asset in package.assets:
       m = re.match(f'{self.package}_([0-9m.]+)(?:-([0-9]+))?_([a-z0-9]+)\\.deb$', asset)
       if m:
         version = m.group(1)
@@ -84,7 +83,7 @@ class Package:
         bump = int(bump) if bump else 0
 
         arch = m.group(3)
-        assert arch in ARCHS, f'{arch} not in {ARCHS}'
+        assert arch in package.archs, f'{arch} not in {ARCHS}'
         assert arch not in self.public or self.public[arch] is None, f'{asset} already known as {self.public[arch]}'
 
         self.public[arch] = Munch(version=version, bump=bump)
@@ -92,7 +91,7 @@ class Package:
     self.needs_update = False
     if args.bump or args.force:
       self.needs_update = True
-    for arch in ARCHS:
+    for arch in package.archs:
       if not self.public[arch]:
         self.needs_update = True
         break
@@ -197,14 +196,14 @@ class Package:
       print(f'Package: {self.package}', file=f)
       print(f'Architecture: {arch}', file=f)
       print(f'Depends: libnss3-dev{self.dependencies}'.strip(), file=f)
-      print(f'Maintainer: {MAINTAINER}', file=f)
+      print(f'Maintainer: {config.build.maintainer}', file=f)
       print('Section: Science', file=f)
       print('Priority: optional', file=f)
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
 
     run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
-    run(f'dpkg-sig -k {GPGKEY} --sign builder repo/{deb}')
+    run(f'dpkg-sig -k {config.build.gpgkey} --sign builder repo/{deb}')
 
   def patch_global_menu(self, installdir):
     if not self.global_menu: return
@@ -237,40 +236,35 @@ class Package:
 
 # let's get it started
 gh = login(token=os.getenv('GITHUB_TOKEN'))
-repo = repo = gh.repository(*REPO.split('/'))
+repo = gh.repository(*config.build.repo.split('/'))
 
-for global_menu in [False, True]:
-  if global_menu:
-    if args.test: continue
-    ARCHS = ['amd64']
-    DEB_REPO = 'global-menu'
+for release_name in config.release.keys():
+  global_menu = release_name == 'global-menu'
+  print(colored(f'\n\n# Building {release_name}', COLORS.repo))
+
+  if args.test:
+    if global_menu: continue # need to set up a separate test release tag
+    release = repo.release_from_tag('test')
   else:
-    ARCHS = ['i386', 'amd64']
-    DEB_REPO = 'apt-get' if not args.test else 'test'
-  print(colored(f'\n\n# Building {DEB_REPO}', COLORS.repo))
+    release = repo.release_from_tag(release_name)
 
-  release = repo.release_from_tag(DEB_REPO)
   assets = release.assets()
 
   packages = Munch(
-    zotero = Package(
-      repo='zotero/zotero',
+    zotero = Package(Munch(
+      config.package.zotero,
       package='zotero',
-      name='Zotero',
-      binary_url='https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}',
       assets=[asset.name for asset in assets],
-      dependencies='',
+      archs=config.release[release_name].archs,
       global_menu=global_menu
-    ),
-    jurism = Package(
-      repo='Juris-M/zotero',
+    )),
+    jurism = Package(Munch(
+      config.package.jurism,
       package='jurism',
-      name='Juris-M',
-      binary_url='https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2',
       assets=[asset.name for asset in assets],
-      dependencies=', default-jre, libreoffice-java-common',
+      archs=config.release[release_name].archs,
       global_menu=global_menu
-    )
+    ))
   )
 
   if not packages.zotero.needs_update and not packages.jurism.needs_update:
@@ -292,31 +286,31 @@ for global_menu in [False, True]:
   #  with open(os.path.join('repo', asset.name), 'wb') as f:
   #    asset.download(f)
 
-  for package in PACKAGES:
-    for arch in ARCHS:
+  for package in config.package.keys():
+    for arch in config.release[release_name].archs:
       packages[package].build(arch)
 
-  print(colored(f'\n## publishing {DEB_REPO}', COLORS.package))
-  run(f'gpg --armor --export {GPGKEY} > repo/deb.gpg.key')
+  print(colored(f'\n## publishing {release_name}', COLORS.package))
+  run(f'gpg --armor --export {config.build.gpgkey} > repo/deb.gpg.key')
   run(f'cd repo && apt-ftparchive packages . > Packages')
   run(f'bzip2 -kf repo/Packages')
   run(f'cd repo && apt-ftparchive release . > Release')
-  run(f'gpg --yes -abs -u {GPGKEY} -o repo/Release.gpg --digest-algo sha256 repo/Release')
-  run(f'gpg --yes -abs -u {GPGKEY} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
+  run(f'gpg --yes -abs -u {config.build.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
+  run(f'gpg --yes -abs -u {config.build.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
 
   with open('repo/install.sh', 'w') as f:
     print(textwrap.dedent(f'''
       if [ -x "$(command -v curl)" ]; then
-        curl --silent -L https://github.com/{REPO}/releases/download/{DEB_REPO}/deb.gpg.key | sudo apt-key add -
+        curl --silent -L https://github.com/{config.build.repo}/releases/download/{release_name}/deb.gpg.key | sudo apt-key add -
       elif [ -x "$(command -v wget)" ]; then
-        wget -qO- https://github.com/{REPO}/releases/download/{DEB_REPO}/deb.gpg.key | sudo apt-key add -
+        wget -qO- https://github.com/{config.build.repo}/releases/download/{release_name}/deb.gpg.key | sudo apt-key add -
       else
         echo "Error: need wget or curl installed." >&2
         exit 1
       fi
 
       cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-      deb https://github.com/{REPO}/releases/download/{DEB_REPO}/ ./
+      deb https://github.com/{config.build.repo}/releases/download/{release_name}/ ./
       EOF
     '''), file=f)
 
