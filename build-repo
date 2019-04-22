@@ -24,21 +24,31 @@ import tarfile
 import configparser
 import textwrap
 import zipfile
+from termcolor import colored
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
 parser.add_argument('--force', action='store_true')
-parser.add_argument('--global-menu', action='store_true')
+parser.add_argument('--test', action='store_true')
 args = parser.parse_args()
 
 PACKAGES = ['zotero', 'jurism']
 MAINTAINER = 'emiliano.heyns@iris-advies.com'
 GPGKEY = 'dpkg'
 
+COLORS = Munch(
+  repo='yellow',
+  package='cyan',
+  shell='magenta',
+  progress='blue',
+  result='green',
+  error='red',
+)
+
 def run(cmd):
-  print(f'\n  {cmd}')
+  print(colored(f'{cmd}', COLORS.shell))
   if os.system(cmd) != 0:
-    print(f'  {cmd} exited with an error')
+    print(colored(f'{cmd} exited with an error'), COLORS.error)
     sys.exit(1)
 
 def rm_rf(*paths):
@@ -73,7 +83,7 @@ class Package:
         bump = int(bump) if bump else 0
 
         arch = m.group(3)
-        assert arch in ARCHS
+        assert arch in ARCHS, f'{arch} not in {ARCHS}'
         assert arch not in self.public or self.public[arch] is None, f'{asset} already known as {self.public[arch]}'
 
         self.public[arch] = Munch(version=version, bump=bump)
@@ -101,14 +111,14 @@ class Package:
 
   def build(self, arch):
     deb = self.deb(arch)
-    print(f'building {deb}')
+    print(colored(f'\n## building {deb}', COLORS.package))
 
     rm_rf('build', 'client.tar.bz2', deb)
     os.makedirs(f'build/usr/lib/{self.package}/distribution')
     os.makedirs('build/usr/share/applications')
     os.makedirs('build/DEBIAN')
     url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.version)
-    print(f'  downloading {url}')
+    print(colored(f'downloading {url}', COLORS.progress))
     urlretrieve(url, 'client.tar.bz2')
 
     tar = tarfile.open('client.tar.bz2')
@@ -197,7 +207,7 @@ class Package:
 
   def patch_global_menu(self, installdir):
     if not self.global_menu: return
-    print('  patching for global menu')
+    print(colored('patching for global menu', COLORS.progress))
 
     url = urlopen('https://github.com/ripefig/Firefox-ESR-52-Global-Menu/releases/latest').geturl().replace('/tag/', '/download/') + '/libxul.so'
     urlretrieve(url, f'{installdir}/libxul.so')
@@ -230,13 +240,13 @@ repo = repo = gh.repository('retorquere', 'zotero-deb')
 
 for global_menu in [False, True]:
   if global_menu:
+    if args.test: continue
     ARCHS = ['amd64']
     RELEASE_REPO = 'global-menu'
   else:
     ARCHS = ['i386', 'amd64']
-    RELEASE_REPO = 'apt-get'
-    #RELEASE_REPO = 'test'
-  print(f'Building {RELEASE_REPO}')
+    RELEASE_REPO = 'apt-get' if not args.test else 'test'
+  print(colored(f'\n\n# Building {RELEASE_REPO}', COLORS.repo))
 
   release = repo.release_from_tag(RELEASE_REPO)
   assets = release.assets()
@@ -263,7 +273,7 @@ for global_menu in [False, True]:
   )
 
   if not packages.zotero.needs_update and not packages.jurism.needs_update:
-    print('nothing to do')
+    print(colored('nothing to do', COLORS.result))
     continue
 
   rm_rf('repo')
@@ -285,6 +295,7 @@ for global_menu in [False, True]:
     for arch in ARCHS:
       packages[package].build(arch)
 
+  print(colored(f'\n## publishing {RELEASE_REPO}', COLORS.package))
   run(f'gpg --armor --export {GPGKEY} > repo/deb.gpg.key')
   run(f'cd repo && apt-ftparchive packages . > Packages')
   run(f'bzip2 -kf repo/Packages')
@@ -310,7 +321,7 @@ for global_menu in [False, True]:
 
   for asset in sorted(glob.glob('repo/*')):
     content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
-    print(f'  Uploading {asset} ({content_type})')
+    print(colored(f'Uploading {asset} ({content_type})', COLORS.progress))
     with open(asset, 'rb') as f:
       release.upload_asset(
         asset=f,
