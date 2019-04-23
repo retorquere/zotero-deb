@@ -243,8 +243,7 @@ for release_name in config.release.keys():
   print(colored(f'\n\n# Building {release_name}', COLORS.repo))
 
   if args.test:
-    if global_menu: continue # need to set up a separate test release tag
-    release = repo.release_from_tag('test')
+    release = repo.release_from_tag(release_name + '-test')
   else:
     release = repo.release_from_tag(release_name)
 
