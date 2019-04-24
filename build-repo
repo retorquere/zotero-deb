@@ -59,13 +59,44 @@ def rm_rf(*paths):
 
 class Package:
   def __init__(self, package):
+    package = Munch({**config.package[package.package], **package})
     # find current version
     feed = f'https://github.com/{package.repo}/releases.atom'
     response = urlopen(feed).read()
     if type(response) is bytes: response = response.decode("utf-8")
     root = ET.fromstring(response)
     version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
-    self.version = version.split('/')[-1]
+    self.base_version = version.split('/')[-1]
+
+    if args.bump:
+      if not 'version' in config.package[package.package]:
+        self.bump = 0
+        config.package[package.package].pop('bump', None)
+        print(f'No version information for {package.package}, setting to {self.base_version}')
+      elif packaging.version.parse(config.package[package.package].version.replace('m', '.')) < packaging.version.parse(self.base_version.replace('m', '.')):
+        config.package[package.package].pop('bump', None)
+        self.bump = 0
+        print(f'Upgrading {package.package} to {self.base_version}')
+      elif not 'bump' in config.package[package.package]:
+        config.package[package.package].bump = 1
+        print(f'Bumping {package.package} to {config.package[package.package].bump}')
+      else:
+        config.package[package.package].bump += 1
+        print(f'Bumping {package.package} to {config.package[package.package].bump}')
+      config.package[package.package].version = self.base_version
+
+    if not 'version' in config.package[package.package]:
+      print(f'No version information for {package.package}')
+      sys.exit(1)
+    if config.package[package.package].version != self.base_version:
+      print(f'Building {config.package[package.package].version}, but {self.base_version} is available')
+      sys.exit(1)
+
+    self.version = config.package[package.package].version
+    self.bump = 0
+    if 'bump' in config.package[package.package]:
+      self.bump = config.package[package.package].bump
+      self.version += f'-{self.bump}'
 
     self.binary_url = package.download
     self.package = package.package
@@ -87,28 +118,22 @@ class Package:
         assert arch in package.archs, f'{arch} not in {ARCHS}'
         assert arch not in self.public or self.public[arch] is None, f'{asset} already known as {self.public[arch]}'
 
-        self.public[arch] = Munch(version=version, bump=bump)
+        self.public[arch] = Munch(base_version=version, bump=bump)
 
-    self.needs_update = False
-    if args.bump or args.force:
-      self.needs_update = True
+    self.needs_update = args.force
     for arch in package.archs:
       if not self.public[arch]:
         self.needs_update = True
         break
-      if packaging.version.parse(self.public[arch].version.replace('m', '.')) < packaging.version.parse(self.version.replace('m', '.')):
+      if self.public[arch].base_version != self.base_version:
         self.needs_update = True
+        break
+      if self.public[arch].bump != self.bump:
+        self.needs_update = True
+        break
 
   def deb(self, arch):
-    if self.public[arch] is None: # first build for version, don't bump
-      bump = ''
-    elif args.bump:
-      bump = f'-{self.public[arch].bump + 1}'
-    elif self.public[arch].bump > 0:
-      bump = f'-{self.public[arch].bump}'
-    else:
-      bump = ''
-    return f'{self.package}_{self.version}{bump}_{arch}.deb'
+    return f'{self.package}_{self.version}_{arch}.deb'
 
   def build(self, arch):
     deb = self.deb(arch)
@@ -118,7 +143,7 @@ class Package:
     os.makedirs(f'build/usr/lib/{self.package}/distribution')
     os.makedirs('build/usr/share/applications')
     os.makedirs('build/DEBIAN')
-    url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.version)
+    url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.base_version)
     print(colored(f'downloading {url}', COLORS.progress))
     urlretrieve(url, 'client.tar.bz2')
 
@@ -253,20 +278,20 @@ for release_name in config.release.keys():
 
   packages = Munch(
     zotero = Package(Munch(
-      config.package.zotero,
       package='zotero',
       assets=[asset.name for asset in assets],
       archs=config.release[release_name].archs,
       global_menu=global_menu
     )),
     jurism = Package(Munch(
-      config.package.jurism,
       package='jurism',
       assets=[asset.name for asset in assets],
       archs=config.release[release_name].archs,
       global_menu=global_menu
     ))
   )
+  if args.bump:
+    break
 
   if not packages.zotero.needs_update and not packages.jurism.needs_update:
     print(colored('nothing to do', COLORS.result))
@@ -316,3 +341,7 @@ for release_name in config.release.keys():
           name=os.path.basename(asset),
           content_type=content_type
         )
+
+if args.bump:
+  with open(os.path.join(os.path.dirname(__file__), 'config.toml'), 'w') as f:
+    toml.dump(config, f)
