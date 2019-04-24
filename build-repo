@@ -140,6 +140,7 @@ class Package:
 
     desktop = configparser.RawConfigParser()
     desktop.add_section('Desktop Entry')
+    desktop.optionxform=str
     desktop.set('Desktop Entry', 'Name', self.name)
     if self.global_menu:
       desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager (global menu support)')
