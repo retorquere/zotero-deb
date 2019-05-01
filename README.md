@@ -22,11 +22,13 @@ $ sudo apt-get install zotero # if you want Zotero
 $ sudo apt-get install jurism # if you want Juris-M
 ```
 
-## Global Menu support for Ubuntu 19.04+
+## Unofficial Global Menu support for Ubuntu 19.04+
 
 For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
 
-# Updating the packages
+Note that whereas the packaged version above are the official binaries from Zotero/Juris-M, the global-menu versions have changes applied not supported by the Zotero/Juris-M teams; specifically, the CSS of the client has been changed, and a cusom libxul.so has replaced the ones that are in the official Zotero/Juris-M releases.
+
+# For developers -- Updating the packages
 
 The update script expects a gpg key by the name `dpkg` to be available:
 
