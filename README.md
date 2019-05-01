@@ -1,6 +1,6 @@
 # Packaged version of Zotero and Juris-M.
 
-These packages are "fat installers" -- the debs include the Zotero/Juris-M binaries, as built bu Zotero/Juris-M themselves. One-time installation of the repo:
+These packages are "fat installers" -- the debs include the Zotero/Juris-M binaries, as built by Zotero/Juris-M themselves. One-time installation of the repo:
 
 If you have `wget` installed:
 
@@ -21,6 +21,8 @@ $ sudo apt-get update
 $ sudo apt-get install zotero # if you want Zotero
 $ sudo apt-get install jurism # if you want Juris-M
 ```
+
+This repository updates to new releases within 24 hours, usually faster.
 
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
