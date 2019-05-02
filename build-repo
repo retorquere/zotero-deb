@@ -29,6 +29,7 @@ import toml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
+parser.add_argument('--upgrade', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--dry-run', action='store_true')
 parser.add_argument('--test', action='store_true')
@@ -68,7 +69,7 @@ class Package:
     version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
     self.base_version = version.split('/')[-1]
 
-    if args.bump:
+    if args.bump or args.upgrade:
       if not 'version' in config.package[package.package]:
         self.bump = 0
         config.package[package.package].pop('bump', None)
@@ -77,10 +78,10 @@ class Package:
         config.package[package.package].pop('bump', None)
         self.bump = 0
         print(f'Upgrading {package.package} to {self.base_version}')
-      elif not 'bump' in config.package[package.package]:
+      elif args.bump and not 'bump' in config.package[package.package]:
         config.package[package.package].bump = 1
         print(f'Bumping {package.package} to {config.package[package.package].bump}')
-      else:
+      elif args.bump:
         config.package[package.package].bump += 1
         print(f'Bumping {package.package} to {config.package[package.package].bump}')
       config.package[package.package].version = self.base_version
@@ -290,7 +291,7 @@ for release_name in config.release.keys():
       global_menu=global_menu
     ))
   )
-  if args.bump:
+  if args.bump or args.upgrade:
     break
 
   if not packages.zotero.needs_update and not packages.jurism.needs_update:
@@ -342,6 +343,6 @@ for release_name in config.release.keys():
           content_type=content_type
         )
 
-if args.bump:
+if args.bump or args.upgrade:
   with open(os.path.join(os.path.dirname(__file__), 'config.toml'), 'w') as f:
     toml.dump(config, f)
