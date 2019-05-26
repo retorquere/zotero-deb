@@ -12,4 +12,5 @@ before_install:
 - sudo apt-get install dpkg-sig fakeroot
 
 script:
+- python3 -u build-repo --rdepends
 - python3 -u build-repo
