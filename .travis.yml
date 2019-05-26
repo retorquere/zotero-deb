@@ -12,5 +12,5 @@ before_install:
 - sudo apt-get install dpkg-sig fakeroot
 
 script:
-- apt-cache rdepends libdbus-glib-1-2 # make sure we still need this
+- sudo add-apt-repository ppa:mozillateam/ppa -y
 - python3 -u build-repo
