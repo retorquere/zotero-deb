@@ -12,5 +12,5 @@ before_install:
 - sudo apt-get install dpkg-sig fakeroot
 
 script:
-- python3 -u build-repo --rdepends
+- apt-cache rdepends libdbus-glib-1-2 # make sure we still need this
 - python3 -u build-repo

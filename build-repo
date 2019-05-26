@@ -33,7 +33,7 @@ parser.add_argument('--upgrade', action='store_true')
 parser.add_argument('--force', action='store_true')
 parser.add_argument('--dry-run', action='store_true')
 parser.add_argument('--test', action='store_true')
-parser.add_argument('--rdepends', action='store_true')
+#parser.add_argument('--rdepends', action='store_true')
 args = parser.parse_args()
 
 with open(os.path.join(os.path.dirname(__file__), 'config.toml')) as f:
@@ -265,13 +265,16 @@ class Package:
 
 # let's get it started
 
-if args.rdepends:
-  rdepends = set([])
-  for pkg in config.package.keys():
-    for dep in config.package[pkg].dependencies:
-      rdepends.add(dep)
-  run('apt-cache rdepends ' + ' '.join(rdepends))
-  sys.exit(0)
+#if args.rdepends:
+#  dependencies = set([])
+#  for pkg in config.package.keys():
+#    for deb in config.package[pkg].dependencies:
+#      dependencies.add(deb)
+#  for deb in dependencies:
+#    rdepends = os.popen(f'apt-cache rdepends {deb}').read()
+#    rdepends = [pkg.strip() for pkg in rdepends.split('\n') if len(pkg) > 0 and pkg[0] == ' ']
+#    print('\n'.join(rdepends))
+#  sys.exit(0)
 
 gh = login(token=os.getenv('GITHUB_TOKEN'))
 repo = gh.repository(*config.build.repo.split('/'))
