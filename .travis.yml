@@ -13,4 +13,5 @@ before_install:
 
 script:
 - sudo add-apt-repository ppa:mozillateam/ppa -y
+- apt-cache depends firefox-esr
 - python3 -u build-repo
