@@ -14,8 +14,7 @@ repo = "zotero/zotero"
 name = "Zotero"
 download = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}"
 dependencies = [ "libnss3-dev",]
-version = "5.0.66"
-bump = 8
+version = "5.0.67.3"
 
 [package.jurism]
 repo = "Juris-M/zotero"
