@@ -61,13 +61,24 @@ def rm_rf(*paths):
 class Package:
   def __init__(self, package):
     package = Munch({**config.package[package.package], **package})
+
     # find current version
-    feed = f'https://github.com/{package.repo}/releases.atom'
-    response = urlopen(feed).read()
-    if type(response) is bytes: response = response.decode("utf-8")
-    root = ET.fromstring(response)
-    version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
-    self.base_version = version.split('/')[-1]
+    if 'releases' in package:
+      # for now, assume x86 and x64 always have same version. This needs to be fixed at some point
+      response = urlopen(package.releases).read()
+      if type(response) is bytes: response = response.decode("utf-8")
+      releases = json.loads(response)
+      self.base_version = releases[-1]['version']
+    else:
+      feed = f'https://github.com/{package.repo}/releases.atom'
+      response = urlopen(feed).read()
+      if type(response) is bytes: response = response.decode("utf-8")
+      root = ET.fromstring(response)
+      version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
+      self.base_version = version.split('/')[-1]
+
+    # https://www.zotero.org/download/client/manifests/release/updates-linux-i686.json
+    # https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json
 
     if args.bump or args.upgrade:
       if not 'version' in config.package[package.package]:
