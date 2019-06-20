@@ -24,6 +24,8 @@ $ sudo apt-get install jurism # if you want Juris-M
 
 This repository updates to new releases within 24 hours, usually faster.
 
+After installation, Zotero can be found in /usr/lib/zotero.
+
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
 For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
