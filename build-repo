@@ -64,21 +64,27 @@ class Package:
 
     # find current version
     if 'releases' in package:
+      # https://www.zotero.org/download/client/manifests/release/updates-linux-i686.json
+      # https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json
       # for now, assume x86 and x64 always have same version. This needs to be fixed at some point
       response = urlopen(package.releases).read()
       if type(response) is bytes: response = response.decode("utf-8")
       releases = json.loads(response)
       self.base_version = releases[-1]['version']
+    elif 'incrementals' in package:
+      response = urlopen(package.incrementals).read()
+      if type(response) is bytes: response = response.decode("utf-8")
+      self.base_version = response.strip().split("\n")[-1]
     else:
+      # Come on Frank....
+      raise ValueError("Don't know how to check for Juris-M version")
+
       feed = f'https://github.com/{package.repo}/releases.atom'
       response = urlopen(feed).read()
       if type(response) is bytes: response = response.decode("utf-8")
       root = ET.fromstring(response)
       version = root.find('{http://www.w3.org/2005/Atom}entry/{http://www.w3.org/2005/Atom}id').text
       self.base_version = version.split('/')[-1]
-
-    # https://www.zotero.org/download/client/manifests/release/updates-linux-i686.json
-    # https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json
 
     if args.bump or args.upgrade:
       if not 'version' in config.package[package.package]:
