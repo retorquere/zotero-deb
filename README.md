@@ -36,10 +36,6 @@ sudo apt update
 sudo apt install jurism
 ```
 
-Or you can use the visual tools that do the same that come with your distro.
-
-After installation, Zotero can be found in /usr/lib/zotero.
-
 **Note**
 
 You can use `curl` instead of `wget` by typing
