@@ -14,7 +14,7 @@ or if you have `curl` installed:
 $ curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 ```
 
-after this you can install and update in the usual way:
+after this you can install in the usual way:
 
 ```
 $ sudo apt-get update
@@ -22,9 +22,18 @@ $ sudo apt-get install zotero # if you want Zotero
 $ sudo apt-get install jurism # if you want Juris-M
 ```
 
-This repository updates to new releases within 24 hours, usually faster.
+and consequently update to later versions:
+
+```
+$ sudo apt-get update
+$ sudo apt-get upgrade
+```
+
+Or you can use the visual tools that do the same that come with your distro.
 
 After installation, Zotero can be found in /usr/lib/zotero.
+
+This repository updates to new releases within 24 hours, usually faster.
 
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
