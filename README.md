@@ -36,13 +36,6 @@ sudo apt-get update
 sudo apt-get install jurism
 ```
 
-and consequently update to later versions:
-
-```
-sudo apt-get update
-sudo apt-get upgrade
-```
-
 Or you can use the visual tools that do the same that come with your distro.
 
 After installation, Zotero can be found in /usr/lib/zotero.
@@ -54,6 +47,19 @@ You can use `curl` instead of `wget` by typing
 curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 ```
 
+## Updating Zotero / Juris-M
+
+The Zotero / Juris-M programs provided by this repository have their self-update facility disabled.
+
+Simply rely on on your system's package manager to give you update notifications when a new version comes out.
+
+Alternatively, you can use the following commands:
+
+```
+sudo apt-get update
+sudo apt-get upgrade
+```
+
 
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
@@ -61,7 +67,7 @@ For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change th
 
 Note that whereas the packaged version above are the official binaries from Zotero/Juris-M, the global-menu versions have changes applied not supported by the Zotero/Juris-M teams; specifically, the CSS of the client has been changed, and a custom libxul.so has replaced the ones that are in the official Zotero/Juris-M releases.
 
-# For developers -- Updating the packages
+## For developers -- Updating the packages
 
 The update script expects a gpg key by the name `dpkg` to be available:
 
