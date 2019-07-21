@@ -6,7 +6,11 @@ This repository contains packaged versions of [Zotero](https://www.zotero.org) a
 
 This repository updates to new releases within 24 hours, usually faster.
 
-The packages are "fat installers" -- the debs include the Zotero/Juris-M binaries, as built by Zotero/Juris-M themselves. 
+## Contents of the packages
+
+The packages include the whole Zotero/Juris-M binaries, as built by Zotero / Juris-M teams themselves.
+
+The packages provide a system-wide installation (into the `/usr/lib` directory), as opposed to a single-user installation (e.g. in your `HOME` directory).
 
 ## Installing Zotero / Juris-M
 
