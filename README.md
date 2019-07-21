@@ -1,6 +1,12 @@
 # Packaged version of Zotero and Juris-M.
 
-These packages are "fat installers" -- the debs include the Zotero/Juris-M binaries, as built by Zotero/Juris-M themselves. One-time installation of the repo:
+This repository contains packaged versions of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for debian-based linux systems, along with the script used to build them.
+
+The packages are "fat installers" -- the debs include the Zotero/Juris-M binaries, as built by Zotero/Juris-M themselves. 
+
+## Installing Zotero / Juris-M
+
+One-time installation of the repo:
 
 If you have `wget` installed:
 
