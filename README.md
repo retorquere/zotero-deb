@@ -12,6 +12,8 @@ The packages include the whole Zotero/Juris-M binaries, as built by Zotero / Jur
 
 The packages provide a system-wide installation (into the `/usr/lib` directory), as opposed to a single-user installation (e.g. in your `HOME` directory).
 
+Alternative packages with [unofficial Global Menu support for Ubuntu 19.04+](#unofficial-global-menu-support-for-ubuntu-1904) are also provided.
+
 ## Installing Zotero / Juris-M
 
 ### Installing Zotero
