@@ -13,28 +13,28 @@ One-time installation of the repo:
 If you have `wget` installed:
 
 ```
-$ wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 ```
 
 or if you have `curl` installed:
 
 ```
-$ curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 ```
 
 after this you can install in the usual way:
 
 ```
-$ sudo apt-get update
-$ sudo apt-get install zotero # if you want Zotero
-$ sudo apt-get install jurism # if you want Juris-M
+sudo apt-get update
+sudo apt-get install zotero # if you want Zotero
+sudo apt-get install jurism # if you want Juris-M
 ```
 
 and consequently update to later versions:
 
 ```
-$ sudo apt-get update
-$ sudo apt-get upgrade
+sudo apt-get update
+sudo apt-get upgrade
 ```
 
 Or you can use the visual tools that do the same that come with your distro.
@@ -71,6 +71,6 @@ EOF
 For Travis builds, you can do the following:
 
 ```
-$ gpg --export-secret-keys dpkg > dpkg.priv.key
-$ travis encrypt-file dpkg.priv.key --add
+gpg --export-secret-keys dpkg > dpkg.priv.key
+travis encrypt-file dpkg.priv.key --add
 ```
