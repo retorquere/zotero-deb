@@ -1,4 +1,4 @@
-# Packaged version of Zotero and Juris-M for Debian-based systems
+# Packaged versions of Zotero and Juris-M for Debian-based systems
 
 [![Build Status](https://travis-ci.org/retorquere/zotero-deb.svg?branch=master)](https://travis-ci.org/retorquere/zotero-deb)
 
