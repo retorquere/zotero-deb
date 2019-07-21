@@ -63,7 +63,10 @@ sudo apt upgrade
 
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
-For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
+For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to
+```
+https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
+```
 
 Note that whereas the packaged version above are the official binaries from Zotero/Juris-M, the global-menu versions have changes applied not supported by the Zotero/Juris-M teams; specifically, the CSS of the client has been changed, and a custom libxul.so has replaced the ones that are in the official Zotero/Juris-M releases.
 
