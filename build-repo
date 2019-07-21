@@ -76,7 +76,6 @@ class Package:
       if type(response) is bytes: response = response.decode("utf-8")
       self.base_version = response.strip().split("\n")[-1]
     else:
-      # Come on Frank....
       raise ValueError("Don't know how to check for Juris-M version")
 
       feed = f'https://github.com/{package.repo}/releases.atom'
@@ -171,6 +170,7 @@ class Package:
     os.makedirs(f'build/usr/lib/{self.package}/distribution')
     os.makedirs('build/usr/share/applications')
     os.makedirs('build/DEBIAN')
+    os.makedirs('build/usr/local/bin')
     url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.base_version)
     print(colored(f'downloading {url}', COLORS.progress))
     urlretrieve(url, 'client.tar.bz2')
@@ -181,7 +181,7 @@ class Package:
       if not member.isreg(): continue
       member.name = re.sub(r'^.+?\/', '', member.name) # strip leading directory
 
-      if member.name in ['active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
+      if member.name in ['zotero.desktop', 'jurism.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
         continue
 
       tar.extract(member, f'build/usr/lib/{self.package}')
@@ -257,6 +257,8 @@ class Package:
       print('Priority: optional', file=f)
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
+
+    os.symlink(f'/usr/lib/{self.package}/{self.package}', f'build/usr/local/bin/{self.package}')
 
     run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
     run(f'dpkg-sig -k {config.build.gpgkey} --sign builder repo/{deb}')
