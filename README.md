@@ -10,13 +10,24 @@ The packages are "fat installers" -- the debs include the Zotero/Juris-M binarie
 
 ## Installing Zotero / Juris-M
 
-One-time installation of the repo:
+### Installing Zotero
+
+To install Zotero, use the following commands:
 
 ```
 wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
 sudo apt-get update
-sudo apt-get install zotero # if you want Zotero
-sudo apt-get install jurism # if you want Juris-M
+sudo apt-get install zotero
+```
+
+### Installing Juris-M
+
+To install Juris-M, use the following commands:
+
+```
+wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+sudo apt-get update
+sudo apt-get install jurism
 ```
 
 and consequently update to later versions:
