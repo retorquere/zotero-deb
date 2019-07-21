@@ -22,8 +22,8 @@ To install Zotero, use the following commands:
 
 ```
 wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-sudo apt-get update
-sudo apt-get install zotero
+sudo apt update
+sudo apt install zotero
 ```
 
 ### Installing Juris-M
@@ -32,8 +32,8 @@ To install Juris-M, use the following commands:
 
 ```
 wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-sudo apt-get update
-sudo apt-get install jurism
+sudo apt update
+sudo apt install jurism
 ```
 
 Or you can use the visual tools that do the same that come with your distro.
@@ -56,8 +56,8 @@ Simply rely on on your system's package manager to give you update notifications
 Alternatively, you can use the following commands:
 
 ```
-sudo apt-get update
-sudo apt-get upgrade
+sudo apt update
+sudo apt upgrade
 ```
 
 
