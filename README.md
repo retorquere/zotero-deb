@@ -1,8 +1,8 @@
-# Packaged version of Zotero and Juris-M for debian-based systems.
+# Packaged version of Zotero and Juris-M for Debian-based systems
 
 [![Build Status](https://travis-ci.org/retorquere/zotero-deb.svg?branch=master)](https://travis-ci.org/retorquere/zotero-deb)
 
-This repository contains packaged versions of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for debian-based linux systems, along with the script used to build them.
+This repository contains packaged versions of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems, along with the script used to build them.
 
 This repository updates to new releases within 24 hours, usually faster.
 
