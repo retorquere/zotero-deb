@@ -326,7 +326,7 @@ for release_name in config.release.keys():
   if args.bump or args.upgrade:
     break
 
-  if not packages.zotero.needs_update and not packages.jurism.needs_update:
+  if len([package for package in packages.values() if package.needs_update]) == 0:
     print(colored('nothing to do', COLORS.result))
     continue
 
