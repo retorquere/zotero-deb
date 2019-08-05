@@ -191,6 +191,26 @@ class Package:
 
     with open(f'build/usr/lib/{self.package}/distribution/policies.json', 'w') as f:
       f.write(json.dumps({ "policies": { "DisableAppUpdate": True } }))
+    with open(f'build/usr/lib/{self.package}/defaults/preferences/prefs.js') as f:
+      prefs_js = f.read()
+    with open(f'build/usr/lib/{self.package}/defaults/preferences/prefs.js', 'w') as f:
+      replace = {
+        'pref("app.update.enabled", true);': 'pref("app.update.enabled", false);',
+        'pref("app.update.auto", true);': 'pref("app.update.auto", false);',
+      }
+      for ist in replace.keys():
+        if not ist in prefs_js: raise ValueError(f'Expected \'{ist}\' in prefs.js')
+      for soll in replace.values():
+        if soll in prefs_js: raise ValueError(f'Unexpected \'{soll}\' in prefs.js')
+
+      for ist, soll in replace.items():
+        prefs_js = prefs_js.replace(ist, soll)
+
+      for ist in replace.keys():
+        if ist in prefs_js: raise ValueError(f'Unexpected \'{ist}\' in prefs.js')
+      for soll in replace.values():
+        if not soll in prefs_js: raise ValueError(f'Expected \'{soll}\' in prefs.js')
+      f.write(prefs_js)
 
     desktop = configparser.RawConfigParser()
     desktop.add_section('Desktop Entry')
