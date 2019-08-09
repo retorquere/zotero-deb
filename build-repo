@@ -226,7 +226,7 @@ class Package:
     else:
       desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
     desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.package}/{self.package} --url %u')
-    desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default48.png')
+    desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default256.png')
     desktop.set('Desktop Entry', 'Type', 'Application')
     desktop.set('Desktop Entry', 'Categories', 'Office;Education;Literature')
     desktop.set('Desktop Entry', 'StartupNotify', 'true')
