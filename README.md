@@ -70,6 +70,10 @@ https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.s
 
 Note that whereas the packaged versions above are the official binaries from Zotero/Juris-M, the global-menu versions have changes applied not supported by the Zotero/Juris-M teams; specifically, the CSS of the client has been changed, and a custom libxul.so has replaced the ones that are in the official Zotero/Juris-M releases.
 
+## Instructions for installation on Crostini-capable Chromebooks
+
+Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki/Installation-on-Chromebooks).
+
 ## For packagers -- Updating the packages
 
 The update script expects a gpg key by the name `dpkg` to be available:
