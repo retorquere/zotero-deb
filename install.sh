@@ -11,7 +11,6 @@ case `uname -m` in
     exit
     ;;
 esac
-exit
 
 if [ -x "$(command -v curl)" ]; then
   curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
