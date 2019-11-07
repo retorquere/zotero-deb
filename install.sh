@@ -4,7 +4,7 @@ if [ `whoami` != root ]; then
 fi
 
 case `uname -m` in
-  "i686" | "x86_64")
+  "i386" | "i686" | "x86_64")
     ;;
   *)
     echo "Zotero is only available for architectures i686 and x86_64"
