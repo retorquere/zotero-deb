@@ -122,7 +122,11 @@ class Package:
     self.bump = 0
     if 'bump' in config.package[package.package]:
       self.bump = config.package[package.package].bump
-      self.version += f'-{self.bump}'
+
+    ### TEMPORARY TO DEPRECATE global menu #####
+    if package.global_menu: self.bump += 1
+
+    if self.bump != 0: self.version += f'-{self.bump}'
 
     self.binary_url = package.download
     self.package = package.package
@@ -293,6 +297,14 @@ class Package:
   def patch_global_menu(self, installdir):
     if not self.global_menu: return
     print(colored('patching for global menu', COLORS.progress))
+
+    rm_rf(installdir)
+    os.makedirs(installdir)
+    with open(f'{installdir}/{self.package}', 'w') as f:
+      print('#!/bin/bash', file=f)
+      print(f'notify-send "{self.package} with global-menu support has been deprecated. Please uninstall, and install the regular .deb version of {self.package}"', file=f)
+    os.system(f'chmod +x {installdir}/zotero')
+    return
 
     url = urlopen('https://github.com/ripefig/Firefox-ESR-52-Global-Menu/releases/latest').geturl().replace('/tag/', '/download/') + '/libxul.so'
     urlretrieve(url, f'{installdir}/libxul.so')
