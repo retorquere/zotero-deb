@@ -63,6 +63,8 @@ sudo apt upgrade
 
 ## Unofficial Global Menu support for Ubuntu 19.04+
 
+**It looks like this is currently broken!**
+
 For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to
 ```
 https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
