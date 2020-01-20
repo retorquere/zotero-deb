@@ -6,7 +6,7 @@ gpgkey = "dpkg"
 [release.apt-get]
 archs = [ "i386", "amd64",]
 
-[release.global-menu]
+[xrelease.global-menu]
 archs = [ "amd64",]
 
 [package.zotero]
