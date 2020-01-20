@@ -16,8 +16,6 @@ The packages provide a system-wide installation (into the `/usr/lib` directory),
 
 They manage both desktop file registration and MimeType registration.
 
-Alternative packages with [unofficial Global Menu support for Ubuntu 19.04+](#unofficial-global-menu-support-for-ubuntu-1904) are also provided.
-
 ## Installing Zotero / Juris-M
 
 ### Installing Zotero
@@ -59,18 +57,6 @@ Alternatively, you can use the following commands:
 sudo apt update
 sudo apt upgrade
 ```
-
-
-## Unofficial Global Menu support for Ubuntu 19.04+
-
-**It looks like this is currently broken!**
-
-For Global Menu support (which will *only* work on Ubuntu 19.04+ x64), change the installation url to
-```
-https://github.com/retorquere/zotero-deb/releases/download/global-menu/install.sh
-```
-
-Note that whereas the packaged versions above are the official binaries from Zotero/Juris-M, the global-menu versions have changes applied not supported by the Zotero/Juris-M teams; specifically, the CSS of the client has been changed, and a custom libxul.so has replaced the ones that are in the official Zotero/Juris-M releases.
 
 ## Instructions for installation on Crostini-capable Chromebooks
 
