@@ -55,7 +55,6 @@ class Deb:
     return f'zotero_{self.version}{self.patch}_{debarch[self.arch]}.deb'
 
   def build(self, repo):
-    print('building', self.name())
     with tempfile.TemporaryDirectory() as build, tempfile.TemporaryDirectory() as bz2, tempfile.TemporaryDirectory() as binaries:
       self.unpack(os.path.join(bz2, 'zotero.tar.bz2'), build)
       self.control(build)
@@ -134,24 +133,30 @@ class Repo:
     self.publish()
 
   def fetch(self):
+    print('fetching repo')
     for obj in self.bucket.objects.all():
       if not obj.key.endswith('.deb'): continue
       deb = os.path.join(self.repo, obj.key)
-      if not os.path.exists(deb):
-        print('retrieving existing', obj.key)
+      if os.path.exists(deb):
+        print(' ', obj.key, 'exists')
+      else:
+        print('  retrieving existing', obj.key)
         self.bucket.download_file(obj.key, deb)
 
   def build(self):
+    print('building missing packages')
     self.debs = []
     for arch in ['i686', 'x86_64']:
       for version in self.releases(arch):
         self.debs.append(Deb(version, arch))
     for deb in self.debs:
       if os.path.exists(os.path.join(self.repo, deb.name())):
-        self.exists = deb.name()
+        self.exists.append(deb.name())
       else:
+        print('  building', self.name())
         deb.build(self.repo)
 
+    print('updating repo administration')
     repo = shlex.quote(self.repo)
     gpgkey = shlex.quote(config['maintainer']['gpgkey'])
     run(f'cd {repo} && gpg --armor --export {gpgkey} > deb.gpg.key')
