@@ -178,8 +178,11 @@ class Repo:
     print('publish')
     for f in os.listdir(self.repo):
       if f in self.exists: continue
-      print('  uploading', f)
-      self.bucket.upload_file(os.path.join(self.repo, f), f)
+      if '.deb.' in f: # interrupted build
+        os.remove(os.path.join(self.repo, f))
+      else:
+        print('  uploading', f)
+        self.bucket.upload_file(os.path.join(self.repo, f), f)
 
   def releases(self, arch):
     response = urlopen(f'https://www.zotero.org/download/client/manifests/release/updates-linux-{arch}.json').read()
