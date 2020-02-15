@@ -1,0 +1,185 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+from shutil import copyfile
+from urllib.request import urlopen, urlretrieve
+import boto3
+import configparser
+import json
+import os
+import re
+import shlex
+import sys
+import tarfile
+import tempfile
+
+config = configparser.ConfigParser()
+config.read('config.ini')
+scriptdir = os.path.dirname(os.path.realpath(__file__))
+
+debarch = {
+  'i686': 'i386',
+  'x86_64': 'amd64'
+}
+
+def run(cmd):
+  print(cmd)
+  if os.system(cmd) != 0:
+    print(f'{cmd} exited with an error')
+    sys.exit(1)
+
+class Open():
+  def __init__(self, path, mode='r'):
+    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(path), exist_ok=True)
+    self.f = open(path, mode)
+  def __enter__(self):
+    return self.f
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+    self.f.close()
+
+class Deb:
+  def __init__(self, version, arch):
+    self.version = version
+    self.arch = arch
+    self.patch = ''
+    try:
+      self.patch = '-' + config['patch'][f'{self.version}-{self.arch}']
+    except KeyError:
+      pass
+    try:
+      self.patch = '-' + config['patch'][self.version]
+    except KeyError:
+      pass
+
+  def name(self):
+    return f'zotero_{self.version}{self.patch}_{debarch[self.arch]}.deb'
+
+  def build(self, repo):
+    print('building', self.name())
+    with tempfile.TemporaryDirectory() as build, tempfile.TemporaryDirectory() as bz2, tempfile.TemporaryDirectory() as binaries:
+      self.unpack(os.path.join(bz2, 'zotero.tar.bz2'), build)
+      self.control(build)
+
+      os.makedirs(os.path.join(build, 'usr/share/applications'))
+      copyfile(os.path.join(scriptdir, 'zotero.desktop'), os.path.join(build, 'usr/share/applications/zotero.desktop'))
+
+      # add zotero to path
+      os.makedirs(os.path.join(build, 'usr/local/bin'))
+      os.symlink(f'/usr/lib/zotero/zotero', os.path.join(build, 'usr/local/bin/zotero'))
+
+      deb = os.path.join(repo, self.name())
+      run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(build)} {shlex.quote(deb)}')
+      run(f'dpkg-sig -k {shlex.quote(config["maintainer"]["gpgkey"])} --sign builder {shlex.quote(deb)}')
+
+  def unpack(self, bz2, build):
+    # download the bz2 and unpack it
+    url = f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{self.arch}&version={self.version}'
+    urlretrieve(url, bz2)
+    tar = tarfile.open(bz2)
+    for member in tar.getmembers():
+      if not member.isreg(): continue
+      member.name = re.sub(r'^.+?\/', '', member.name) # strip leading directory
+      if member.name in ['zotero.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
+        continue
+      tar.extract(member, os.path.join(build, 'usr/lib/zotero'))
+    tar.close()
+
+    # disable internal update mechanism
+    with Open(os.path.join(build, 'usr/lib/zotero}/defaults/pref/local-settings.js'), 'a') as f:
+      if f.tell() != 0: print('', file=f)
+      print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=f)
+      print('pref("general.config.filename", "mozilla.cfg");', file=f)
+    with Open(os.path.join(build, 'usr/lib/zotero/mozilla.cfg'), 'a') as f:
+      if f.tell() == 0:
+        print('//', file=f) # needed for some reason
+      else:
+        print('', file=f)
+      print('lockPref("app.update.enabled", false);', file=f)
+      print('lockPref("app.update.auto", false);', file=f)
+
+  def control(self, build):
+    dependencies = [ 'libnss3-dev' ]
+    # peek dependencies from firefox-esr
+    for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
+      dep = dep.strip()
+      if not dep.startswith('Depends:'): continue
+      dep = dep.split(':')[1].strip()
+      if dep != 'lsb-release': # why should it need this?
+        dependencies.append(dep)
+    dependencies = ', '.join(sorted(list(set(dependencies))))
+
+    with Open(os.path.join(build, 'DEBIAN/control'), 'w') as f:
+      print(f'Package: zotero', file=f)
+      print(f'Architecture: {debarch[self.arch]}', file=f)
+      print(f'Depends: {dependencies}'.strip(), file=f)
+      print(f'Maintainer: {config["maintainer"]["email"]}', file=f)
+      print('Section: Science', file=f)
+      print('Priority: optional', file=f)
+      print(f'Version: {self.version}{self.patch}', file=f)
+      print(f'Description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
+
+class Repo:
+  def __init__(self):
+    self.repo = 'repo'
+
+    s3 = boto3.resource('s3')
+    self.bucket = s3.Bucket(name=config['S3']['bucket'])
+
+    Path(self.repo).mkdir(parents=True, exist_ok=True)
+
+    self.exists = []
+
+    self.fetch()
+    self.build()
+    self.publish()
+
+  def fetch(self):
+    for obj in self.bucket.objects.all():
+      if not obj.key.endswith('.deb'): continue
+      deb = os.path.join(self.repo, obj.key)
+      if not os.path.exists(deb):
+        print('retrieving existing', obj.key)
+        self.bucket.download_file(obj.key, deb)
+
+  def build(self):
+    self.debs = []
+    for arch in ['i686', 'x86_64']:
+      for version in self.releases(arch):
+        self.debs.append(Deb(version, arch))
+    for deb in self.debs:
+      if os.path.exists(os.path.join(self.repo, deb.name())):
+        self.exists = deb.name()
+      else:
+        deb.build(self.repo)
+
+    repo = shlex.quote(self.repo)
+    gpgkey = shlex.quote(config['maintainer']['gpgkey'])
+    run(f'cd {repo} && gpg --armor --export {gpgkey} > deb.gpg.key')
+    run(f'cd {repo} && apt-ftparchive packages . > Packages')
+    run(f'cd {repo} && bzip2 -kf Packages')
+    run(f'cd {repo} && apt-ftparchive release . > Release')
+    run(f'cd {repo} && gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
+    run(f'cd {repo} && gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
+
+    with Open(os.path.join(repo, 'install.sh'), 'w') as i:
+      with open(os.path.join(scriptdir, 'install.sh.tmpl')) as t:
+        print(t.read().format(url=config["S3"]["site"]), file=i)
+
+    with Open(os.path.join(repo, 'index.html'), 'w') as i:
+      with open(os.path.join(scriptdir, 'index.html.tmpl')) as t:
+        print(t.read().format(site=config["S3"]["site"]), file=i)
+
+  def publish(self):
+    print('publish')
+    for f in os.listdir(self.repo):
+      if f in self.exists: continue
+      print('  uploading', f)
+      self.bucket.upload_file(os.path.join(self.repo, f), f)
+
+  def releases(self, arch):
+    response = urlopen(f'https://www.zotero.org/download/client/manifests/release/updates-linux-{arch}.json').read()
+    if type(response) is bytes: response = response.decode("utf-8")
+    releases = json.loads(response)
+    return [rel['version'] for rel in releases]
+
+Repo()

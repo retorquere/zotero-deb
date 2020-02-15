@@ -1,0 +1,19 @@
+<h1 id="packaged-versions-of-zotero-for-debian-based-systems">Packaged versions of Zotero for Debian-based systems</h1>
+<p>This repository contains packaged releases of <a href="https://www.zotero.org">Zotero</a> for Debian-based Linux systems and Crostini-enabled chromebooks. It updates to new releases of Zotero within 24 hours, usually faster.</p>
+<p>The packages include the Zotero binaries as built by Zotero team themselves. They provide a system-wide installation (into the <code>/usr/lib</code> directory), as opposed to a single-user installation (e.g. in your <code>HOME</code> directory). They manage both desktop file registration and MimeType registration.</p>
+<h2 id="installing-zotero">Installing Zotero</h2>
+<p>To install Zotero, use the following commands:</p>
+<pre><code>wget -qO- {site}/install.sh | sudo bash
+sudo apt update
+sudo apt install zotero</code></pre>
+<p><strong>Note</strong></p>
+<p>You can use <code>curl</code> instead of <code>wget</code> by typing</p>
+<pre><code>curl -sL {site}/install.sh | sudo bash</code></pre>
+<h2 id="updating-zotero">Updating Zotero</h2>
+<p>Zotero as provided by this repository has its self-update facility disabled. Simply rely on on your system’s package manager to give you update notifications when a new version comes out.</p>
+<p>Alternatively, you can use the following commands:</p>
+<pre><code>sudo apt update
+sudo apt upgrade</code></pre>
+<h2 id="instructions-for-installation-on-crostini-capable-chromebooks">Instructions for installation on Crostini-capable Chromebooks</h2>
+<p>Instructions for installation on Crostini-capable Chromebooks can be found on the <a href="https://github.com/retorquere/zotero-deb/wiki/Installation-on-Chromebooks">wiki</a>.</p>
+
