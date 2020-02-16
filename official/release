@@ -12,6 +12,7 @@ import shlex
 import sys
 import tarfile
 import tempfile
+import collections
 
 config = configparser.ConfigParser()
 config.read('config.ini')
@@ -23,7 +24,7 @@ debarch = {
 }
 
 def run(cmd):
-  print(cmd)
+  print(f'  {cmd}')
   if os.system(cmd) != 0:
     print(f'{cmd} exited with an error')
     sys.exit(1)
@@ -126,7 +127,7 @@ class Repo:
 
     Path(self.repo).mkdir(parents=True, exist_ok=True)
 
-    self.exists = []
+    self.status = collections.defaultdict(lambda: collections.defaultdict(bool))
 
     self.fetch()
     self.build()
@@ -136,27 +137,49 @@ class Repo:
     print('fetching repo')
     for obj in self.bucket.objects.all():
       if not obj.key.endswith('.deb'): continue
+
+      self.status[obj.key]['remote'] = True
       deb = os.path.join(self.repo, obj.key)
       if os.path.exists(deb):
-        print(' ', obj.key, 'exists')
+        print('  exists:', self.name())
       else:
-        print('  retrieving existing', obj.key)
+        print('  fetch:', obj.key)
         self.bucket.download_file(obj.key, deb)
+      self.status[obj.key]['local'] = True
 
   def build(self):
-    print('building missing packages')
+    print('building packages')
     self.debs = []
     for arch in ['i686', 'x86_64']:
       for version in self.releases(arch):
         self.debs.append(Deb(version, arch))
     for deb in self.debs:
       if os.path.exists(os.path.join(self.repo, deb.name())):
-        self.exists.append(deb.name())
+        print('  exists:', deb.name())
+        self.status[deb.name()]['local'] = True
       else:
-        print('  building', self.name())
+        print('  build:', deb.name())
+        self.status[deb.name()]['built'] = True
+        self.status[deb.name()]['local'] = True
         deb.build(self.repo)
 
-    print('updating repo administration')
+  def publish(self):
+    local = set([deb for deb, status in self.status.items() if status['local']])
+    remote = set([deb for deb, status in self.status.items() if status['remote']])
+    work = local - remote
+    if len(work) == 0:
+      print('remote is up to date')
+      return
+
+    print('updating repo')
+    with Open(os.path.join(self.repo, 'install.sh'), 'w') as i:
+      with open(os.path.join(scriptdir, 'install.sh.tmpl')) as t:
+        print(t.read().format(url=config["S3"]["site"]), file=i)
+
+    with Open(os.path.join(self.repo, 'index.html'), 'w') as i:
+      with open(os.path.join(scriptdir, 'index.html.tmpl')) as t:
+        print(t.read().format(site=config["S3"]["site"]), file=i)
+
     repo = shlex.quote(self.repo)
     gpgkey = shlex.quote(config['maintainer']['gpgkey'])
     run(f'cd {repo} && gpg --armor --export {gpgkey} > deb.gpg.key')
@@ -166,23 +189,15 @@ class Repo:
     run(f'cd {repo} && gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
     run(f'cd {repo} && gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
 
-    with Open(os.path.join(repo, 'install.sh'), 'w') as i:
-      with open(os.path.join(scriptdir, 'install.sh.tmpl')) as t:
-        print(t.read().format(url=config["S3"]["site"]), file=i)
-
-    with Open(os.path.join(repo, 'index.html'), 'w') as i:
-      with open(os.path.join(scriptdir, 'index.html.tmpl')) as t:
-        print(t.read().format(site=config["S3"]["site"]), file=i)
-
-  def publish(self):
-    print('publish')
     for f in os.listdir(self.repo):
-      if f in self.exists: continue
       if '.deb.' in f: # interrupted build
         os.remove(os.path.join(self.repo, f))
-      else:
-        print('  uploading', f)
-        self.bucket.upload_file(os.path.join(self.repo, f), f)
+        continue
+
+      if f.endswith('.deb') and f in remote: continue
+
+      print('  uploading', f)
+      self.bucket.upload_file(os.path.join(self.repo, f), f)
 
   def releases(self, arch):
     response = urlopen(f'https://www.zotero.org/download/client/manifests/release/updates-linux-{arch}.json').read()
