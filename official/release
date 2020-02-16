@@ -141,7 +141,7 @@ class Repo:
       self.status[obj.key]['remote'] = True
       deb = os.path.join(self.repo, obj.key)
       if os.path.exists(deb):
-        print('  exists:', self.name())
+        print('  exists:', obj.key)
       else:
         print('  fetch:', obj.key)
         self.bucket.download_file(obj.key, deb)
