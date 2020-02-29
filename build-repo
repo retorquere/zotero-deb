@@ -353,22 +353,14 @@ for release_name in config.release.keys():
       assets=[asset.name for asset in assets],
       archs=config.release[release_name].archs,
       global_menu=global_menu
+    )),
+    jurism = Package(Munch(
+      package='jurism',
+      assets=[asset.name for asset in assets],
+      archs=config.release[release_name].archs,
+      global_menu=global_menu
     ))
   )
-#  packages = Munch(
-#    zotero = Package(Munch(
-#      package='zotero',
-#      assets=[asset.name for asset in assets],
-#      archs=config.release[release_name].archs,
-#      global_menu=global_menu
-#    )),
-#    jurism = Package(Munch(
-#      package='jurism',
-#      assets=[asset.name for asset in assets],
-#      archs=config.release[release_name].archs,
-#      global_menu=global_menu
-#    ))
-#  )
   if args.bump or args.upgrade:
     break
 
