@@ -15,7 +15,7 @@ name = "Zotero"
 releases = "https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json"
 download = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}"
 dependencies = [ "libnss3-dev",]
-version = "5.0.84"
+version = "5.0.85"
 
 [package.jurism]
 repo = "Juris-M/zotero"
