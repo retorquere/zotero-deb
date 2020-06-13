@@ -238,7 +238,6 @@ class Package:
       'x-scheme-handler/zotero',
 
       # Research Information Systems Document
-      'ris',
       'application/x-research-info-systems',
       'application/x-endnote-refer',
       'text/x-research-info-systems',
@@ -246,31 +245,22 @@ class Package:
       'text/ris',
 
       # ISI Common Export Format Document
-      'ciw',
-      'isi',
       'application/x-inst-for-Scientific-info',
 
       # Metadata Object Description Schema Document
-      'mods',
       'application/mods+xml',
 
       # Resource Description Framework Document
-      'rdf',
       'application/rdf+xml',
 
       # BibTeX Document
-      'bib',
-      'bibtex',
       'application/x-bibtex',
       'text/x-bibtex',
 
       # MARC Record
-      'mrc',
-      'marc',
       'application/marc',
 
       # CSL Citation Style
-      'csl',
       'vnd.citationstyles.style+xml',
     ]))
 
