@@ -16,6 +16,7 @@ releases = "https://www.zotero.org/download/client/manifests/release/updates-lin
 download = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}"
 dependencies = [ "libnss3-dev",]
 version = "5.0.87"
+bump = 1
 
 [package.jurism]
 repo = "Juris-M/zotero"
@@ -24,3 +25,4 @@ download = "https://github.com/Juris-M/assets/releases/download/client%2Frelease
 incrementals = "https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux"
 dependencies = [ "libnss3-dev", "default-jre", "libreoffice-java-common",]
 version = "5.0.85m3"
+bump = 1
