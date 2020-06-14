@@ -238,11 +238,10 @@ class Package:
       'x-scheme-handler/zotero',
 
       # Research Information Systems Document
-      'application/x-research-info-systems',
       'application/x-endnote-refer',
-      'text/x-research-info-systems',
-      'text/application/x-research-info-systems',
+      'application/x-research-info-systems',
       'text/ris',
+      'text/x-research-info-systems',
 
       # ISI Common Export Format Document
       'application/x-inst-for-Scientific-info',
@@ -261,7 +260,7 @@ class Package:
       'application/marc',
 
       # CSL Citation Style
-      'vnd.citationstyles.style+xml',
+      'application/vnd.citationstyles.style+xml',
     ]))
 
     with Open(f'build/usr/share/applications/{self.package}.desktop', 'w') as f:
