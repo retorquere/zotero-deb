@@ -56,7 +56,7 @@ sudo apt upgrade
 
 ## Instructions for installation on Crostini-capable Chromebooks
 
-Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki/Installation-on-Chromebooks).
+Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
 
 ## For packagers -- Updating the packages
 
