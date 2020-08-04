@@ -223,20 +223,7 @@ class Package:
       print('lockPref("app.update.enabled", false);', file=f)
       print('lockPref("app.update.auto", false);', file=f)
 
-    desktop = configparser.RawConfigParser()
-    desktop.add_section('Desktop Entry')
-    desktop.optionxform=str
-    desktop.set('Desktop Entry', 'Name', self.name)
-    if self.global_menu:
-      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager (global menu support)')
-    else:
-      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
-    desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.package}/{self.package} --url %u')
-    desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default256.png')
-    desktop.set('Desktop Entry', 'Type', 'Application')
-    desktop.set('Desktop Entry', 'Categories', 'Office;Education;Literature')
-    desktop.set('Desktop Entry', 'StartupNotify', 'true')
-    desktop.set('Desktop Entry', 'MimeType', ';'.join([
+    mimetypes = [
       'x-scheme-handler/zotero',
 
       # Research Information Systems Document
@@ -263,7 +250,22 @@ class Package:
 
       # CSL Citation Style
       'application/vnd.citationstyles.style+xml',
-    ]))
+    ]
+
+    desktop = configparser.RawConfigParser()
+    desktop.add_section('Desktop Entry')
+    desktop.optionxform=str
+    desktop.set('Desktop Entry', 'Name', self.name)
+    if self.global_menu:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager (global menu support)')
+    else:
+      desktop.set('Desktop Entry', 'Comment', 'Open-source reference manager')
+    desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.package}/{self.package} --url %u')
+    desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.package}/chrome/icons/default/default256.png')
+    desktop.set('Desktop Entry', 'Type', 'Application')
+    desktop.set('Desktop Entry', 'Categories', 'Office;Education;Literature')
+    desktop.set('Desktop Entry', 'StartupNotify', 'true')
+    desktop.set('Desktop Entry', 'MimeType', ';'.join(mimetypes))
 
     with Open(f'build/usr/share/applications/{self.package}.desktop', 'w') as f:
       desktop.write(f, space_around_delimiters=False)
@@ -279,9 +281,10 @@ class Package:
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
 
-    with Open('build/DEBIAN/postinst', 'w', stat.S_IRUSR + stat.S_IXUSR + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH) as f:
-      print('#!/bin/bash', file=f)
-      print(f'xdg-mime default {self.package}.desktop x-scheme-handler/zotero', file=f)
+    #with Open('build/DEBIAN/postinst', 'w', stat.S_IRUSR + stat.S_IXUSR + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH) as f:
+    #  print('#!/bin/bash', file=f)
+    #  for mimetype in mimetypes:
+    #    print(f'xdg-mime default {self.package}.desktop {mimetype}', file=f)
 
     os.makedirs('build/usr/local/bin')
     os.symlink(f'/usr/lib/{self.package}/{self.package}', f'build/usr/local/bin/{self.package}')
