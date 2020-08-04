@@ -6,7 +6,7 @@ load_dotenv(find_dotenv())
 import mimetypes
 mimetypes.init()
 
-import os
+import os, stat
 import sys
 import subprocess
 import glob
@@ -59,13 +59,17 @@ def rm_rf(*paths):
     if os.path.isfile(path): os.remove(path)
 
 class Open():
-  def __init__(self, path, mode='r'):
+  def __init__(self, path, mode='r', fmode=None):
     if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(path), exist_ok=True)
+    self.path = path
+    self.mode = fmode
     self.f = open(path, mode)
   def __enter__(self):
     return self.f
   def __exit__(self, exc_type, exc_value, exc_traceback):
     self.f.close()
+    if self.mode is not None:
+      os.chmod(self.path, self.mode)
 
 class Package:
   def __init__(self, package):
@@ -196,8 +200,6 @@ class Package:
       tar.extract(member, f'build/usr/lib/{self.package}')
     tar.close()
 
-    self.patch_global_menu(f'build/usr/lib/{self.package}')
-
     #with Open(f'build/usr/lib/{self.package}/defaults/preferences/prefs.js') as f:
     #  prefs_js = f.read()
     #with Open(f'build/usr/lib/{self.package}/defaults/preferences/prefs.js', 'w') as f:
@@ -277,48 +279,15 @@ class Package:
       print(f'Version: {self.version}', file=f)
       print(f'Description: {self.name} is a free, easy-to-use tool to help you collect, organize, cite, and share research', file=f)
 
+    with Open('build/DEBIAN/postinst', 'w', stat.S_IRUSR + stat.S_IXUSR + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH) as f:
+      print('#!/bin/bash', file=f)
+      print(f'xdg-mime default {self.package}.desktop x-scheme-handler/zotero', file=f)
+
     os.makedirs('build/usr/local/bin')
     os.symlink(f'/usr/lib/{self.package}/{self.package}', f'build/usr/local/bin/{self.package}')
 
     run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
     run(f'dpkg-sig -k {config.build.gpgkey} --sign builder repo/{deb}')
-
-  def patch_global_menu(self, installdir):
-    if not self.global_menu: return
-    print(colored('patching for global menu', COLORS.progress))
-
-    rm_rf(installdir)
-    os.makedirs(installdir)
-    with open(f'{installdir}/{self.package}', 'w') as f:
-      print('#!/bin/bash', file=f)
-      print(f'notify-send "{self.package} with global-menu support has been deprecated. Please uninstall, and install the regular .deb version of {self.package}"', file=f)
-    os.system(f'chmod +x {installdir}/{self.package}')
-    return
-
-    url = urlopen('https://github.com/ripefig/Firefox-ESR-52-Global-Menu/releases/latest').geturl().replace('/tag/', '/download/') + '/libxul.so'
-    urlretrieve(url, f'{installdir}/libxul.so')
-
-    jar = os.path.join(installdir, self.package + '.jar')
-    jar_gm = os.path.join(self.package + '.jar')
-    with zipfile.ZipFile(jar, 'r') as zj:
-      with zipfile.ZipFile(jar_gm, 'w') as zjgm:
-        for item in zj.infolist():
-          data = zj.read(item.filename)
-          if item.filename == 'chrome/skin/default/zotero/zotero.css':
-            data = data.decode('utf-8') + textwrap.dedent('''
-              window[shellshowingmenubar="true"] menubar {
-                display: none !important;
-              }
-
-              window[shellshowingmenubar="true"]
-              toolbar[type="menubar"]:not([customizing="true"]) {
-                min-height: 0 !important;
-                border: 0 !important;
-              }
-            ''')
-          zjgm.writestr(item, data)
-    os.remove(jar)
-    os.rename(jar_gm, jar)
 
 # let's get it started
 
