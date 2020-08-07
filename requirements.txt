@@ -4,3 +4,4 @@ github3.py
 packaging
 python-dotenv
 munch
+lxml

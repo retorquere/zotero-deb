@@ -27,6 +27,9 @@ import zipfile
 from termcolor import colored
 import toml
 
+import lxml.etree as etree
+from lxml.builder import ElementMaker
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
 parser.add_argument('--upgrade', action='store_true')
@@ -223,34 +226,21 @@ class Package:
       print('lockPref("app.update.enabled", false);', file=f)
       print('lockPref("app.update.auto", false);', file=f)
 
-    mimetypes = [
-      'x-scheme-handler/zotero',
-
-      # Research Information Systems Document
-      'application/x-endnote-refer',
-      'application/x-research-info-systems',
-      'text/ris',
-      'text/x-research-info-systems',
-
-      # ISI Common Export Format Document
-      'application/x-inst-for-Scientific-info',
-
-      # Metadata Object Description Schema Document
-      'application/mods+xml',
-
-      # Resource Description Framework Document
-      'application/rdf+xml',
-
-      # BibTeX Document
-      'application/x-bibtex',
-      'text/x-bibtex',
-
-      # MARC Record
-      'application/marc',
-
-      # CSL Citation Style
-      'application/vnd.citationstyles.style+xml',
-    ]
+    def pluralize(d, singular):
+      plural = singular + 's'
+      assert not (singular in d and plural in d)
+      if singular in d:
+        d[plural] = d[singular]
+        del d[singular]
+      if plural in d and type(d[plural]) != list:
+        d[plural] = [ d[plural] ]
+    with open('mimeinfo.toml') as f:
+      mimeinfo = toml.load(f, _dict=Munch)
+      for mi in mimeinfo.values():
+        pluralize(mi, 'mimetype')
+        pluralize(mi, 'extension')
+        if 'extensions' in mi:
+          mi['extensions'] = [ext[1:] if ext[0] == '.' else ext for ext in mi['extensions']]
 
     desktop = configparser.RawConfigParser()
     desktop.add_section('Desktop Entry')
@@ -265,7 +255,32 @@ class Package:
     desktop.set('Desktop Entry', 'Type', 'Application')
     desktop.set('Desktop Entry', 'Categories', 'Office;Education;Literature')
     desktop.set('Desktop Entry', 'StartupNotify', 'true')
-    desktop.set('Desktop Entry', 'MimeType', ';'.join(mimetypes))
+    desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in mimeinfo.values() for mt in mi.mimetypes]))
+
+    E = ElementMaker(
+      namespace='http://www.freedesktop.org/standards/shared-mime-info',
+      nsmap={
+        None : 'http://www.freedesktop.org/standards/shared-mime-info',
+        'xml': 'http://www.w3.org/XML/1998/namespace',
+      }
+    )
+    with Open(f'build/usr/share/mime/packages/{self.package}.xml', 'wb') as f:
+      mimetypes = []
+      MIMETYPE = getattr(E, 'mime-type')
+      MIMEINFO = getattr(E, 'mime-info')
+      for name, mi in mimeinfo.items():
+        if not 'extensions' in mi: continue
+
+        children = [E.comment(name)]
+        for k, v in mi.items():
+          if len(k) == 2:
+            children.append(E.comment(v, **{'{http://www.w3.org/XML/1998/namespace}lang': k}))
+        for ext in mi.get('extensions', []):
+          children.append(E.glob(pattern=f'*.{ext}'))
+        for mt in mi.mimetypes[1:]:
+          children.append(E.alias(type=mt))
+        mimetypes.append(MIMETYPE(*children, type=mi.mimetypes[0]))
+      f.write(etree.tostring(MIMEINFO(*mimetypes), pretty_print=True, xml_declaration=True, encoding='utf-8'))
 
     with Open(f'build/usr/share/applications/{self.package}.desktop', 'w') as f:
       desktop.write(f, space_around_delimiters=False)
