@@ -187,11 +187,14 @@ class Package:
     print(colored(f'\n## building {deb}', COLORS.package))
 
     rm_rf('build', 'client.tar.bz2', deb)
-    url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.base_version)
-    print(colored(f'downloading {url}', COLORS.progress))
-    urlretrieve(url, 'client.tar.bz2')
+    os.makedirs('cache', exist_ok=True)
+    tarball = f'cache/{self.package}-{self.base_version}-{arch}.tar.bz2'
+    if not os.path.isfile(tarball):
+      url = self.binary_url.format(arch={'amd64': 'x86_64', 'i386': 'i686'}[arch], version=self.base_version)
+      print(colored(f'downloading {url}', COLORS.progress))
+      urlretrieve(url, tarball)
 
-    tar = tarfile.open('client.tar.bz2')
+    tar = tarfile.open(tarball)
     members = [member for member in tar.getmembers() if member.isreg()] # skip if the TarInfo is not files
     for member in tar.getmembers():
       if not member.isreg(): continue
@@ -298,7 +301,8 @@ class Package:
 
     #with Open('build/DEBIAN/postinst', 'w', stat.S_IRUSR + stat.S_IXUSR + stat.S_IRGRP + stat.S_IXGRP + stat.S_IROTH + stat.S_IXOTH) as f:
     #  print('#!/bin/bash', file=f)
-    #  for mimetype in mimetypes:
+    #  print('update-mime-database /usr/share/mime', file=f)
+    #  for mimetype in [mt for mi in mimeinfo.values() for mt in mi.mimetypes]:
     #    print(f'xdg-mime default {self.package}.desktop {mimetype}', file=f)
 
     os.makedirs('build/usr/local/bin')
