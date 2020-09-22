@@ -363,21 +363,7 @@ for release_name in config.release.keys():
   run(f'gpg --yes -abs -u {config.build.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
   run(f'gpg --yes -abs -u {config.build.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
 
-  with Open('repo/install.sh', 'w') as f:
-    print(textwrap.dedent(f'''
-      if [ -x "$(command -v curl)" ]; then
-        curl --silent -L https://github.com/{config.build.repo}/releases/download/{release_name}/deb.gpg.key | sudo apt-key add -
-      elif [ -x "$(command -v wget)" ]; then
-        wget -qO- https://github.com/{config.build.repo}/releases/download/{release_name}/deb.gpg.key | sudo apt-key add -
-      else
-        echo "Error: need wget or curl installed." >&2
-        exit 1
-      fi
-
-      cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-      deb https://github.com/{config.build.repo}/releases/download/{release_name}/ ./
-      EOF
-    '''), file=f)
+  shutil.copyfile('install.sh', 'repo/install.sh')
 
   if not args.dry_run:
     for asset in assets:
