@@ -13,9 +13,9 @@ case `uname -m` in
 esac
 
 if [ -x "$(command -v curl)" ]; then
-  curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
+  curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | gpg --no-default-keyring --keyring /etc/apt/trusted.gpg --import -
 elif [ -x "$(command -v wget)" ]; then
-  wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
+  wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | gpg --no-default-keyring --keyring /etc/apt/trusted.gpg --import -
 else
   echo "Error: need wget or curl installed." >&2
   exit 1
