@@ -13,9 +13,11 @@ import sys
 import tarfile
 import tempfile
 import collections
+from munch import Munch
 
 config = configparser.ConfigParser()
 config.read('config.ini')
+config = Munch.fromDict({s:dict(config.items(s)) for s in config.sections()})
 scriptdir = os.path.dirname(os.path.realpath(__file__))
 
 debarch = {
@@ -44,11 +46,11 @@ class Deb:
     self.arch = arch
     self.patch = ''
     try:
-      self.patch = '-' + config['patch'][f'{self.version}-{self.arch}']
+      self.patch = '-' + config.zotero[f'{self.version}-{self.arch}']
     except KeyError:
       pass
     try:
-      self.patch = '-' + config['patch'][self.version]
+      self.patch = '-' + config.zotero[self.version]
     except KeyError:
       pass
 
@@ -69,7 +71,7 @@ class Deb:
 
       deb = os.path.join(repo, self.name())
       run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(build)} {shlex.quote(deb)}')
-      run(f'dpkg-sig -k {shlex.quote(config["maintainer"]["gpgkey"])} --sign builder {shlex.quote(deb)}')
+      run(f'dpkg-sig -k {shlex.quote(config.maintainer.gpgkey)} --sign builder {shlex.quote(deb)}')
 
   def unpack(self, bz2, build):
     # download the bz2 and unpack it
@@ -112,7 +114,7 @@ class Deb:
       print(f'Package: zotero', file=f)
       print(f'Architecture: {debarch[self.arch]}', file=f)
       print(f'Depends: {dependencies}'.strip(), file=f)
-      print(f'Maintainer: {config["maintainer"]["email"]}', file=f)
+      print(f'Maintainer: {config.maintainer.email}', file=f)
       print('Section: Science', file=f)
       print('Priority: optional', file=f)
       print(f'Version: {self.version}{self.patch}', file=f)
@@ -123,7 +125,7 @@ class Repo:
     self.repo = 'repo'
 
     s3 = boto3.resource('s3')
-    self.bucket = s3.Bucket(name=config['S3']['bucket'])
+    self.bucket = s3.Bucket(name=config.S3.bucket)
 
     Path(self.repo).mkdir(parents=True, exist_ok=True)
 
@@ -203,14 +205,14 @@ class Repo:
     print('updating repo')
     with Open(os.path.join(self.repo, 'install.sh'), 'w') as i:
       with open(os.path.join(scriptdir, 'install.sh.tmpl')) as t:
-        print(t.read().format(url=config["S3"]["site"]), file=i)
+        print(t.read().format(url=config.S3.site), file=i)
 
     with Open(os.path.join(self.repo, 'index.html'), 'w') as i:
       with open(os.path.join(scriptdir, 'index.html.tmpl')) as t:
-        print(t.read().format(site=config["S3"]["site"]), file=i)
+        print(t.read().format(site=config.S3.site), file=i)
 
     repo = shlex.quote(self.repo)
-    gpgkey = shlex.quote(config['maintainer']['gpgkey'])
+    gpgkey = shlex.quote(config.maintainer.gpgkey)
     run(f'cd {repo} && gpg --armor --export {gpgkey} > deb.gpg.key')
     run(f'cd {repo} && apt-ftparchive packages . > Packages')
     run(f'cd {repo} && bzip2 -kf Packages')
