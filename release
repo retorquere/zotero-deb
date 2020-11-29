@@ -21,12 +21,16 @@ from lxml.builder import ElementMaker
 import glob
 import github3 as github
 import mimetypes
+import subprocess
+import textwrap
+import struct
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
 parser.add_argument('--reload', action='store_true')
 parser.add_argument('--rebuild', action='store_true')
 args = parser.parse_args()
+if args.reload: args.rebuild = True
 
 #### global data ####
 with open('config.toml') as f:
@@ -98,12 +102,12 @@ class GitHub:
     assets = []
     for asset in self.release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
-        print('deleting obsolete asset:', asset.name)
+        print('  deleting obsolete asset:', asset.name)
         asset.delete()
-      elif asset.name.endswith('.deb'):
+      elif asset.name.endswith('.deb') and not args.rebuild:
         assets.append(asset.name)
       else:
-        print('refreshing asset:', asset.name)
+        print('  refreshing asset:', asset.name)
         asset.delete()
 
     for asset in sorted(glob.glob('repo/*')):
@@ -121,10 +125,11 @@ if Config.hosting and Config.hosting.github:
   Repo = GitHub()
 
 def run(cmd):
-  print(cmd)
-  if os.system(cmd) != 0:
-    print(f'{cmd} exited with an error')
-    sys.exit(1)
+  print('  $', cmd)
+
+  # only high byte
+  pid, exitcode = struct.unpack('bb', struct.pack('H', os.system(cmd)))
+  if exitcode != 0: sys.exit(1)
 
 class Open():
   def __init__(self, path, mode='r', fmode=None):
@@ -141,7 +146,7 @@ class Open():
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
-  if type(response) is bytes: response = response.decode("utf-8")
+  if type(response) is bytes: response = response.decode('utf-8')
   if parse_json:
     return json.loads(response, object_hook=Munch.fromDict)
   else:
@@ -188,20 +193,17 @@ class Deb:
     self.beta = version.startswith('beta-')
 
     # set download URL
-    if client == 'zotero':
-      if version.startswith('beta-'):
-        self.url = f'https://www.zotero.org/download/client/dl?channel=beta&platform=linux-{arch}'
-      else:
-        self.url = f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}'
-    else:
-      if version.startswith('beta-'):
-        self.url = f'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=beta&platform=linux-{arch}'
-      else:
-        self.url = f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2'
+    self.url = {
+      'zotero':       f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}',
+      'zotero-beta':  f'https://www.zotero.org/download/client/dl?channel=beta&platform=linux-{arch}',
+
+      'jurism':       f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2',
+      'jurism-beta':  f'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=beta&platform=linux-{arch}',
+    }[f'{self.client}{"-beta" if self.beta else ""}']
 
   @property
   def deb(self):
-    return f'repo/{self.client}{self.apt.beta}_{self.apt.version}{self.apt.patch}_{self.apt.arch}.deb'
+    return f'repo/{self.client}{self.apt.postfix}_{self.apt.version}{self.apt.patch}_{self.apt.arch}.deb'
 
   @property
   def tarball(self):
@@ -210,22 +212,22 @@ class Deb:
   @property
   def apt(self):
     if self.beta:
-      return Munch(
-        beta='-beta',
+      apt = Munch(
+        postfix='-beta',
         version=self.version.replace('beta-', '').replace('-', '.'),
         patch='',
         arch=ArchMap[self.arch]
       )
     else:
       apt = Munch(
-        beta='',
-        version=version,
+        postfix='',
+        version=self.version,
         patch='',
         arch=ArchMap[self.arch]
       )
       if 'patch' in Config[self.client] and 'version' in Config[self.client].patch:
         apt.patch = '-' + str(Config[self.client].patch[self.version])
-      return apt
+    return apt
     
   def build(self):
     if not 'patch' in Config[client]: Config[client].patch = Munch()
@@ -233,18 +235,24 @@ class Deb:
     print(f'\n## building {self.deb}')
     self.rebuilt = True
 
-    if not args.rebuild and not args.reload and Repo and Repo.get(self.deb):
+    if args.rebuild:
+      print('  forced rebuild')
+    elif os.path.exists(self.deb):
+      print(f'  {self.deb} already exists')
+      return
+    elif Repo and Repo.get(self.deb):
+      print(f'  {self.deb} downloaded')
       return
 
     if not os.path.exists(self.tarball) or args.reload:
       os.makedirs(os.path.dirname(self.tarball), exist_ok=True)
-      print('downloading', self.tarball)
+      print('  downloading', self.tarball)
       urlretrieve(self.url, self.tarball)
 
     if os.path.exists('build'): shutil.rmtree('build')
     os.makedirs('build')
   
-    print(f'   unpacking {self.tarball}')
+    print(f'  unpacking {self.tarball}')
     tar = tarfile.open(self.tarball)
     for member in tar.getmembers():
       if not member.isreg(): continue
@@ -253,11 +261,11 @@ class Deb:
       if member.name in ['zotero.desktop', 'jurism.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
         continue
   
-      tar.extract(member, f'build/usr/lib/{self.client}{self.apt.beta}')
+      tar.extract(member, f'build/usr/lib/{self.client}{self.apt.postfix}')
     tar.close()
   
-    print(f'   disable auto-update')
-    with Open(f'build/usr/lib/{self.client}{self.apt.beta}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{self.client}{self.apt.beta}/mozilla.cfg', 'a') as cfg:
+    print(f'  disable auto-update')
+    with Open(f'build/usr/lib/{self.client}{self.apt.postfix}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{self.client}{self.apt.postfix}/mozilla.cfg', 'a') as cfg:
       # enable mozilla.cfg
       if ls.tell() != 0: print('', file=ls)
       print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=ls)
@@ -271,23 +279,23 @@ class Deb:
       print('lockPref("app.update.enabled", false);', file=cfg)
       print('lockPref("app.update.auto", false);', file=cfg)
   
-    print(f'   write launcher entry')
-    with Open(f'build/usr/share/applications/{self.client}{self.apt.beta}.desktop', 'w') as f:
+    print(f'  write launcher entry')
+    with Open(f'build/usr/share/applications/{self.client}{self.apt.postfix}.desktop', 'w') as f:
       desktop = configparser.RawConfigParser()
       desktop.add_section('Desktop Entry')
       desktop.optionxform=str
-      desktop.set('Desktop Entry', 'Name', Config[client].name + self.apt.beta.replace('-', ' '))
+      desktop.set('Desktop Entry', 'Name', Config[client].name + self.apt.postfix.replace('-', ' '))
       desktop.set('Desktop Entry', 'Comment', Config[client].comment)
-      desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.client}{self.apt.beta}/{self.client} --url %u')
-      desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.client}{self.apt.beta}/chrome/icons/default/default256.png')
+      desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.client}{self.apt.postfix}/{self.client} --url %u')
+      desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.client}{self.apt.postfix}/chrome/icons/default/default256.png')
       desktop.set('Desktop Entry', 'Type', 'Application')
       desktop.set('Desktop Entry', 'Categories', Config[client].categories)
       desktop.set('Desktop Entry', 'StartupNotify', 'true')
       desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in MimeInfo.values() for mt in mi.mimetypes]))
       desktop.write(f, space_around_delimiters=False)
 
-    print(f'   update mime info')
-    with Open(f'build/usr/share/mime/packages/{self.client}{self.apt.beta}.xml', 'wb') as f:
+    print(f'  update mime info')
+    with Open(f'build/usr/share/mime/packages/{self.client}{self.apt.postfix}.xml', 'wb') as f:
       E = ElementMaker(
         namespace='http://www.freedesktop.org/standards/shared-mime-info',
         nsmap={
@@ -312,10 +320,10 @@ class Deb:
         _mimetypes.append(MIMETYPE(*children, type=mi.mimetypes[0]))
       f.write(etree.tostring(MIMEINFO(*_mimetypes), pretty_print=True, xml_declaration=True, encoding='utf-8'))
 
-    print(f'   write build control file')
+    print(f'  write build control file')
     with Open('build/DEBIAN/control', 'w') as f:
       dependencies = ', '.join(sorted(list(set(Config[client].dependencies + ESR))))
-      print(f'Package: {self.client}{self.apt.beta}', file=f)
+      print(f'Package: {self.client}{self.apt.postfix}', file=f)
       print(f'Architecture: {self.apt.arch}', file=f)
       print(f'Depends: {dependencies}'.strip(), file=f)
       print(f'Maintainer: {Config.maintainer.email}', file=f)
@@ -325,7 +333,7 @@ class Deb:
       print(f'Description: {Config[self.client].description}', file=f)
 
     os.makedirs('build/usr/local/bin')
-    os.symlink(f'/usr/lib/{self.client}{self.apt.beta}/{self.client}', f'build/usr/local/bin/{self.client}{self.apt.beta}')
+    os.symlink(f'/usr/lib/{self.client}{self.apt.postfix}/{self.client}', f'build/usr/local/bin/{self.client}{self.apt.postfix}')
 
     os.makedirs('repo', exist_ok=True)
     run(f'fakeroot dpkg-deb --build -Zgzip build {self.deb}')
@@ -340,7 +348,7 @@ for deb in glob.glob('repo/*.deb.*'):
 # gather .debs to build
 for client in Clients:
   if client == 'zotero':
-    versions = [release.version for release in load("https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json", parse_json=True)]
+    versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
   else:
     versions = [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']
   versions.append(f'beta-{date.today().isoformat()}')
@@ -372,10 +380,7 @@ if args.bump:
 # build and download as needed
 
 for deb in Deb.all():
-  if os.path.exists(deb.deb): continue
-  if not os.path.exists(deb.tarball) or args.rebuild:
-    os.makedirs(os.path.dirname(deb.tarball), exist_ok=True)
-    deb.build()
+  deb.build()
 
 # cleanup leftover .debs
 for deb in glob.glob('repo/*.deb'):
@@ -398,7 +403,6 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
   shutil.copyfile('install.sh', 'repo/install.sh')
 
-if Repo:
-  Repo.publish()
+  if Repo: Repo.publish()
 else:
   print(f'\n## not publishing repo')
