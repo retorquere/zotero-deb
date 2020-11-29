@@ -86,16 +86,19 @@ class GitHub:
     gh = github.login(token=os.getenv('GITHUB_TOKEN'))
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
+    self.assets = self.release.assets()
 
   def unchanged(self):
-    published = set([asset.name for asset in self.release.assets() if asset.name.endswith('.deb')])
+    published = set([asset.name for asset in self.assets if asset.name.endswith('.deb')])
     available = set([deb.deb for deb in Deb.all()])
     return published == available
 
   def get(self, name):
     try:
-      for asset in self.release.assets():
+      for asset in self.assets:
+        print('get', asset.name, 'for', os.path.basename(name), 'to', name, '?')
         if asset.name == os.path.basename(name):
+          print('found', name)
           urlretrieve(asset.download_url, name)
           return True
     except:
@@ -182,7 +185,7 @@ def run(cmd):
   print('  $', cmd)
 
   try:
-   print(textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    ')
+   print(textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    '))
   except subprocess.CalledProcessError as e:
     print(textwrap.indent(e.output.decode('utf-8'), '    '))
     sys.exit(1)
