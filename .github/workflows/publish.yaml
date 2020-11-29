@@ -25,7 +25,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: install signing key
-      run: gpg --batch --passphrase "${{ secret.PASSPHRASE }}" --decrypt dpkg.priv.key.gpg | gpg --import
+      run: gpg --batch --passphrase "${{ secrets.PASSPHRASE }}" --decrypt dpkg.priv.key.gpg | gpg --import
     - name: install build requirements
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
