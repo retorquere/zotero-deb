@@ -3,6 +3,7 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+from packaging import version as vcomp
 import boto3
 from munch import Munch
 from urllib.request import urlopen, urlretrieve
@@ -195,6 +196,34 @@ def load(url,parse_json=False):
   else:
     return response
 
+class Version:
+  def __init__(self, deb, *args):
+    self.deb  = deb
+  def __lt__(self, other):
+    if self.deb.client == other.deb.client:
+      return vcomp.parse(self.deb.version.replace('m', '.')) < vcomp.parse(other.deb.version.replace('m', '.'))
+    else:
+      return self.deb.client < other.deb.client
+  def __gt__(self, other):
+    if self.deb.client == other.deb.client:
+      return vcomp.parse(self.deb.version.replace('m', '.')) > vcomp.parse(other.deb.version.replace('m', '.'))
+    else:
+      return self.deb.client > other.deb.client
+  def __eq__(self, other):
+    return self.deb.client == other.deb.client and vcomp.parse(self.deb.version.replace('m', '.')) == vcomp.parse(other.deb.version.replace('m', '.'))
+  def __le__(self, other):
+    if self.deb.client == other.deb.client:
+      return vcomp.parse(self.deb.version.replace('m', '.')) <= vcomp.parse(other.deb.version.replace('m', '.'))
+    else:
+      return self.deb.client <= other.deb.client
+  def __ge__(self, other):
+    if self.deb.client == other.deb.client:
+      return vcomp.parse(self.deb.version.replace('m', '.')) >= vcomp.parse(other.deb.version.replace('m', '.'))
+    else:
+      return self.deb.client >= other.deb.client
+  def __ne__(self, other):
+    return self.deb.client != other.deb.client and vcomp.parse(self.deb.version.replace('m', '.')) != vcomp.parse(other.deb.version.replace('m', '.'))
+
 class Deb:
   __debs = []
 
@@ -215,7 +244,7 @@ class Deb:
     #      'beta:', deb.beta
     #    )
 
-    return sorted([deb for deb in cls.__debs if equal(deb)], key=lambda d: f'{d.client}-{d.version}')
+    return sorted([deb for deb in cls.__debs if equal(deb)], key=Version)
 
   @classmethod
   def all(cls):
