@@ -96,7 +96,6 @@ class GitHub:
   def get(self, name):
     asset = self.assets.get(os.path.basename(name))
     if asset:
-      print('found', name, 'in repo')
       os.makedirs(os.path.dirname(name), exist_ok=True)
       urlretrieve(asset.download_url, name)
       return True
