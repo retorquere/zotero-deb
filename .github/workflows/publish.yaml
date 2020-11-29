@@ -44,7 +44,7 @@ jobs:
     - if: github.event.inputs.rebuild
       id: rebuild
       run: echo ::set-output name=rebuild::--rebuild
-    - name: Cache downloads
+    - name: Cache built debs for next round
       id: cache
       uses: actions/cache@v2
       env:
