@@ -44,7 +44,7 @@ jobs:
 #        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
 #        restore-keys: |
 #          ${{ runner.os }}-build-${{ env.cache-name }}-
-    - name: Force rebuild on manual dipatch
+    - name: Force rebuild on manual dispatch
       if: github.event_name == 'workflow_dispatch'
       run: echo "REBUILD=true" >> $GITHUB_ENV
     - name: refresh repo
