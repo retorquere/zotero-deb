@@ -38,5 +38,18 @@ jobs:
     - if: github.event.inputs.rebuild
       id: rebuild
       run: echo ::set-output name=rebuild::--rebuild
+    - name: Cache downloads
+      id: cache
+      uses: actions/cache@v2
+      env:
+        cache-name: v1
+      with:
+        path: |
+          ./zotero
+          ./jurism
+          ./repo
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: refresh repo
       run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}
