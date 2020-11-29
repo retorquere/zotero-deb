@@ -31,7 +31,7 @@ parser.add_argument('--bump', action='store_true')
 parser.add_argument('--reload', action='store_true')
 parser.add_argument('--rebuild', action='store_true')
 args = parser.parse_args()
-if args.reload: args.rebuild = True
+if args.reload or os.environ.get('REBUILD', '').strip() != '': args.rebuild = True
 
 #### global data ####
 with open('config.toml') as f:

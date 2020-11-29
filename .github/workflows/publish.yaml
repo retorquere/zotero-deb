@@ -8,9 +8,7 @@ on:
   workflow_dispatch:
     inputs:
       rebuild:
-        description: Enter 'true' to rebuild packages
-      reload:
-        description: Enter 'true' to reload tarballs
+        description: rebuild repo
 
 jobs:
   release:
@@ -38,12 +36,6 @@ jobs:
         sudo apt-get update
         sudo apt-get install dpkg-sig fakeroot
 
-    - if: github.event.inputs.reload
-      id: reload
-      run: echo ::set-output name=reload::--reload
-    - if: github.event.inputs.rebuild
-      id: rebuild
-      run: echo ::set-output name=rebuild::--rebuild
     - name: Cache built debs for next round
       id: cache
       uses: actions/cache@v2
@@ -59,6 +51,7 @@ jobs:
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        REBUILD: ${{ github.event.inputs.rebuild }}
       run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}
     - run: echo rebuild=${{ steps.repo.ouputs.rebuild }}
     - name: publish repo
