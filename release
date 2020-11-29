@@ -325,7 +325,7 @@ class Deb:
       print(f'  {self.deb} already exists')
       return
     elif Repo and Repo.get(self.deb):
-      print(f'  {self.deb} downloaded')
+      print(f'  {self.deb} re-fetched')
       return
 
     if not os.path.exists(self.tarball) or args.reload:
