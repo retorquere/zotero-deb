@@ -508,6 +508,7 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   if type(Repo) == GitHub:
     print('leaving publish to next step')
     print('::set-output name=rebuilt::true')
+    print('::set-output name=release::{Config.hosting.github.release}')
   elif type(Repo) == S3:
     Repo.publish()
   else:

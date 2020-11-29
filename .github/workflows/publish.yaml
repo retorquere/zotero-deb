@@ -57,36 +57,13 @@ jobs:
         echo url=${{ steps.repo.outputs.url }}
 
     - name: publish repo
-      continue-on-error: true
       id: publish
       if: steps.repo.outputs.rebuilt == 'true'
-      uses: svenstaro/upload-release-action@v2
+      uses: AButler/upload-release-assets@v2.0
       with:
-        tag: apt-get-test
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file_glob: true
-        overwrite: true
-        file: repo/*
-    - name: publish repo (2nd attempt)
-      continue-on-error: true
-      if: steps.repo.outputs.rebuilt == 'true' && steps.publish.outcome == 'failure'
-      id: retry
-      uses: svenstaro/upload-release-action@v2
-      with:
-        tag: apt-get-test
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file_glob: true
-        overwrite: true
-        file: repo/*
-    - name: publish repo (final attempt)
-      if: steps.repo.outputs.rebuilt == 'true' && steps.retry.outcome == 'failure'
-      uses: svenstaro/upload-release-action@v2
-      with:
-        tag: apt-get-test
-        repo_token: ${{ secrets.GITHUB_TOKEN }}
-        file_glob: true
-        overwrite: true
-        file: repo/*
+        release-tag: ${{ steps.repo.outputs.release }}
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        files: repo/*
     - name: Test-install
       if: steps.repo.outputs.rebuilt == 'true'
       run: |
