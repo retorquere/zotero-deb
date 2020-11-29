@@ -145,7 +145,7 @@ class S3:
     print(f'\n## publishing repo to S3 bucket')
     published = []
     for asset in self.bucket.objects.all():
-      if not os.path.exists(f'repo/asset.key}'):
+      if not os.path.exists(f'repo/{asset.key}'):
         print('  deleting obsolete asset:', asset.key)
         self.bucket.delete_key(asset)
       elif asset.key.endswith('.deb') and not args.rebuild:
@@ -160,11 +160,11 @@ class S3:
       print(f'  uploading {asset} ({content_type})')
       self.bucket.upload_file(asset, os.path.basename(asset))
 
-if Config.hosting and Config.hosting.S3:
-  print('\n ## publish target: S3 bucket')
+if 'hosting' in Config and 'S3' in Config.hosting:
+  print('\n## publish target: S3 bucket')
   Repo = S3()
-elif Config.hosting and Config.hosting.github:
-  print('\n ## publish target: Github release')
+elif 'hosting' in Config and 'github' in Config.hosting:
+  print('\n## publish target: Github release')
   Repo = GitHub()
 
 def run(cmd):
