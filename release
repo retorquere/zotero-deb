@@ -444,6 +444,11 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
   shutil.copyfile('install.sh', 'repo/install.sh')
 
-  if Repo: Repo.publish()
+  if type(Repo) == GitHub:
+    print('::set-output name=rebuild::true')
+  elif type(Repo) == S3:
+    Repo.publish()
+  else:
+    print(f'\n## not publishing repo')
 else:
   print(f'\n## not publishing repo')
