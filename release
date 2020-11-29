@@ -94,7 +94,6 @@ class GitHub:
     return False
 
   def publish(self):
-    cls.__prep__()
     print(f'\n## publishing repo to github')
     assets = []
     for asset in self.release.assets():
@@ -113,7 +112,7 @@ class GitHub:
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
       print(f'  uploading {asset} ({content_type})')
       with open(asset, 'rb') as f:
-        release.upload_asset(
+        self.release.upload_asset(
           asset=f,
           name=os.path.basename(asset),
           content_type=content_type
