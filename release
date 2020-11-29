@@ -490,6 +490,7 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   shutil.copyfile('install.sh', 'repo/install.sh')
 
   if type(Repo) == GitHub:
+    print(':set-output name=rebuild:true')
     print('::set-output name=rebuild::true')
   elif type(Repo) == S3:
     Repo.publish()

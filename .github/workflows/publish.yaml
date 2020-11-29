@@ -61,10 +61,11 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}
     - name: publish repo
+      if: steps.repo.ouputs.rebuild == 'true'
       uses: svenstaro/upload-release-action@v2
       with:
         tag: apt-get-test
         repo_token: ${{ secrets.GITHUB_TOKEN }}
         file_glob: true
-        overwrite: ${{ steps.repo.ouputs.rebuild }}
+        overwrite: true
         file: repo/*
