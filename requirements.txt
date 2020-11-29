@@ -5,3 +5,4 @@ packaging
 python-dotenv
 munch
 lxml
+boto3
