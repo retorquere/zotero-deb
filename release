@@ -87,6 +87,11 @@ class GitHub:
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
 
+  def unchanged(self):
+    published = set([asset.name for asset in self.release.assets() if asset.name.endswith('.deb')])
+    available = set([deb.deb for deb in Deb.all()])
+    return published == available
+
   def get(self, name):
     try:
       for asset in self.release.assets():
@@ -127,6 +132,11 @@ class S3:
   def __init__(self):
     self.s3 = boto3.resource('s3')
     self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
+
+  def unchanged(self):
+    published = set([asset.key for asset in self.bucket.objects.all() if asset.key.endswith('.deb')])
+    available = set([deb.deb for deb in Deb.all()])
+    return published == available
 
   def get(self, name):
     if not name.endswith('.deb'): return False
@@ -450,6 +460,10 @@ if args.bump:
     toml.dump(Config, f)
 
 # build and download as needed
+
+if not args.rebuild and Repo and Repo.unchanged():
+  print('\n## repo up to date')
+  sys.exit()
 
 for deb in Deb.all():
   deb.build()
