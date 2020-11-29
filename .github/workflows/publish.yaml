@@ -52,9 +52,9 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./release
-    - run: echo rebuild=${{ steps.repo.ouputs.rebuild }}
+    - run: echo rebuilt=${{ steps.repo.outputs.rebuilt }}
     - name: publish repo
-      if: steps.repo.ouputs.rebuild == 'true'
+      if: steps.repo.outputs.rebuilt == 'true'
       uses: svenstaro/upload-release-action@v2
       with:
         tag: apt-get-test
