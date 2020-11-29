@@ -86,24 +86,19 @@ class GitHub:
     gh = github.login(token=os.getenv('GITHUB_TOKEN'))
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
-    self.assets = self.release.assets()
+    self.assets = { asset.name: asset for asset in self.release.assets() }
 
   def unchanged(self):
-    published = set([asset.name for asset in self.assets if asset.name.endswith('.deb')])
-    available = set([deb.deb for deb in Deb.all()])
+    published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
+    available = set([os.path.basename(deb.deb) for deb in Deb.all()])
     return published == available
 
   def get(self, name):
-    try:
-      for asset in self.assets:
-        print('get', asset.name, 'for', os.path.basename(name), 'to', name, '?')
-        if asset.name == os.path.basename(name):
-          print('found', name)
-          urlretrieve(asset.download_url, name)
-          return True
-    except:
-      print('  error: could not get {os.path.basename(name)}')
-      if os.path.exists(name): os.remove(name)
+    asset = self.assets.get(os.path.basename(name))
+    if asset:
+      print('found', name, 'in repo')
+      urlretrieve(asset.download_url, name)
+      return True
     return False
 
   def publish(self):
@@ -138,7 +133,7 @@ class S3:
 
   def unchanged(self):
     published = set([asset.key for asset in self.bucket.objects.all() if asset.key.endswith('.deb')])
-    available = set([deb.deb for deb in Deb.all()])
+    available = set([os.path.basename(deb.deb) for deb in Deb.all()])
     return published == available
 
   def get(self, name):
