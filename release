@@ -432,7 +432,15 @@ for client in Clients:
   if client == 'zotero':
     versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
   else:
-    versions = [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']
+    versions = []
+    # jurism puts out new version in a frenzied burst -- only keep the last m-version
+    for version in [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']:
+      if len(versions) == 0:
+        versions.append(version)
+      elif version.split('m')[0] == versions[-1].split('m')[0]:
+        versions[-1] = version
+      else:
+        versions.append)version)
   versions.append(f'beta-{date.today().isoformat()}')
 
   for version in versions:
