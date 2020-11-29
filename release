@@ -24,7 +24,7 @@ import github3 as github
 import mimetypes
 import subprocess
 import textwrap
-import struct
+from string import Template
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
@@ -87,6 +87,7 @@ class GitHub:
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
     self.assets = { asset.name: asset for asset in self.release.assets() }
+    self.url = f'https://github.com/{Config.hosting.github.repo}/releases/tag/{Config.hosting.github.release}'
 
   def unchanged(self):
     published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
@@ -130,6 +131,7 @@ class S3:
   def __init__(self):
     self.s3 = boto3.resource('s3')
     self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
+    self.url = f'https://{Config.hosting.S3.bucket}.s3.{Config.hosting.S3.region}.amazonaws.com'
 
   def unchanged(self):
     published = set([asset.key for asset in self.bucket.objects.all() if asset.key.endswith('.deb')])
@@ -495,7 +497,12 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   run(f'cd repo && apt-ftparchive release . > Release')
   run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
   run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
-  shutil.copyfile('install.sh', 'repo/install.sh')
+
+  if Repo:
+    with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
+      install.write(Template(tmpl.read()).substitute(url=Repo.url))
+  else:
+    os.remove('repo/install.sh')
 
   if type(Repo) == GitHub:
     print('leaving publish to next step')
