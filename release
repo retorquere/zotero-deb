@@ -440,7 +440,7 @@ for client in Clients:
       elif version.split('m')[0] == versions[-1].split('m')[0]:
         versions[-1] = version
       else:
-        versions.append)version)
+        versions.append(version)
   versions.append(f'beta-{date.today().isoformat()}')
 
   for version in versions:
