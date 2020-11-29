@@ -26,6 +26,8 @@ import mimetypes
 import subprocess
 import textwrap
 from string import Template
+from pydpkg import Dpkg
+from arpy import ArchiveFormatError
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
@@ -334,14 +336,22 @@ class Deb:
     print(f'\n## building {self.deb}')
     self.rebuilt = True
 
+    exists = None
     if args.rebuild:
       print('  forced rebuild')
     elif os.path.exists(self.deb):
-      print(f'  {self.deb} already exists')
-      return
+      exists = f'  {self.deb} already exists'
     elif Repo and Repo.get(self.deb):
-      print(f'  {self.deb} re-fetched')
-      return
+      exists = f'  {self.deb} re-fetched'
+    if exists:
+      try:
+        # for some bloody reason Github frequently hands us a JSON description of the asset rather than the asset itself
+        Dpkg(deb).headers
+        print(exists)
+        return
+      except ArchiveFormatError:
+        print(exists + ', but is corrupted')
+        if os.path.exists(self.deb): os.remove(self.deb)
 
     if not os.path.exists(self.tarball) or args.reload:
       os.makedirs(os.path.dirname(self.tarball), exist_ok=True)

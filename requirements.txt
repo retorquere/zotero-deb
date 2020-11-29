@@ -5,3 +5,4 @@ python-dotenv
 munch
 lxml
 boto3
+pydpkg
