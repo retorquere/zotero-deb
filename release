@@ -3,6 +3,7 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+import shlex
 from packaging import version as vcomp
 import boto3
 from munch import Munch
@@ -83,11 +84,17 @@ for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
 
 class GitHub:
   def __init__(self):
+    self.url = f'https://github.com/{Config.hosting.github.repo}/releases/tag/{Config.hosting.github.release}'
     gh = github.login(token=os.getenv('GITHUB_TOKEN'))
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
+
     self.assets = { asset.name: asset for asset in self.release.assets() }
-    self.url = f'https://github.com/{Config.hosting.github.repo}/releases/tag/{Config.hosting.github.release}'
+    self.rebuild = 'Packages' not in self.assets # deleting 'Packages' forces re-uploading of everything
+    if self.rebuild:
+      for asset in self.assets.values():
+        asset.delete()
+      self.assets = {}
 
   def unchanged(self):
     published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
@@ -98,7 +105,8 @@ class GitHub:
     asset = self.assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
-      urlretrieve(asset.download_url, name)
+      #urlretrieve(asset.download_url, name)
+      run(f'curl -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
       return True
     return False
 
@@ -129,12 +137,19 @@ class GitHub:
 
 class S3:
   def __init__(self):
+    self.url = f'https://{Config.hosting.S3.bucket}.s3.{Config.hosting.S3.region}.amazonaws.com'
     self.s3 = boto3.resource('s3')
     self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
-    self.url = f'https://{Config.hosting.S3.bucket}.s3.{Config.hosting.S3.region}.amazonaws.com'
+    self.assets = { asset.key: asset for asset in self.bucket.objects.all() }
+
+    self.rebuild = 'Packages' not in self.assets # deleting 'Packages' forces re-uploading of everything
+    if self.rebuild:
+      for asset in self.assets.values():
+        self.bucket.delete_key(asset)
+      self.assets = {}
 
   def unchanged(self):
-    published = set([asset.key for asset in self.bucket.objects.all() if asset.key.endswith('.deb')])
+    published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
     available = set([os.path.basename(deb.deb) for deb in Deb.all()])
     return published == available
 
@@ -474,6 +489,7 @@ if args.bump:
 if not args.rebuild and Repo and Repo.unchanged():
   print('\n## repo up to date')
   sys.exit()
+if Repo and Repo.rebuild: args.rebuild = True
 
 for deb in Deb.all():
   deb.build()

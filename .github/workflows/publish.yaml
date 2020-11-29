@@ -44,9 +44,6 @@ jobs:
 #        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
 #        restore-keys: |
 #          ${{ runner.os }}-build-${{ env.cache-name }}-
-    - name: Force rebuild on manual dispatch
-      if: github.event_name == 'workflow_dispatch'
-      run: echo "REBUILD=true" >> $GITHUB_ENV
     - name: refresh repo
       id: repo
       env:
@@ -57,13 +54,16 @@ jobs:
         echo url=${{ steps.repo.outputs.url }}
 
     - name: publish repo
-      id: publish
       if: steps.repo.outputs.rebuilt == 'true'
-      uses: AButler/upload-release-assets@v2.0
+      uses: xresloader/upload-to-github-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        release-tag: ${{ steps.repo.outputs.release }}
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        files: repo/*
+        file: repo/*
+        overwrite: true
+        draft: false
+        verbose: true
+        tag_name: ${{ steps.repo.outputs.release }}
     - name: Test-install
       if: steps.repo.outputs.rebuilt == 'true'
       run: |
