@@ -6,9 +6,6 @@ on:
   push:
     branches: [ master, auto ]
   workflow_dispatch:
-    inputs:
-      rebuild:
-        description: rebuild repo
 
 jobs:
   release:
@@ -36,22 +33,24 @@ jobs:
         sudo apt-get update
         sudo apt-get install dpkg-sig fakeroot
 
-    - name: Cache built debs for next round
-      id: cache
-      uses: actions/cache@v2
-      env:
-        cache-name: v2
-      with:
-        path: |
-          ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
+#    - name: Cache built debs for next round
+#      id: cache
+#      uses: actions/cache@v2
+#      env:
+#        cache-name: v2
+#      with:
+#        path: |
+#          ./repo
+#        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
+#        restore-keys: |
+#          ${{ runner.os }}-build-${{ env.cache-name }}-
+    - name: Force rebuild on manual dipatch
+      if: github.event_name == 'workflow_dispatch'
+      run: echo "REBUILD=true" >> $GITHUB_ENV
     - name: refresh repo
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        REBUILD: ${{ github.event.inputs.rebuild }}
       run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}
     - run: echo rebuild=${{ steps.repo.ouputs.rebuild }}
     - name: publish repo
