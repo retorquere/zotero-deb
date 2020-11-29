@@ -1,6 +1,8 @@
 name: Release Zotero/Juris-M .deb packages
 
 on:
+  schedule:
+    - cron: 0 0 * * *
   push:
     branches: [ master, auto ]
   workflow_dispatch:
