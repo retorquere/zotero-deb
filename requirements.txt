@@ -1,5 +1,4 @@
 toml
-termcolor
 github3.py
 packaging
 python-dotenv

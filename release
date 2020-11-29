@@ -86,32 +86,32 @@ class GitHub:
     repo = gh.repository(*Config.hosting.github.repo.split('/'))
     self.release = repo.release_from_tag(Config.hosting.github.release)
 
-  @property
-  def assets(self):
-    return self.release.assets()
-
   def get(self, name):
-    for asset in self.release.assets():
-      if asset.name == os.path.basename(name):
-        urlretrieve(asset.download_url, name)
-        return True
+    try:
+      for asset in self.release.assets():
+        if asset.name == os.path.basename(name):
+          urlretrieve(asset.download_url, name)
+          return True
+    except:
+      print('  error: could not get {os.path.basename(name)}')
+      if os.path.exists(name): os.remove(name)
     return False
 
   def publish(self):
     print(f'\n## publishing repo to github')
-    assets = []
+    published = []
     for asset in self.release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
         print('  deleting obsolete asset:', asset.name)
         asset.delete()
       elif asset.name.endswith('.deb') and not args.rebuild:
-        assets.append(asset.name)
+        published.append(asset.name)
       else:
         print('  refreshing asset:', asset.name)
         asset.delete()
 
     for asset in sorted(glob.glob('repo/*')):
-      if os.path.basename(asset) in assets: continue
+      if os.path.basename(asset) in published: continue
 
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
       print(f'  uploading {asset} ({content_type})')
@@ -121,13 +121,54 @@ class GitHub:
           name=os.path.basename(asset),
           content_type=content_type
         )
-if Config.hosting and Config.hosting.github:
+
+class S3:
+  def __init__(self):
+    self.s3 = boto3.resource('s3')
+    self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
+
+  def get(self, name):
+    if not name.endswith('.deb') return False
+
+    try:
+      for asset in self.bucket.objects.all():
+        if os.path.basename(asset.key) == os.path.basename(name):
+          self.bucket.download_file(os.path.basename(name), name)
+          return True
+    except:
+      print('  error: could not get {os.path.basename(name)}')
+      if os.path.exists(name): os.remove(name)
+
+    return False
+
+  def publish(self):
+    print(f'\n## publishing repo to S3 bucket')
+    published = []
+    for asset in self.bucket.objects.all():
+      if not os.path.exists(f'repo/asset.key}'):
+        print('  deleting obsolete asset:', asset.key)
+        self.bucket.delete_key(asset)
+      elif asset.key.endswith('.deb') and not args.rebuild:
+        published.append(asset.key)
+      else:
+        print('  refreshing asset:', asset.key)
+
+    for asset in sorted(glob.glob('repo/*')):
+      if os.path.basename(asset) in published: continue
+
+      content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
+      print(f'  uploading {asset} ({content_type})')
+      self.bucket.upload_file(asset, os.path.basename(asset))
+
+if Config.hosting and Config.hosting.S3:
+  Repo = S3()
+elif Config.hosting and Config.hosting.github:
   Repo = GitHub()
 
 def run(cmd):
   print('  $', cmd)
 
-  # only high byte
+  # high byte has the exit code
   pid, exitcode = struct.unpack('bb', struct.pack('H', os.system(cmd)))
   if exitcode != 0: sys.exit(1)
 
