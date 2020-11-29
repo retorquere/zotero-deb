@@ -182,9 +182,9 @@ def run(cmd):
   print('  $', cmd)
 
   try:
-   print(subprocess.check_output(cmd, shell=True))
+   print(subprocess.check_output(cmd, shell=True).decode('utf-8'))
   except subprocess.CalledProcessError as e:
-    print(e)
+    print(e.output.decode('utf-8'))
     sys.exit(1)
 
 class Open():
