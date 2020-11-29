@@ -52,8 +52,13 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./release
-    - run: echo rebuilt=${{ steps.repo.outputs.rebuilt }}
+    - run: |
+        echo rebuilt=${{ steps.repo.outputs.rebuilt }}
+        echo url=${{ steps.repo.outputs.url }}
+
     - name: publish repo
+      continue-on-error: true
+      id: publish
       if: steps.repo.outputs.rebuilt == 'true'
       uses: svenstaro/upload-release-action@v2
       with:
@@ -62,3 +67,28 @@ jobs:
         file_glob: true
         overwrite: true
         file: repo/*
+    - name: publish repo (2nd attempt)
+      continue-on-error: true
+      if: steps.repo.outputs.rebuilt == 'true' && steps.publish.outcome == 'failure'
+      id: retry
+      uses: svenstaro/upload-release-action@v2
+      with:
+        tag: apt-get-test
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file_glob: true
+        overwrite: true
+        file: repo/*
+    - name: publish repo (final attempt)
+      if: steps.repo.outputs.rebuilt == 'true' && steps.retry.outcome == 'failure'
+      uses: svenstaro/upload-release-action@v2
+      with:
+        tag: apt-get-test
+        repo_token: ${{ secrets.GITHUB_TOKEN }}
+        file_glob: true
+        overwrite: true
+        file: repo/*
+    - name: Test-install
+      if: steps.repo.outputs.rebuilt == 'true'
+      run: |
+        curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
+        sudo apt install zotero zotero-beta jurism jurism-beta

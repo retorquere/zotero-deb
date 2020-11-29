@@ -504,6 +504,7 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   else:
     os.remove('repo/install.sh')
 
+  if Repo: print(f'::set-output name=url::{Repo.url}')
   if type(Repo) == GitHub:
     print('leaving publish to next step')
     print('::set-output name=rebuilt::true')
