@@ -1,0 +1,45 @@
+# This workflow will install Python dependencies, run tests and lint with a single version of Python
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Python application
+
+on:
+  push:
+    branches: [ master, auto ]
+  workflow_dispatch:
+    inputs:
+      rebuild:
+        description: Enter 'true' to rebuild packages
+      reload:
+        description: Enter 'true' to reload tarballs
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.8
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+    - name: install signing key
+      run: gpg --batch --passphrase "${{ secret.PASSPHRASE }}" --decrypt dpkg.priv.key.gpg | gpg --import
+    - name: install build requirements
+      run: |
+        sudo add-apt-repository ppa:mozillateam/ppa -y
+        sudo apt-get update
+        sudo apt-get install dpkg-sig fakeroot
+
+    - if: github.event.inputs.reload
+      id: reload
+      run: echo ::set-output name=reload::--reload
+    - if: github.event.inputs.rebuild
+      id: rebuild
+      run: echo ::set-output name=rebuild::--rebuild
+    - name: refresh repo
+      run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}

@@ -1,8 +1,10 @@
 build
+repo
+zotero
+jurism
 .env
 *.deb
 *.tar.bz2
 *.swp
-repo
 *.key
 *.jar

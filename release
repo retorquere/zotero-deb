@@ -1,0 +1,311 @@
+#!/usr/bin/env python3
+
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv())
+
+from munch import Munch
+from urllib.request import urlopen, urlretrieve
+import json
+import os
+import argparse
+import toml
+import sys
+from datetime import date
+import shutil
+import tarfile
+import re
+import configparser
+import lxml.etree as etree
+from lxml.builder import ElementMaker
+import glob
+import github3 as github
+import mimetypes
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--bump', action='store_true')
+parser.add_argument('--reload', action='store_true')
+parser.add_argument('--rebuild', action='store_true')
+args = parser.parse_args()
+
+debarch = {
+  'i686': 'i386',
+  'x86_64': 'amd64'
+}
+
+#### global data ####
+with open('config.ini') as f:
+  Config = toml.load(f, _dict=Munch)
+
+Versions = Munch()
+for section, values in Config.items():
+  if 'name' in values and 'comment' in values: Versions[section] = set()
+
+def pluralize(d, singular):
+  plural = singular + 's'
+  assert not (singular in d and plural in d)
+  if singular in d:
+    d[plural] = d[singular]
+    del d[singular]
+  if plural in d and type(d[plural]) != list:
+    d[plural] = [ d[plural] ]
+
+with open('mimeinfo.toml') as f:
+  MimeInfo = toml.load(f, _dict=Munch)
+  for mi in MimeInfo.values():
+    for singular in ['mimetype', 'extension']:
+      plural = singular + 's'
+      assert not (singular in mi and plural in mi)
+      if singular in mi:
+        mi[plural] = mi[singular]
+        del mi[singular]
+      if plural in mi and type(mi[plural]) != list:
+        mi[plural] = [ mi[plural] ]
+      
+    if 'extensions' in mi:
+      mi['extensions'] = [ext[1:] if ext[0] == '.' else ext for ext in mi['extensions']]
+
+ESR = []
+for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
+  dep = dep.strip()
+  if not dep.startswith('Depends:'): continue
+  dep = dep.split(':')[1].strip()
+  if dep != 'lsb-release': # why should it need this?
+    ESR.append(dep)
+
+#### convenience functions ####
+def run(cmd):
+  print(cmd)
+  if os.system(cmd) != 0:
+    print(f'{cmd} exited with an error')
+    sys.exit(1)
+
+class Open():
+  def __init__(self, path, mode='r', fmode=None):
+    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(path), exist_ok=True)
+    self.path = path
+    self.mode = fmode
+    self.f = open(path, mode)
+  def __enter__(self):
+    return self.f
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+    self.f.close()
+    if self.mode is not None:
+      os.chmod(self.path, self.mode)
+
+def load(url,parse_json=False):
+  response = urlopen(url).read()
+  if type(response) is bytes: response = response.decode("utf-8")
+  if parse_json:
+    return json.loads(response, object_hook=Munch.fromDict)
+  else:
+    return response
+
+#### deb builder ####
+for client in Versions.keys():
+  for arch in debarch.keys():
+    os.makedirs(os.path.join(client, arch), exist_ok=True)
+
+for client in Versions.keys():
+  if client == 'zotero':
+    versions = [release.version for release in load("https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json", parse_json=True)]
+  else:
+    versions = [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']
+  versions.append(f'beta-{date.today().isoformat()}')
+  for version in versions:
+    Versions[client].add(version)
+    for arch in debarch.keys():
+      tarball = os.path.join(client, arch, version + '.tar.bz2')
+      if not os.path.exists(tarball) or args.reload:
+        print('downloading', tarball)
+        if client == 'zotero':
+          if version.startswith('beta-'):
+            url = f'https://www.zotero.org/download/client/dl?channel=beta&platform=linux-{arch}'
+          else:
+            url = f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}'
+        else:
+          if version.startswith('beta-'):
+            url = f'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=beta&platform=linux-{arch}'
+          else:
+            url = f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2'
+        urlretrieve(url, tarball)
+  for tarball in glob.glob(f'{client}/*/*.tar.bz2'):
+    if not os.path.basename(tarball).replace('.tar.bz2', '') in Versions[client]:
+      print('removing', tarball)
+      os.remove(tarball)
+
+if args.bump:
+  for client, versions in Versions.items():
+    if not 'patch' in Config[client]: Config[client].patch = Munch()
+    for version in versions:
+      if version.startswith('beta-'): continue
+
+      if not version in Config[client].patch:
+        Config[client].patch[version] = 1
+      else:
+        Config[client].patch[version] += 1
+  with open('config.ini', 'w') as f:
+    toml.dump(Config, f)
+
+Built = 0
+for arch in debarch.keys():
+  for client, versions in Versions.items():
+    if not 'patch' in Config[client]: Config[client].patch = Munch()
+    for version in sorted(versions):
+      tarball = f'{client}/{arch}/{version}.tar.bz2'
+
+      if version.startswith('beta-'):
+        beta = '-beta'
+        version = version.replace('beta-', '').replace('-', '.')
+        patch = ''
+      else:
+        beta = ''
+        patch = '-' + str(Config[client].patch.get(version, ''))
+        if patch == '-': patch = ''
+
+      deb = f'{client}{beta}_{version}{patch}_{debarch[arch]}.deb'
+      if os.path.exists(f'repo/{deb}') and not args.rebuild: continue
+
+      print(f'\n## building {deb}')
+      Built += 1
+
+      if os.path.exists('build'): shutil.rmtree('build')
+      os.makedirs('build')
+  
+      print(f'   unpacking {tarball}')
+      tar = tarfile.open(tarball)
+      for member in tar.getmembers():
+        if not member.isreg(): continue
+        member.name = re.sub(r'^.+?\/', '', member.name) # strip leading directory
+  
+        if member.name in ['zotero.desktop', 'jurism.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
+          continue
+  
+        tar.extract(member, f'build/usr/lib/{client}{beta}')
+      tar.close()
+  
+      print(f'   disable auto-update')
+      with Open(f'build/usr/lib/{client}{beta}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{client}{beta}/mozilla.cfg', 'a') as cfg:
+        # enable mozilla.cfg
+        if ls.tell() != 0: print('', file=ls)
+        print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=ls)
+        print('pref("general.config.filename", "mozilla.cfg");', file=ls)
+
+        # disable auto-update
+        if cfg.tell() == 0:
+          print('//', file=cfg)
+        else:
+          print('', file=cfg)
+        print('lockPref("app.update.enabled", false);', file=cfg)
+        print('lockPref("app.update.auto", false);', file=cfg)
+  
+      print(f'   write launcher entry')
+      with Open(f'build/usr/share/applications/{client}{beta}.desktop', 'w') as f:
+        desktop = configparser.RawConfigParser()
+        desktop.add_section('Desktop Entry')
+        desktop.optionxform=str
+        desktop.set('Desktop Entry', 'Name', Config[client].name + beta.replace('-', ' '))
+        desktop.set('Desktop Entry', 'Comment', Config[client].comment)
+        desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{client}{beta}/{client} --url %u')
+        desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{client}{beta}/chrome/icons/default/default256.png')
+        desktop.set('Desktop Entry', 'Type', 'Application')
+        desktop.set('Desktop Entry', 'Categories', Config[client].categories)
+        desktop.set('Desktop Entry', 'StartupNotify', 'true')
+        desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in MimeInfo.values() for mt in mi.mimetypes]))
+        desktop.write(f, space_around_delimiters=False)
+  
+      print(f'   update mime info')
+      with Open(f'build/usr/share/mime/packages/{client}{beta}.xml', 'wb') as f:
+        E = ElementMaker(
+          namespace='http://www.freedesktop.org/standards/shared-mime-info',
+          nsmap={
+            None : 'http://www.freedesktop.org/standards/shared-mime-info',
+            'xml': 'http://www.w3.org/XML/1998/namespace',
+          }
+        )
+        mimetypes = []
+        MIMETYPE = getattr(E, 'mime-type')
+        MIMEINFO = getattr(E, 'mime-info')
+        for name, mi in MimeInfo.items():
+          if not 'extensions' in mi: continue
+  
+          children = [E.comment(name)]
+          for k, v in mi.items():
+            if len(k) == 2:
+              children.append(E.comment(v, **{'{http://www.w3.org/XML/1998/namespace}lang': k}))
+          for ext in mi.get('extensions', []):
+            children.append(E.glob(pattern=f'*.{ext}'))
+          for mt in mi.mimetypes[1:]:
+            children.append(E.alias(type=mt))
+          mimetypes.append(MIMETYPE(*children, type=mi.mimetypes[0]))
+        f.write(etree.tostring(MIMEINFO(*mimetypes), pretty_print=True, xml_declaration=True, encoding='utf-8'))
+  
+      print(f'   write build control file')
+      with Open('build/DEBIAN/control', 'w') as f:
+        dependencies = ', '.join(sorted(list(set(Config[client].dependencies + ESR))))
+        print(f'Package: {client}{beta}', file=f)
+        print(f'Architecture: {debarch[arch]}', file=f)
+        print(f'Depends: {dependencies}'.strip(), file=f)
+        print(f'Maintainer: {Config.maintainer.email}', file=f)
+        print(f'Section: {Config[client].section}', file=f)
+        print('Priority: optional', file=f)
+        print(f'Version: {version}{patch}', file=f)
+        print(f'Description: {Config[client].description}', file=f)
+  
+      os.makedirs('build/usr/local/bin')
+      os.symlink(f'/usr/lib/{client}{beta}/{client}', f'build/usr/local/bin/{client}{beta}')
+  
+      os.makedirs('repo', exist_ok=True)
+      run(f'fakeroot dpkg-deb --build -Zgzip build repo/{deb}')
+      run(f'dpkg-sig -k {Config.maintainer.gpgkey} --sign builder repo/{deb}')
+
+for deb in glob.glob('repo/*.deb'):
+  client, version, arch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
+  if client.endswith('-beta'):
+    version = 'beta-' + version.replace('.', '-')
+    client = client.replace('-beta', '')
+  if not version in Versions[client] or arch not in debarch.values():
+    if os.path.exists('repo/Packages'): os.remove('repo/Packages')
+    print('removing', deb)
+    os.remove(deb)
+
+if Built > 0 or not os.path.exists('repo/Packages'):
+  print(f'\n## preparing repo')
+  run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
+  run(f'cd repo && apt-ftparchive packages . > Packages')
+  run(f'bzip2 -kf repo/Packages')
+  run(f'cd repo && apt-ftparchive release . > Release')
+  run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
+  run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
+  shutil.copyfile('install.sh', 'repo/install.sh')
+
+if len([h for h in Config.hosting.keys() if h]) == 0:
+  print(f'\n## not publishing repo')
+
+if Config.hosting and Config.hosting.github:
+  print(f'\n## publishing repo to github')
+  gh = github.login(token=os.getenv('GITHUB_TOKEN'))
+  repo = gh.repository(*Config.hosting.github.repo.split('/'))
+  release = repo.release_from_tag(Config.hosting.github.release)
+
+  assets = []
+  for asset in release.assets():
+    if not os.path.exists(f'repo/{asset.name}'):
+      print('deleting obsolete asset:', asset.name)
+      asset.delete()
+    elif asset.name.endswith('.deb'):
+      assets.append(asset.name)
+    else:
+      print('refreshing asset:', asset.name)
+      asset.delete()
+
+  for asset in sorted(glob.glob('repo/*')):
+    if os.path.basename(asset) in assets: continue
+
+    content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
+    print(f'  uploading {asset} ({content_type})')
+    with open(asset, 'rb') as f:
+      release.upload_asset(
+        asset=f,
+        name=os.path.basename(asset),
+        content_type=content_type
+      )

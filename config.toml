@@ -1,26 +1,23 @@
-[build]
-maintainer = "emiliano.heyns@iris-advies.com"
-repo = "retorquere/zotero-deb"
+[maintainer]
+email = "emiliano.heyns@iris-advies.com"
 gpgkey = "dpkg"
 
-[release.apt-get]
-archs = [ "i386", "amd64",]
-
-[xrelease.global-menu]
-archs = [ "amd64",]
-
-[package.zotero]
-repo = "zotero/zotero"
+[zotero]
 name = "Zotero"
-releases = "https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json"
-download = "https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}"
-dependencies = [ "libnss3-dev",]
-version = "5.0.93"
+comment = "Open-source reference manager"
+categories = "Office;Education;Literature"
+dependencies = [ "libnss3-dev", ]
+section = "Science"
+description = "Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
-[package.jurism]
-repo = "Juris-M/zotero"
+[jurism]
 name = "Juris-M"
-download = "https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2"
-incrementals = "https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux"
+comment = "Open-source reference manager"
+categories = "Office;Education;Literature"
 dependencies = [ "libnss3-dev", "default-jre", "libreoffice-java-common",]
-version = "5.0.93m6"
+section = "Science"
+description = "Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research"
+
+[hosting.github]
+repo = "retorquere/zotero-deb"
+release = "apt-get-test"
