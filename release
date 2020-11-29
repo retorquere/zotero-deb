@@ -128,7 +128,7 @@ class S3:
     self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
 
   def get(self, name):
-    if not name.endswith('.deb') return False
+    if not name.endswith('.deb'): return False
 
     try:
       for asset in self.bucket.objects.all():
@@ -161,8 +161,10 @@ class S3:
       self.bucket.upload_file(asset, os.path.basename(asset))
 
 if Config.hosting and Config.hosting.S3:
+  print('\n ## publish target: S3 bucket')
   Repo = S3()
 elif Config.hosting and Config.hosting.github:
+  print('\n ## publish target: Github release')
   Repo = GitHub()
 
 def run(cmd):
