@@ -231,16 +231,21 @@ class Deb:
   def build(self):
     if not 'patch' in Config[client]: Config[client].patch = Munch()
 
-    print(f'\n## building {deb}')
+    print(f'\n## building {self.deb}')
     self.rebuilt = True
 
-    if not args.rebuild and Repo and Repo.get(self.deb):
+    if not args.rebuild and not args.reload and Repo and Repo.get(self.deb):
       return
+
+    if not os.path.exists(self.tarball) or args.reload:
+      os.makedirs(os.path.dirname(self.tarball), exist_ok=True)
+      print('downloading', self.tarball)
+      urlretrieve(self.url, self.tarball)
 
     if os.path.exists('build'): shutil.rmtree('build')
     os.makedirs('build')
   
-    print(f'   unpacking {tarball}')
+    print(f'   unpacking {self.tarball}')
     tar = tarfile.open(self.tarball)
     for member in tar.getmembers():
       if not member.isreg(): continue
@@ -249,11 +254,11 @@ class Deb:
       if member.name in ['zotero.desktop', 'jurism.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml']:
         continue
   
-      tar.extract(member, f'build/usr/lib/{client}{beta}')
+      tar.extract(member, f'build/usr/lib/{self.client}{self.apt.beta}')
     tar.close()
   
     print(f'   disable auto-update')
-    with Open(f'build/usr/lib/{client}{beta}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{client}{beta}/mozilla.cfg', 'a') as cfg:
+    with Open(f'build/usr/lib/{self.client}{self.apt.beta}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{self.client}{self.apt.beta}/mozilla.cfg', 'a') as cfg:
       # enable mozilla.cfg
       if ls.tell() != 0: print('', file=ls)
       print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=ls)
@@ -268,14 +273,14 @@ class Deb:
       print('lockPref("app.update.auto", false);', file=cfg)
   
     print(f'   write launcher entry')
-    with Open(f'build/usr/share/applications/{client}{beta}.desktop', 'w') as f:
+    with Open(f'build/usr/share/applications/{self.client}{self.apt.beta}.desktop', 'w') as f:
       desktop = configparser.RawConfigParser()
       desktop.add_section('Desktop Entry')
       desktop.optionxform=str
-      desktop.set('Desktop Entry', 'Name', Config[client].name + beta.replace('-', ' '))
+      desktop.set('Desktop Entry', 'Name', Config[client].name + self.apt.beta.replace('-', ' '))
       desktop.set('Desktop Entry', 'Comment', Config[client].comment)
-      desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{client}{beta}/{client} --url %u')
-      desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{client}{beta}/chrome/icons/default/default256.png')
+      desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.client}{self.apt.beta}/{self.client} --url %u')
+      desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.client}{self.apt.beta}/chrome/icons/default/default256.png')
       desktop.set('Desktop Entry', 'Type', 'Application')
       desktop.set('Desktop Entry', 'Categories', Config[client].categories)
       desktop.set('Desktop Entry', 'StartupNotify', 'true')
@@ -283,7 +288,7 @@ class Deb:
       desktop.write(f, space_around_delimiters=False)
 
     print(f'   update mime info')
-    with Open(f'build/usr/share/mime/packages/{client}{beta}.xml', 'wb') as f:
+    with Open(f'build/usr/share/mime/packages/{self.client}{self.apt.beta}.xml', 'wb') as f:
       E = ElementMaker(
         namespace='http://www.freedesktop.org/standards/shared-mime-info',
         nsmap={
@@ -311,26 +316,23 @@ class Deb:
     print(f'   write build control file')
     with Open('build/DEBIAN/control', 'w') as f:
       dependencies = ', '.join(sorted(list(set(Config[client].dependencies + ESR))))
-      print(f'Package: {client}{beta}', file=f)
-      print(f'Architecture: {debarch[arch]}', file=f)
+      print(f'Package: {self.client}{self.apt.beta}', file=f)
+      print(f'Architecture: {self.apt.arch}', file=f)
       print(f'Depends: {dependencies}'.strip(), file=f)
       print(f'Maintainer: {Config.maintainer.email}', file=f)
       print(f'Section: {Config[client].section}', file=f)
       print('Priority: optional', file=f)
-      print(f'Version: {version}{patch}', file=f)
-      print(f'Description: {Config[client].description}', file=f)
+      print(f'Version: {self.apt.version}{self.apt.patch}', file=f)
+      print(f'Description: {Config[self.client].description}', file=f)
 
     os.makedirs('build/usr/local/bin')
-    os.symlink(f'/usr/lib/{client}{beta}/{client}', f'build/usr/local/bin/{client}{beta}')
+    os.symlink(f'/usr/lib/{self.client}{self.apt.beta}/{self.client}', f'build/usr/local/bin/{self.client}{self.apt.beta}')
 
     os.makedirs('repo', exist_ok=True)
     run(f'fakeroot dpkg-deb --build -Zgzip build {self.deb}')
     run(f'dpkg-sig -k {Config.maintainer.gpgkey} --sign builder {self.deb}')
 
 #### deb builder ####
-for client in Clients:
-  for arch in ArchMap.keys():
-    os.makedirs(os.path.join(client, arch), exist_ok=True)
 
 # cleanup interrupted build
 for deb in glob.glob('repo/*.deb.*'):
@@ -374,21 +376,18 @@ for deb in Deb.all():
   if os.path.exists(deb.deb): continue
   if not os.path.exists(deb.tarball) or args.rebuild:
     os.makedirs(os.path.dirname(deb.tarball), exist_ok=True)
-    if not os.path.exists(deb.tarball) or args.reload:
-      print('downloading', deb.tarball)
-      urlretrieve(deb.url, deb.tarball)
     deb.build()
 
 # cleanup leftover .debs
 for deb in glob.glob('repo/*.deb'):
-  client, version, arch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
+  client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
   if client.endswith('-beta'):
     version = 'beta-' + version.replace('.', '-')
     client = client.replace('-beta', '')
-  if not any(deb for deb in Deb.all() if deb.client == client and deb.version == version and deb.apt.arch == arch):
+  if not any(d for d in Deb.select(client=client, version=version, aptarch=aptarch)):
     if os.path.exists('repo/Packages'): os.remove('repo/Packages')
-    print('removing', deb.deb)
-    os.remove(deb.deb)
+    print('removing', deb)
+    os.remove(deb)
 
 if Deb.rebuilt or not os.path.exists('repo/Packages'):
   print(f'\n## preparing repo')
