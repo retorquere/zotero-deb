@@ -181,9 +181,11 @@ elif 'hosting' in Config and 'github' in Config.hosting:
 def run(cmd):
   print('  $', cmd)
 
-  # high byte has the exit code
-  pid, exitcode = struct.unpack('bb', struct.pack('H', os.system(cmd)))
-  if exitcode != 0: sys.exit(1)
+  try:
+   print(subprocess.check_output(cmd, shell=True))
+  except subprocess.CalledProcessError as e:
+    print(e)
+    sys.exit(1)
 
 class Open():
   def __init__(self, path, mode='r', fmode=None):

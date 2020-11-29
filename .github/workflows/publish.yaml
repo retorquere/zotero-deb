@@ -60,6 +60,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: ./release ${{ steps.reload.outputs.reload }} ${{ steps.rebuild.outputs.rebuild }}
+    - run: echo rebuild: ${{ steps.repo.ouputs.rebuild }}
     - name: publish repo
       if: steps.repo.ouputs.rebuild == 'true'
       uses: svenstaro/upload-release-action@v2
