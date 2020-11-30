@@ -1,9 +1,0 @@
-[Desktop Entry]
-Name=Zotero
-Comment=Open-source reference manager
-Exec=/usr/lib/zotero/zotero --url %u
-Icon=/usr/lib/zotero/chrome/icons/default/default256.png
-Type=Application
-Categories=Office;Education;Literature
-StartupNotify=true
-MimeType=x-scheme-handler/zotero;ris;application/x-research-info-systems;application/x-endnote-refer;text/x-research-info-systems;text/application/x-research-info-systems;text/ris;ciw;isi;application/x-inst-for-Scientific-info;mods;application/mods+xml;rdf;application/rdf+xml;bib;bibtex;application/x-bibtex;text/x-bibtex;mrc;marc;application/marc;csl;vnd.citationstyles.style+xml
