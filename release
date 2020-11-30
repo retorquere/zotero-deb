@@ -84,27 +84,39 @@ for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
 
 #### convenience functions ####
 
-class GitHub:
+class Repository:
   def __init__(self):
-    self.url = f'https://github.com/{Config.hosting.github.repo}/releases/download/{Config.hosting.github.release}'
-    gh = github.login(token=os.getenv('GITHUB_TOKEN'))
-    repo = gh.repository(*Config.hosting.github.repo.split('/'))
-    self.release = repo.release_from_tag(Config.hosting.github.release)
-
-    self.assets = { asset.name: asset for asset in self.release.assets() }
-    self.rebuild = 'Packages' not in self.assets # deleting 'Packages' forces re-uploading of everything
+    self.rebuild = 'Packages' not in self._assets # deleting 'Packages' forces re-uploading of everything
     if self.rebuild:
-      for asset in self.assets.values():
-        asset.delete()
-      self.assets = {}
+      for asset in self._assets.values():
+        self.delete(asset)
+      self._assets = {}
 
   def unchanged(self):
     published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
     available = set([os.path.basename(deb.deb) for deb in Deb.all()])
     return published == available
 
+class GitHub(Repository):
+  def __init__(self, config):
+    self.service = 'github'
+    self.url = f'https://github.com/{config.repo}/releases/download/{config.release}'
+
+    gh = github.login(token=os.getenv('GITHUB_TOKEN'))
+    repo = gh.repository(*config.repo.split('/'))
+
+    self._release = repo.release_from_tag(config.release)
+    self._assets = { asset.name: asset for asset in self._release.assets() }
+
+    super().__init__()
+
+  def delete(self, asset):
+    asset.delete()
+
   def get(self, name):
-    asset = self.assets.get(os.path.basename(name))
+    if not name.endswith('.deb'): return False
+
+    asset = self._assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
       #urlretrieve(asset.download_url, name)
@@ -115,7 +127,7 @@ class GitHub:
   def publish(self):
     print(f'\n## publishing repo to github')
     published = []
-    for asset in self.release.assets():
+    for asset in self._release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
         print('  deleting obsolete asset:', asset.name)
         asset.delete()
@@ -138,23 +150,19 @@ class GitHub:
         )
 
 class S3:
-  def __init__(self):
-    self.url = f'https://{Config.hosting.S3.bucket}.s3.{Config.hosting.S3.region}.amazonaws.com'
-    self.s3 = boto3.resource('s3')
-    self.bucket = s3.Bucket(name=Config.hosting.S3.bucket)
-    self.assets = { asset.key: asset for asset in self.bucket.objects.all() }
+  def __init__(self, config):
+    self.service = 's3'
+    self.url = f'https://{config.bucket}.s3.{config.region}.amazonaws.com'
 
-    self.rebuild = 'Packages' not in self.assets # deleting 'Packages' forces re-uploading of everything
-    if self.rebuild:
-      for asset in self.assets.values():
-        self.bucket.delete_key(asset)
-      self.assets = {}
+    s3 = boto3.resource('s3')
+    self._bucket = s3.Bucket(name=config.bucket)
+    self._assets = { asset.key: asset for asset in self.bucket.objects.all() }
 
-  def unchanged(self):
-    published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
-    available = set([os.path.basename(deb.deb) for deb in Deb.all()])
-    return published == available
+    super().__init__()
 
+  def delete(self, asset):
+    self._bucket.delete_key(asset)
+    
   def get(self, name):
     if not name.endswith('.deb'): return False
 
@@ -188,12 +196,17 @@ class S3:
       print(f'  uploading {asset} ({content_type})')
       self.bucket.upload_file(asset, os.path.basename(asset))
 
-if 'hosting' in Config and 'S3' in Config.hosting:
-  print('\n## publish target: S3 bucket')
-  Repo = S3()
-elif 'hosting' in Config and 'github' in Config.hosting:
-  print('\n## publish target: Github release')
-  Repo = GitHub()
+branch = os.environ.get('GITHUB_REF', '')
+branch = branch.split('/')[-1] if branch.startswith('/ref/heads/') else None
+if branch in Config:
+  for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('github', 's3')]:
+    if hosting == 'github':
+      print('\n## publish target: Github release')
+      Repo = GitHub(config)
+    elif hosting == 's3':
+      print('\n## publish target: S3 bucket')
+      Repo = S3(config)
+    break
 
 def run(cmd):
   print('  $', cmd)
@@ -530,13 +543,10 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
   else:
     os.remove('repo/install.sh')
 
-  if Repo: print(f'::set-output name=url::{Repo.url}')
-  if type(Repo) == GitHub:
-    print('leaving publish to next step')
-    print('::set-output name=rebuilt::true')
-    print(f'::set-output name=release::{Config.hosting.github.release}')
-  elif type(Repo) == S3:
+  if Repo:
     Repo.publish()
+    print(f'::set-output name=url::{Repo.url}')
+    print('::set-output name=rebuilt::true')
   else:
     print(f'\n## not publishing repo')
 else:

@@ -55,17 +55,6 @@ jobs:
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}
 
-    - name: publish repo
-      if: steps.repo.outputs.rebuilt == 'true'
-      uses: xresloader/upload-to-github-release@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        file: repo/*
-        overwrite: true
-        draft: false
-        prerelease: false
-        tag_name: ${{ steps.repo.outputs.release }}
     - name: Test-install
       if: steps.repo.outputs.rebuilt == 'true'
       run: |

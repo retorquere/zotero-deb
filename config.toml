@@ -18,6 +18,10 @@ dependencies = [ "libnss3-dev", "default-jre", "libreoffice-java-common",]
 section = "Science"
 description = "Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
-[hosting.github]
+[master.github]
 repo = "retorquere/zotero-deb"
 release = "apt-get"
+
+[hosting.github]
+repo = "retorquere/zotero-deb"
+release = "test"
