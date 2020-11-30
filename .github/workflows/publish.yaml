@@ -43,7 +43,7 @@ jobs:
       with:
         path: |
           ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('repo/Packages') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: refresh repo
