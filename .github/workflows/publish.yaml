@@ -64,7 +64,7 @@ jobs:
         file: repo/*
         overwrite: true
         draft: false
-        prerelease: true
+        prerelease: false
         tag_name: ${{ steps.repo.outputs.release }}
     - name: Test-install
       if: steps.repo.outputs.rebuilt == 'true'

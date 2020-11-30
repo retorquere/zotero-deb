@@ -20,4 +20,4 @@ description = "Juris-M is a free, easy-to-use tool to help you collect, organize
 
 [hosting.github]
 repo = "retorquere/zotero-deb"
-release = "test"
+release = "apt-get"
