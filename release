@@ -346,7 +346,7 @@ class Deb:
     if exists:
       try:
         # for some bloody reason Github frequently hands us a JSON description of the asset rather than the asset itself
-        Dpkg(deb).headers
+        Dpkg(self.deb).headers
         print(exists)
         return
       except ArchiveFormatError:
