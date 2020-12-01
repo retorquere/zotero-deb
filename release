@@ -92,7 +92,7 @@ class Repository:
       self._assets = {}
 
   def unchanged(self):
-    published = set([asset for asset in self.assets.keys() if asset.endswith('.deb')])
+    published = set([asset for asset in self._assets.keys() if asset.endswith('.deb')])
     available = set([os.path.basename(deb.deb) for deb in Deb.all()])
     return published == available
 
