@@ -142,7 +142,7 @@ class GitHub(Repository):
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
       print(f'  uploading {asset} ({content_type})')
       with open(asset, 'rb') as f:
-        self.release.upload_asset(
+        self._release.upload_asset(
           asset=f,
           name=os.path.basename(asset),
           content_type=content_type
