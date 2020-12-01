@@ -101,7 +101,7 @@ class GitHub(Repository):
     self.service = 'github'
     self.url = f'https://github.com/{config.repo}/releases/download/{config.release}'
 
-    gh = github.GitHub(token=os.getenv('GITHUB_TOKEN'), session=session.GitHubSession(default_read_timeout=60))
+    gh = github.GitHub(token=os.getenv('GITHUB_TOKEN'), session=github.session.GitHubSession(default_read_timeout=60))
     repo = gh.repository(*config.repo.split('/'))
 
     self._release = repo.release_from_tag(config.release)
