@@ -196,7 +196,7 @@ class S3:
       self.bucket.upload_file(asset, os.path.basename(asset))
 
 branch = os.environ.get('GITHUB_REF', '')
-branch = branch.split('/')[-1] if branch.startswith('/ref/heads/') else None
+branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else None
 Repo = None
 print(f'\n## branch = {branch}')
 if branch and branch in Config:
