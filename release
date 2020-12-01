@@ -45,7 +45,6 @@ ArchMap = {
   'x86_64': 'amd64'
 }
 
-Repo = None
 Clients = []
 for section, values in Config.items():
   if 'name' in values and 'comment' in values: Clients.append(section)
@@ -198,7 +197,9 @@ class S3:
 
 branch = os.environ.get('GITHUB_REF', '')
 branch = branch.split('/')[-1] if branch.startswith('/ref/heads/') else None
-if branch in Config:
+Repo = None
+print(f'\n## branch = {branch}')
+if branch and branch in Config:
   for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('github', 's3')]:
     if hosting == 'github':
       print('\n## publish target: Github release')
@@ -207,6 +208,9 @@ if branch in Config:
       print('\n## publish target: S3 bucket')
       Repo = S3(config)
     break
+
+if not Repo:
+  print(f'  no repo found for {branch}')
 
 def run(cmd):
   print('  $', cmd)
@@ -541,7 +545,7 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
     with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
       install.write(Template(tmpl.read()).substitute(url=Repo.url))
   else:
-    os.remove('repo/install.sh')
+    if os.path.exists('repo/install.sh'): os.remove('repo/install.sh')
 
   if Repo:
     Repo.publish()
