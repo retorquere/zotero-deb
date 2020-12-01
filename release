@@ -548,6 +548,6 @@ if Deb.rebuilt or not os.path.exists('repo/Packages'):
     print(f'::set-output name=url::{Repo.url}')
     print('::set-output name=rebuilt::true')
   else:
-    print(f'\n## not publishing repo')
+    print(f'\n## not publishing repo: no repo specified')
 else:
-  print(f'\n## not publishing repo')
+  print(f'\n## not publishing repo: nothing rebuilt')
