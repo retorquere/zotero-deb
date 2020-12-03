@@ -25,10 +25,12 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: install signing key
-      run: |
-        rm -rf ~/.gnupg
-        gpg --batch --passphrase "${{ secrets.PASSPHRASE }}" --decrypt dpkg.priv.key.gpg | gpg --import
+    - name: Import GPG key
+      id: import_gpg
+      uses: crazy-max/ghaction-import-gpg@v3
+      with:
+        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+
     - name: install build requirements
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
