@@ -586,4 +586,5 @@ class Builder:
     else:
       print(f'\n## not publishing repo: nothing rebuilt')
 
+# kick off build
 Builder()
