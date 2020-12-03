@@ -355,7 +355,7 @@ class Deb:
         patch='',
         arch=ArchMap[self.arch]
       )
-      if 'patch' in Config[self.client] and 'version' in Config[self.client].patch:
+      if 'patch' in Config[self.client] and self.version in Config[self.client].patch:
         apt.patch = '-' + str(Config[self.client].patch[self.version])
     return apt
     
