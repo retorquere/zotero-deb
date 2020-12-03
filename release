@@ -286,9 +286,9 @@ class Deb:
   __debs = []
 
   @classmethod
-  def select(cls, version = None, client = None, arch=None, aptarch=None, beta=True):
+  def select(cls, version = None, patch = None, client = None, arch=None, aptarch=None, beta=None):
     def equal(deb):
-      return (version is None or version == deb.version) and (client is None or client == deb.client) and (arch is None or arch == deb.arch) and (aptarch is None or aptarch == deb.apt.arch) and (beta or not deb.beta)
+      return all((given is None or given == found) for given, found in [(version, deb.version), (patch, deb.version + deb.apt.patch), (client, deb.client), (arch, deb.arch), (aptarch, deb.apt.arch), (beta, deb.beta)])
     #print('version:', version, 'client:', client, 'arch:', arch, 'aptarch:', aptarch, 'beta:', beta)
     #for deb in cls.__debs:
     #  if equal(deb):
@@ -510,6 +510,7 @@ class Builder:
           Deb(client, version, arch)
 
   def cleanup(self):
+    print('\n## pre-build cleanup')
     # cleanup interrupted build
     for deb in glob.glob('repo/*.deb.*'):
       os.remove(deb)
@@ -518,9 +519,9 @@ class Builder:
     for client in Clients:
       for tarball in glob.glob(f'{client}/*/*.tar.bz2'):
         arch = os.path.basename(os.path.dirname(tarball))
-        version = re.sub('-[0-9]+$', '', os.path.basename(tarball).replace('.tar.bz2', ''))
+        version = os.path.basename(tarball).replace('.tar.bz2', '')
         if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
-          print('removing', tarball)
+          print('  removing', tarball)
           os.remove(tarball)
 
   def bump(self):
@@ -549,14 +550,15 @@ class Builder:
 
   def trim(self):
     # cleanup leftover .debs
+    print('\n## Remove obsolete .debs')
     for deb in glob.glob('repo/*.deb'):
       client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
       if client.endswith('-beta'):
         version = 'beta-' + version.replace('.', '-')
         client = client.replace('-beta', '')
-      if not any(d for d in Deb.select(client=client, version=version, aptarch=aptarch)):
+      if not any(d for d in Deb.select(client=client, patch=version, aptarch=aptarch)):
         if os.path.exists('repo/Packages'): os.remove('repo/Packages')
-        print('removing', deb)
+        print('  removing', deb)
         os.remove(deb)
 
   def publish(self):
