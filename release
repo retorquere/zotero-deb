@@ -45,9 +45,12 @@ ArchMap = {
   'x86_64': 'amd64'
 }
 
-Clients = []
-for section, values in Config.items():
-  if 'name' in values and 'comment' in values: Clients.append(section)
+def get_clients():
+  clients = []
+  for section, values in Config.items():
+    if 'name' in values and 'comment' in values: clients.append(section)
+  return clients
+Clients = get_clients()
 
 def pluralize(d, singular):
   plural = singular + 's'
@@ -58,28 +61,34 @@ def pluralize(d, singular):
   if plural in d and type(d[plural]) != list:
     d[plural] = [ d[plural] ]
 
-with open('mimeinfo.toml') as f:
-  MimeInfo = toml.load(f, _dict=Munch)
-  for mi in MimeInfo.values():
-    for singular in ['mimetype', 'extension']:
-      plural = singular + 's'
-      assert not (singular in mi and plural in mi)
-      if singular in mi:
-        mi[plural] = mi[singular]
-        del mi[singular]
-      if plural in mi and type(mi[plural]) != list:
-        mi[plural] = [ mi[plural] ]
+def load_mimeinfo():
+  with open('mimeinfo.toml') as f:
+    _mimeinfo = toml.load(f, _dict=Munch)
+    for mi in _mimeinfo.values():
+      for singular in ['mimetype', 'extension']:
+        plural = singular + 's'
+        assert not (singular in mi and plural in mi)
+        if singular in mi:
+          mi[plural] = mi[singular]
+          del mi[singular]
+        if plural in mi and type(mi[plural]) != list:
+          mi[plural] = [ mi[plural] ]
       
-    if 'extensions' in mi:
-      mi['extensions'] = [ext[1:] if ext[0] == '.' else ext for ext in mi['extensions']]
+      if 'extensions' in mi:
+        mi['extensions'] = [ext[1:] if ext[0] == '.' else ext for ext in mi['extensions']]
+  return _mimeinfo
+MimeInfo = load_mimeinfo()
 
-ESR = []
-for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
-  dep = dep.strip()
-  if not dep.startswith('Depends:'): continue
-  dep = dep.split(':')[1].strip()
-  if dep != 'lsb-release': # why should it need this?
-    ESR.append(dep)
+def load_esr_deps():
+  deps = []
+  for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
+    dep = dep.strip()
+    if not dep.startswith('Depends:'): continue
+    dep = dep.split(':')[1].strip()
+    if dep != 'lsb-release': # why should it need this?
+      deps.append(dep)
+  return deps
+ESR = load_esr_deps()
 
 #### convenience functions ####
 
@@ -195,22 +204,25 @@ class S3:
       print(f'  uploading {asset} ({content_type})')
       self.bucket.upload_file(asset, os.path.basename(asset))
 
-branch = os.environ.get('GITHUB_REF', '')
-branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else None
-Repo = None
-print(f'\n## branch = {branch}')
-if branch and branch in Config:
-  for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('github', 's3')]:
-    if hosting == 'github':
-      print('\n## publish target: Github release')
-      Repo = GitHub(config)
-    elif hosting == 's3':
-      print('\n## publish target: S3 bucket')
-      Repo = S3(config)
-    break
+def load_repo():
+  branch = os.environ.get('GITHUB_REF', '')
+  branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else None
+  repo = None
+  print(f'\n## branch = {branch}')
+  if branch and branch in Config:
+    for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('github', 's3')]:
+      if hosting == 'github':
+        print('\n## publish target: Github release')
+        repo = GitHub(config)
+      elif hosting == 's3':
+        print('\n## publish target: S3 bucket')
+        repo = S3(config)
+      break
 
-if not Repo:
-  print(f'  no repo found for {branch}')
+  if not repo:
+    print(f'  no repo found for {branch}')
+  return repo
+Repo = load_repo()
 
 def run(cmd):
   print('  $', cmd)
@@ -348,7 +360,7 @@ class Deb:
     return apt
     
   def build(self):
-    if not 'patch' in Config[client]: Config[client].patch = Munch()
+    if not 'patch' in Config[self.client]: Config[self.client].patch = Munch()
 
     print(f'\n## building {self.deb}')
     self.rebuilt = True
@@ -410,12 +422,12 @@ class Deb:
       desktop = configparser.RawConfigParser()
       desktop.add_section('Desktop Entry')
       desktop.optionxform=str
-      desktop.set('Desktop Entry', 'Name', Config[client].name + self.apt.postfix.replace('-', ' '))
-      desktop.set('Desktop Entry', 'Comment', Config[client].comment)
+      desktop.set('Desktop Entry', 'Name', Config[self.client].name + self.apt.postfix.replace('-', ' '))
+      desktop.set('Desktop Entry', 'Comment', Config[self.client].comment)
       desktop.set('Desktop Entry', 'Exec', f'/usr/lib/{self.client}{self.apt.postfix}/{self.client} --url %u')
       desktop.set('Desktop Entry', 'Icon', f'/usr/lib/{self.client}{self.apt.postfix}/chrome/icons/default/default256.png')
       desktop.set('Desktop Entry', 'Type', 'Application')
-      desktop.set('Desktop Entry', 'Categories', Config[client].categories)
+      desktop.set('Desktop Entry', 'Categories', Config[self.client].categories)
       desktop.set('Desktop Entry', 'StartupNotify', 'true')
       desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in MimeInfo.values() for mt in mi.mimetypes]))
       desktop.write(f, space_around_delimiters=False)
@@ -448,12 +460,12 @@ class Deb:
 
     print(f'  write build control file')
     with Open('build/DEBIAN/control', 'w') as f:
-      dependencies = ', '.join(sorted(list(set(Config[client].dependencies + ESR))))
+      dependencies = ', '.join(sorted(list(set(Config[self.client].dependencies + ESR))))
       print(f'Package: {self.client}{self.apt.postfix}', file=f)
       print(f'Architecture: {self.apt.arch}', file=f)
       print(f'Depends: {dependencies}'.strip(), file=f)
       print(f'Maintainer: {Config.maintainer.email}', file=f)
-      print(f'Section: {Config[client].section}', file=f)
+      print(f'Section: {Config[self.client].section}', file=f)
       print('Priority: optional', file=f)
       print(f'Version: {self.apt.version}{self.apt.patch}', file=f)
       print(f'Description: {Config[self.client].description}', file=f)
@@ -467,91 +479,108 @@ class Deb:
 
 #### deb builder ####
 
-# cleanup interrupted build
-for deb in glob.glob('repo/*.deb.*'):
-  os.remove(deb)
+class Builder:
+  def __init__(self):
+    self.gather()
+    self.cleanup()
+    self.bump()
+    self.build()
+    self.trim()
+    self.publish()
 
-# gather .debs to build
-for client in Clients:
-  if client == 'zotero':
-    versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
-  else:
-    versions = []
-    # jurism puts out new version in a frenzied burst -- only keep the last m-version
-    for version in [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']:
-      if len(versions) == 0:
-        versions.append(version)
-      elif version.split('m')[0] == versions[-1].split('m')[0]:
-        versions[-1] = version
+  def gather(self):
+    # gather .debs to build
+    for client in Clients:
+      if client == 'zotero':
+        versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
       else:
-        versions.append(version)
-  versions.append(f'beta-{date.today().isoformat()}')
+        versions = []
+        # jurism puts out new version in a frenzied burst -- only keep the last m-version
+        for version in [release for release in load('https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux').split('\n') if release != '']:
+          if len(versions) == 0:
+            versions.append(version)
+          elif version.split('m')[0] == versions[-1].split('m')[0]:
+            versions[-1] = version
+          else:
+            versions.append(version)
+      versions.append(f'beta-{date.today().isoformat()}')
 
-  for version in versions:
-    for arch in ArchMap.keys():
-      Deb(client, version, arch)
+      for version in versions:
+        for arch in ArchMap.keys():
+          Deb(client, version, arch)
 
-# cleanup leftover tarballs
-for client in Clients:
-  for tarball in glob.glob(f'{client}/*/*.tar.bz2'):
-    arch = os.path.basename(os.path.dirname(tarball))
-    version = os.path.basename(tarball).replace('.tar.bz2', '')
-    if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
-      print('removing', tarball)
-      os.remove(tarball)
+  def cleanup(self):
+    # cleanup interrupted build
+    for deb in glob.glob('repo/*.deb.*'):
+      os.remove(deb)
 
-# bump patch level
-if args.bump:
-  for client in Clients:
-    debs = Debs.select(client=client, beta=False)
-    if not 'patch' in Config[client]:
-      Config[client].patch = Munch()
-      Config[client].patch[debs[-1].version] = 0
-    Config[client].patch[debs[-1].version] += 1
-  with open('config.toml', 'w') as f:
-    toml.dump(Config, f)
+    # cleanup leftover tarballs
+    for client in Clients:
+      for tarball in glob.glob(f'{client}/*/*.tar.bz2'):
+        arch = os.path.basename(os.path.dirname(tarball))
+        version = os.path.basename(tarball).replace('.tar.bz2', '')
+        if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
+          print('removing', tarball)
+          os.remove(tarball)
 
-# build and download as needed
+  def bump(self):
+    # bump patch level
+    if args.bump:
+      for client in Clients:
+        debs = Debs.select(client=client, beta=False)
+        if not 'patch' in Config[client]:
+          Config[client].patch = Munch()
+          Config[client].patch[debs[-1].version] = 0
+        Config[client].patch[debs[-1].version] += 1
+      with open('config.toml', 'w') as f:
+        toml.dump(Config, f)
 
-if not args.rebuild and Repo and Repo.unchanged():
-  print('\n## repo up to date')
-  sys.exit()
-if Repo and Repo.rebuild: args.rebuild = True
+  def build(self):
+    # build and download as needed
 
-for deb in Deb.all():
-  deb.build()
+    if not args.rebuild and Repo and Repo.unchanged():
+      print('\n## repo up to date')
+      sys.exit()
+    if Repo and Repo.rebuild: args.rebuild = True
 
-# cleanup leftover .debs
-for deb in glob.glob('repo/*.deb'):
-  client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
-  if client.endswith('-beta'):
-    version = 'beta-' + version.replace('.', '-')
-    client = client.replace('-beta', '')
-  if not any(d for d in Deb.select(client=client, version=version, aptarch=aptarch)):
-    if os.path.exists('repo/Packages'): os.remove('repo/Packages')
-    print('removing', deb)
-    os.remove(deb)
+    for deb in Deb.all():
+      deb.build()
 
-if Deb.rebuilt or not os.path.exists('repo/Packages'):
-  print(f'\n## preparing repo')
-  run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
-  run(f'cd repo && apt-ftparchive packages . > Packages')
-  run(f'bzip2 -kf repo/Packages')
-  run(f'cd repo && apt-ftparchive release . > Release')
-  run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
-  run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
+  def trim(self):
+    # cleanup leftover .debs
+    for deb in glob.glob('repo/*.deb'):
+      client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
+      if client.endswith('-beta'):
+        version = 'beta-' + version.replace('.', '-')
+        client = client.replace('-beta', '')
+      if not any(d for d in Deb.select(client=client, version=version, aptarch=aptarch)):
+        if os.path.exists('repo/Packages'): os.remove('repo/Packages')
+        print('removing', deb)
+        os.remove(deb)
 
-  if Repo:
-    with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
-      install.write(Template(tmpl.read()).substitute(url=Repo.url))
-  else:
-    if os.path.exists('repo/install.sh'): os.remove('repo/install.sh')
+  def publish(self):
+    if Deb.rebuilt or not os.path.exists('repo/Packages'):
+      print(f'\n## preparing repo')
+      run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
+      run(f'cd repo && apt-ftparchive packages . > Packages')
+      run(f'bzip2 -kf repo/Packages')
+      run(f'cd repo && apt-ftparchive release . > Release')
+      run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
+      run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
 
-  if Repo:
-    Repo.publish()
-    print(f'::set-output name=url::{Repo.url}')
-    print('::set-output name=rebuilt::true')
-  else:
-    print(f'\n## not publishing repo: no repo specified')
-else:
-  print(f'\n## not publishing repo: nothing rebuilt')
+      if Repo:
+        with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
+          install.write(Template(tmpl.read()).substitute(url=Repo.url))
+      else:
+        if os.path.exists('repo/install.sh'): os.remove('repo/install.sh')
+
+      if Repo:
+        Repo.publish()
+        print(f'::set-output name=url::{Repo.url}')
+        print('::set-output name=rebuilt::true')
+      else:
+        print(f'\n## not publishing repo: no repo specified')
+    else:
+      print(f'\n## not publishing repo: nothing rebuilt')
+
+Builder()
