@@ -518,7 +518,7 @@ class Builder:
     for client in Clients:
       for tarball in glob.glob(f'{client}/*/*.tar.bz2'):
         arch = os.path.basename(os.path.dirname(tarball))
-        version = os.path.basename(tarball).replace('.tar.bz2', '')
+        version = re.sub('-[0-9]+$', '', os.path.basename(tarball).replace('.tar.bz2', ''))
         if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
           print('removing', tarball)
           os.remove(tarball)
