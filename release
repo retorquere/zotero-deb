@@ -527,13 +527,14 @@ class Builder:
     # bump patch level
     if args.bump:
       for client in Clients:
-        debs = Debs.select(client=client, beta=False)
+        debs = Deb.select(client=client, beta=False)
         if not 'patch' in Config[client]:
           Config[client].patch = Munch()
           Config[client].patch[debs[-1].version] = 0
         Config[client].patch[debs[-1].version] += 1
       with open('config.toml', 'w') as f:
         toml.dump(Config, f)
+      sys.exit()
 
   def build(self):
     # build and download as needed

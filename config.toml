@@ -6,7 +6,7 @@ gpgkey = "dpkg"
 name = "Zotero"
 comment = "Open-source reference manager"
 categories = "Office;Education;Literature"
-dependencies = [ "libnss3-dev", ]
+dependencies = [ "libnss3-dev",]
 section = "Science"
 description = "Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
@@ -17,6 +17,12 @@ categories = "Office;Education;Literature"
 dependencies = [ "libnss3-dev", "default-jre", "libreoffice-java-common",]
 section = "Science"
 description = "Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research"
+
+[zotero.patch]
+"5.0.93" = 1
+
+[jurism.patch]
+"5.0.93m8" = 1
 
 [master.github]
 repo = "retorquere/zotero-deb"
