@@ -484,7 +484,7 @@ class Builder:
   def __init__(self):
     self.gather()
     self.cleanup()
-    self.bump()
+    self.patch()
     self.build()
     self.trim()
     self.publish()
@@ -525,7 +525,17 @@ class Builder:
           print('  removing', tarball)
           os.remove(tarball)
 
-  def bump(self):
+  def patch(self):
+    changed = False
+    for client in Clients:
+      if not 'patch' in Config[client]: continue
+      for version in list(Config[client].patch.keys()):
+        if len(Deb.select(client=client, version=version, beta=False)) == 0:
+          Config[client].patch.pop(version)
+          changed = True
+    if changed:
+      with open('config.toml', 'w') as f:
+        toml.dump(Config, f)
     # bump patch level
     if args.bump:
       for client in Clients:
