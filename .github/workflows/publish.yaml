@@ -69,4 +69,4 @@ jobs:
       with:
         timeout_minutes: 10
         max_attempts: 3
-          command: sudo apt-get install zotero zotero-beta jurism jurism-beta
+        command: sudo apt-get install zotero zotero-beta jurism jurism-beta
