@@ -37,17 +37,18 @@ jobs:
         sudo apt-get update
         sudo apt-get install dpkg-sig fakeroot
 
-    - name: Cache built debs for next round
-      id: cache
-      uses: actions/cache@v2
-      env:
-        cache-name: v2
-      with:
-        path: |
-          ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
+# I don't trust this cache anymore. File sizes keep being off after refresh
+#    - name: Cache built debs for next round
+#      id: cache
+#      uses: actions/cache@v2
+#      env:
+#        cache-name: v2
+#      with:
+#        path: |
+#          ./repo
+#        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
+#        restore-keys: |
+#          ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: refresh repo
       id: repo
       env:
