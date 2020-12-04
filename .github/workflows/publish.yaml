@@ -45,7 +45,7 @@ jobs:
       with:
         path: |
           ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}-${{ hashFiles('repo/Packages') }}
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-build-${{ env.cache-name }}-
     - name: refresh repo
@@ -57,7 +57,7 @@ jobs:
         echo === Packages ===
         cat repo/Packages
         echo === debs ===
-        ls -l repo/debs
+        ls -l repo/*.deb
     - run: |
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}

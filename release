@@ -564,14 +564,13 @@ class Builder:
 
   def publish(self):
     if Deb.rebuilt or not os.path.exists('repo/Packages'):
-      with tempfile.TemporaryDirectory() as cache:
-        print(f'\n## preparing repo')
-        run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
-        run(f'cd repo && apt-ftparchive -o=Dir.CacheDir={shlex.quote(cache)} packages . > Packages')
-        run(f'bzip2 -kf repo/Packages')
-        run(f'cd repo && apt-ftparchive -o=Dir.CacheDir={shlex.quote(cache)} release . > Release')
-        run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
-        run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
+      print(f'\n## preparing repo')
+      run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
+      run(f'cd repo && dpkg-scanpackages -m . > Packages')
+      run(f'bzip2 -kf repo/Packages')
+      run(f'cd repo && apt-ftparchive release . > Release')
+      run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
+      run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
 
       if Repo:
         with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
