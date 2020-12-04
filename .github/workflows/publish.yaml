@@ -53,12 +53,7 @@ jobs:
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        ./release
-        echo === Packages ===
-        cat repo/Packages
-        echo === debs ===
-        ls -l repo/*.deb
+      run: ./release
     - run: |
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}
