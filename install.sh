@@ -12,6 +12,11 @@ case `uname -m` in
     ;;
 esac
 
+if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/apt-key" ]]; then
+  echo "apt-key will show it is deprecated -- don't worry, we're just migrating the package signing key to a new format"
+  sudo apt-key --keyring /etc/apt/trusted.gpg del 1C349BCF
+fi
+
 if [ -x "$$(command -v curl)" ]; then
   curl --silent -L $url/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
 elif [ -x "$$(command -v wget)" ]; then
