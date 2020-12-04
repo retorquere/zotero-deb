@@ -60,12 +60,9 @@ jobs:
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
       run: curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
-
-    - name: attempt install
-      uses: nick-invision/retry@v2
+    - name: Update package info
       if: steps.repo.outputs.rebuilt == 'true'
-      with:
-        timeout_minutes: 10
-        retry_wait_seconds: 60
-        max_attempts: 5
-        command: sudo apt-get update && sudo apt-get install zotero zotero-beta jurism jurism-beta
+      run: sudo apt-get update
+    - name: Test install
+      if: steps.repo.outputs.rebuilt == 'true'
+      run: sudo apt-get install zotero zotero-beta jurism jurism-beta
