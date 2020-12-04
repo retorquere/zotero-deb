@@ -59,9 +59,7 @@ jobs:
 
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
-      run: |
-        curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
-        sudo apt-get update
+      run: curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
 
     - name: attempt install
       uses: nick-invision/retry@v2
