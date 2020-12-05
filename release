@@ -110,6 +110,8 @@ class Repository:
   def verify(self):
     packages = []
     with open('repo/Packages') as f:
+      print(f.read())
+    with open('repo/Packages') as f:
       for line in f.readlines():
         line = line.strip()
         if line == '': continue
