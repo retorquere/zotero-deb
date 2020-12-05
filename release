@@ -555,7 +555,7 @@ class Builder:
             versions[-1] = version
           else:
             versions.append(version)
-      versions = versions[-1:]
+      #versions = versions[-1:]
       versions.append(f'beta-{date.today().isoformat()}')
 
       for version in versions:
