@@ -110,6 +110,8 @@ class Repository:
 
   def verify(self):
     with open('repo/Packages') as f:
+      packages = f.read()
+      print(textwrap.indent(packages, '=== '), flush=True)
       packages = []
       for pkg in f.read().split('\n\n'):
         pkg = pkg.strip()
@@ -129,6 +131,7 @@ class Repository:
         for k in expected.keys():
           assert expected[k] == deb[k], f'{k} mismatch, expected {expected[k]}, found {deb[k]}'
           print(f'  = {k}: {deb[k]}', flush=True)
+    print('== verify ready')
 
 class GitHub(Repository):
   def __init__(self, config):
