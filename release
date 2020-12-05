@@ -24,6 +24,7 @@ import os
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tarfile
@@ -108,31 +109,25 @@ class Repository:
     return published == available
 
   def verify(self):
-    packages = [Munch()]
     with open('repo/Packages') as f:
-      for line in f.readlines():
-        line = line.strip()
-        print(json.dumps(line))
-        if line == '':
-          packages.append(Munch())
-          continue
-        key, val = [p.strip() for p in line.split(':', 1)]
-        packages[-1][key] = val
-    packages = [pkg for pkg in packages if len(pkg.keys()) > 0]
+      packages = []
+      for pkg in f.read().split('\n\n'):
+        pkg = pkg.strip()
+        if pkg == '': continue
+        deb = Munch.fromDict(dict([tuple([k.strip() for k in kv.split(':', 1)]) for kv in pkg.split('\n')]))
+        print('>', deb.Filename, flush=True)
+        print(textwrap.indent(pkg, '    > '), flush=True)
 
-    for deb in packages:
-      print(deb.keys())
-      print(deb.Filename)
-      expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
-      with open(os.path.join('repo', deb.Filename), 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-          for h in expected.values():
-            h.update(chunk)
-      expected = Munch.fromDict({ k: h.hexdigest() for k, h in expected.items() })
-      expected.Size = str(os.path.getsize(os.path.join('repo', deb.Filename)))
-      for k in expected.keys():
-        assert expected[k] == deb[k], f'{k} mismatch, expected {expected[k]}, found {deb[k]}'
-        print(f'  {k}: {deb[k]}')
+        expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
+        with open(os.path.join('repo', deb.Filename), 'rb') as f:
+          for chunk in iter(lambda: f.read(4096), b""):
+            for h in expected.values():
+              h.update(chunk)
+        expected = Munch.fromDict({ k: h.hexdigest() for k, h in expected.items() })
+        expected.Size = str(os.path.getsize(os.path.join('repo', deb.Filename)))
+        for k in expected.keys():
+          assert expected[k] == deb[k], f'{k} mismatch, expected {expected[k]}, found {deb[k]}'
+          print(f'  = {k}: {deb[k]}', flush=True)
 
 class GitHub(Repository):
   def __init__(self, config):
@@ -167,23 +162,23 @@ class GitHub(Repository):
       urlretrieve(asset.download_url, os.path.join('repo', asset.name))
 
   def publish(self):
-    print(f'\n## publishing repo to github')
+    print(f'\n## publishing repo to github', flush=True)
     published = []
     for asset in self._release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
-        print('  deleting obsolete asset:', asset.name)
+        print('  deleting obsolete asset:', asset.name, flush=True)
         asset.delete()
       elif asset.name.endswith('.deb') and not args.rebuild:
         published.append(asset.name)
       else:
-        print('  refreshing asset:', asset.name)
+        print('  refreshing asset:', asset.name, flush=True)
         asset.delete()
 
     for asset in sorted(glob.glob('repo/*')):
       if os.path.basename(asset) in published: continue
 
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
-      print(f'  uploading {asset} ({content_type})')
+      print(f'  uploading {asset} ({content_type})', flush=True)
       with open(asset, 'rb') as f:
         self._release.upload_asset(
           asset=f,
@@ -191,7 +186,29 @@ class GitHub(Repository):
           content_type=content_type
         )
 
-class S3:
+class Local(Repository):
+  def __init__(self, config):
+    self.service = 'local'
+    self.url = 'http://localhost'
+
+    self._assets = {}
+    for asset in glob.glob('repo/*'):
+      self._assets[os.path.basename(asset)] = asset
+    super().__init__()
+
+  def delete(self, asset):
+    os.remove(f'repo/{asset}')
+
+  def get(self, asset):
+    return os.path.exists(os.path.join('repo', asset))
+
+  def publish(self):
+    print(f'\n## nothing to publish', flush=True)
+
+  def restore(self):
+    pass
+
+class S3(Repository):
   def __init__(self, config):
     self.service = 's3'
     self.url = f'https://{config.bucket}.s3.{config.region}.amazonaws.com'
@@ -214,58 +231,61 @@ class S3:
           self.bucket.download_file(os.path.basename(name), name)
           return True
     except:
-      print('  error: could not get {os.path.basename(name)}')
+      print('  error: could not get {os.path.basename(name)}', flush=True)
       if os.path.exists(name): os.remove(name)
 
     return False
 
   def publish(self):
-    print(f'\n## publishing repo to S3 bucket')
+    print(f'\n## publishing repo to S3 bucket', flush=True)
     published = []
     for asset in self.bucket.objects.all():
       if not os.path.exists(f'repo/{asset.key}'):
-        print('  deleting obsolete asset:', asset.key)
+        print('  deleting obsolete asset:', asset.key, flush=True)
         self.bucket.delete_key(asset)
       elif asset.key.endswith('.deb') and not args.rebuild:
         published.append(asset.key)
       else:
-        print('  refreshing asset:', asset.key)
+        print('  refreshing asset:', asset.key, flush=True)
 
     for asset in sorted(glob.glob('repo/*')):
       if os.path.basename(asset) in published: continue
 
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
-      print(f'  uploading {asset} ({content_type})')
+      print(f'  uploading {asset} ({content_type})', flush=True)
       self.bucket.upload_file(asset, os.path.basename(asset))
 
 def load_repo():
   branch = os.environ.get('GITHUB_REF', '')
-  branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else None
+  branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else f'@{socket.gethostname()}'
   repo = None
-  print(f'\n## branch = {branch}')
+  print(f'\n## branch = {branch}', flush=True)
   if branch and branch in Config:
-    for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('github', 's3')]:
+    for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('local', 'github', 's3')]:
       if hosting == 'github':
-        print('\n## publish target: Github release')
+        print('\n## publish target: Github release', flush=True)
         repo = GitHub(config)
       elif hosting == 's3':
-        print('\n## publish target: S3 bucket')
+        print('\n## publish target: S3 bucket', flush=True)
         repo = S3(config)
+      elif hosting == 'local':
+        print('\n## publish target: local', flush=True)
+        repo = Local(config)
       break
 
   if not repo:
-    print(f'  no repo found for {branch}')
+    print(f'  no repo found for {branch}', flush=True)
   return repo
 Repo = load_repo()
 
 def run(cmd, echo=True):
-  if echo: print('  $', cmd)
+  if echo: print('  $', cmd, flush=True)
 
   try:
     output = textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    ')
-    if echo: print(output)
+    if echo: print(output, flush=True)
   except subprocess.CalledProcessError as e:
-    print(textwrap.indent(e.output.decode('utf-8'), '    '))
+    print(textwrap.indent(e.output.decode('utf-8'), '    '), flush=True)
     sys.exit(1)
 
 class Open():
@@ -324,12 +344,12 @@ class Deb:
   def select(cls, version = None, patch = None, client = None, arch=None, aptarch=None, beta=None):
     def equal(deb):
       return all((given is None or given == found) for given, found in [(version, deb.version), (patch, deb.version + deb.apt.patch), (client, deb.client), (arch, deb.arch), (aptarch, deb.apt.arch), (beta, deb.beta)])
-    #print('version:', version, 'client:', client, 'arch:', arch, 'aptarch:', aptarch, 'beta:', beta)
+    #print('version:', version, 'client:', client, 'arch:', arch, 'aptarch:', aptarch, 'beta:', beta, flush=True)
     #for deb in cls.__debs:
     #  if equal(deb):
-    #    print('== version:', deb.version, 'client:', deb.client, 'arch:', deb.arch, 'aptarch:', deb.apt.arch, 'beta:', deb.beta)
+    #    print('== version:', deb.version, 'client:', deb.client, 'arch:', deb.arch, 'aptarch:', deb.apt.arch, 'beta:', deb.beta, flush=True)
     #  else:
-    #    print('!=',
+    #    print('!=', flush=True,
     #      'version:', deb.version, 
     #      'client:', deb.client, 
     #      'arch:', deb.arch,
@@ -397,12 +417,12 @@ class Deb:
   def build(self):
     if not 'patch' in Config[self.client]: Config[self.client].patch = Munch()
 
-    print(f'\n## building {self.deb}')
+    print(f'\n## building {self.deb}', flush=True)
     self.rebuilt = True
 
     exists = None
     if args.rebuild:
-      print('  forced rebuild')
+      print('  forced rebuild', flush=True)
     elif os.path.exists(self.deb):
       exists = f'  {self.deb} already exists'
     elif Repo and Repo.get(self.deb):
@@ -411,22 +431,21 @@ class Deb:
       try:
         # for some bloody reason Github frequently hands us a JSON description of the asset rather than the asset itself
         run(f'dpkg --info {self.deb}', echo=False)
-        print(exists)
+        print(exists, flush=True)
         return
       except ArchiveFormatError:
-        print(exists + ', but is corrupted')
-        print(output)
+        print(exists + ', but is corrupted', flush=True)
         if os.path.exists(self.deb): os.remove(self.deb)
 
     if not os.path.exists(self.tarball) or args.reload:
       os.makedirs(os.path.dirname(self.tarball), exist_ok=True)
-      print('  downloading', self.tarball)
+      print('  downloading', self.tarball, flush=True)
       urlretrieve(self.url, self.tarball)
 
     if os.path.exists('build'): shutil.rmtree('build')
     os.makedirs('build')
   
-    print(f'  unpacking {self.tarball}')
+    print(f'  unpacking {self.tarball}', flush=True)
     tar = tarfile.open(self.tarball)
     for member in tar.getmembers():
       if not member.isreg(): continue
@@ -438,7 +457,7 @@ class Deb:
       tar.extract(member, f'build/usr/lib/{self.client}{self.apt.postfix}')
     tar.close()
   
-    print(f'  disable auto-update')
+    print(f'  disable auto-update', flush=True)
     with Open(f'build/usr/lib/{self.client}{self.apt.postfix}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{self.client}{self.apt.postfix}/mozilla.cfg', 'a') as cfg:
       # enable mozilla.cfg
       if ls.tell() != 0: print('', file=ls)
@@ -453,7 +472,7 @@ class Deb:
       print('lockPref("app.update.enabled", false);', file=cfg)
       print('lockPref("app.update.auto", false);', file=cfg)
   
-    print(f'  write launcher entry')
+    print(f'  write launcher entry', flush=True)
     with Open(f'build/usr/share/applications/{self.client}{self.apt.postfix}.desktop', 'w') as f:
       desktop = configparser.RawConfigParser()
       desktop.add_section('Desktop Entry')
@@ -468,7 +487,7 @@ class Deb:
       desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in MimeInfo.values() for mt in mi.mimetypes]))
       desktop.write(f, space_around_delimiters=False)
 
-    print(f'  update mime info')
+    print(f'  update mime info', flush=True)
     with Open(f'build/usr/share/mime/packages/{self.client}{self.apt.postfix}.xml', 'wb') as f:
       E = ElementMaker(
         namespace='http://www.freedesktop.org/standards/shared-mime-info',
@@ -494,7 +513,7 @@ class Deb:
         _mimetypes.append(MIMETYPE(*children, type=mi.mimetypes[0]))
       f.write(etree.tostring(MIMEINFO(*_mimetypes), pretty_print=True, xml_declaration=True, encoding='utf-8'))
 
-    print(f'  write build control file')
+    print(f'  write build control file', flush=True)
     with Open('build/DEBIAN/control', 'w') as f:
       dependencies = ', '.join(sorted(list(set(Config[self.client].dependencies + ESR))))
       print(f'Package: {self.client}{self.apt.postfix}', file=f)
@@ -547,7 +566,7 @@ class Builder:
           Deb(client, version, arch)
 
   def cleanup(self):
-    print('\n## pre-build cleanup')
+    print('\n## pre-build cleanup', flush=True)
     # cleanup interrupted build
     for deb in glob.glob('repo/*.deb.*'):
       os.remove(deb)
@@ -558,7 +577,7 @@ class Builder:
         arch = os.path.basename(os.path.dirname(tarball))
         version = os.path.basename(tarball).replace('.tar.bz2', '')
         if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
-          print('  removing', tarball)
+          print('  removing', tarball, flush=True)
           os.remove(tarball)
 
   def patch(self):
@@ -588,7 +607,8 @@ class Builder:
     # build and download as needed
 
     if not args.rebuild and Repo and Repo.unchanged():
-      print('\n## repo up to date')
+      Repo.verify()
+      print('\n## repo up to date', flush=True)
       sys.exit()
     if Repo and Repo.rebuild: args.rebuild = True
 
@@ -597,7 +617,7 @@ class Builder:
 
   def trim(self):
     # cleanup leftover .debs
-    print('\n## Remove obsolete .debs')
+    print('\n## Remove obsolete .debs', flush=True)
     for deb in glob.glob('repo/*.deb'):
       client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
       if client.endswith('-beta'):
@@ -605,12 +625,12 @@ class Builder:
         client = client.replace('-beta', '')
       if not any(d for d in Deb.select(client=client, patch=version, aptarch=aptarch)):
         if os.path.exists('repo/Packages'): os.remove('repo/Packages')
-        print('  removing', deb)
+        print('  removing', deb, flush=True)
         os.remove(deb)
 
   def publish(self):
     if Deb.rebuilt or not os.path.exists('repo/Packages'):
-      print(f'\n## preparing repo')
+      print(f'\n## preparing repo', flush=True)
       run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
       run(f'cd repo && apt-ftparchive packages . > Packages')
       run(f'bzip2 -kf repo/Packages')
@@ -626,17 +646,17 @@ class Builder:
 
       if Repo:
         Repo.publish()
-        print(f'::set-output name=url::{Repo.url}')
-        print('::set-output name=rebuilt::true')
+        print(f'::set-output name=url::{Repo.url}', flush=True)
+        print('::set-output name=rebuilt::true', flush=True)
 
         Repo.verify()
         Repo.restore()
         Repo.verify()
 
       else:
-        print(f'\n## not publishing repo: no repo specified')
+        print(f'\n## not publishing repo: no repo specified', flush=True)
     else:
-      print(f'\n## not publishing repo: nothing rebuilt')
+      print(f'\n## not publishing repo: nothing rebuilt', flush=True)
 
 # kick off build
 Builder()
