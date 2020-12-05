@@ -108,16 +108,18 @@ class Repository:
     return published == available
 
   def verify(self):
-    packages = []
+    packages = [Munch()]
     with open('repo/Packages') as f:
       print(f.read())
     with open('repo/Packages') as f:
       for line in f.readlines():
         line = line.strip()
-        if line == '': continue
+        if line == '':
+          packages.append(Munch())
+          continue
         key, val = [p.strip() for p in line.split(':', 1)]
-        if key == 'Package': packages.append(Munch())
         packages[-1][key] = val
+    packages = [pkg for pkg in packages if len(pkg.keys()) > 0]
 
     for deb in packages:
       print(deb.Filename)
