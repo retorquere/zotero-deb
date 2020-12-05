@@ -114,9 +114,9 @@ class Repository:
       for pkg in f.read().split('\n\n'):
         pkg = pkg.strip()
         if pkg == '': continue
+        print(pkg), flush=True)
         deb = Munch.fromDict(dict([tuple([k.strip() for k in kv.split(':', 1)]) for kv in pkg.split('\n')]))
-        print('>', deb.Filename, flush=True)
-        print(textwrap.indent(pkg, '    > '), flush=True)
+        print('  >', deb.Filename, flush=True)
 
         expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
         with open(os.path.join('repo', deb.Filename), 'rb') as f:
