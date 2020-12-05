@@ -3,32 +3,33 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
-import shlex
-from packaging import version as vcomp
-import boto3
-from munch import Munch
-from urllib.request import urlopen, urlretrieve
-import json
-import os
-import argparse
-import toml
-import sys
-from datetime import date
-import shutil
-import tarfile
-import re
-import configparser
-import lxml.etree as etree
-from lxml.builder import ElementMaker
-import glob
-import github3 as github
-import mimetypes
-import subprocess
-import textwrap
-from string import Template
-import tempfile
-from pydpkg import Dpkg
 from arpy import ArchiveFormatError
+from datetime import date
+from lxml.builder import ElementMaker
+from munch import Munch
+from packaging import version as vcomp
+from pydpkg import Dpkg
+from string import Template
+from urllib.request import urlopen, urlretrieve
+import argparse
+import boto3
+import configparser
+import github3 as github
+import glob
+import hashlib
+import json
+import lxml.etree as etree
+import mimetypes
+import os
+import re
+import shlex
+import shutil
+import subprocess
+import sys
+import tarfile
+import tempfile
+import textwrap
+import toml
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--bump', action='store_true')
@@ -128,8 +129,8 @@ class GitHub(Repository):
     asset = self._assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
-      #urlretrieve(asset.download_url, name)
-      run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
+      urlretrieve(asset.download_url, name)
+      #run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
       return True
     return False
 
@@ -582,6 +583,8 @@ class Builder:
       run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
       run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} --clearsign -o repo/InRelease --digest-algo sha256 repo/Release')
 
+      self.verify()
+
       if Repo:
         with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
           install.write(Template(tmpl.read()).substitute(url=Repo.url))
@@ -596,6 +599,29 @@ class Builder:
         print(f'\n## not publishing repo: no repo specified')
     else:
       print(f'\n## not publishing repo: nothing rebuilt')
+
+  def verify(self):
+    packages = []
+    with open('repo/Packages') as f:
+      for line in f.readlines():
+        line = line.strip()
+        if line == '': continue
+        key, val = [p.strip() for p in line.split(':', 2)]
+        if key == 'Package': packages.append(Munch())
+        packages[-1][key] = val
+
+    for deb in packages:
+      print(deb.Filename)
+      expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
+      with open(os.path.join('repo', deb.Filename), 'rb') as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+          for h in expected.values():
+            h.update(chunk)
+      expected = Munch.fromDict({ k: h.hexdigest() for k, h in expected.items() })
+      expected.Size = str(os.path.getsize(os.path.join('repo', deb.Filename)))
+      for k in expected.keys():
+        assert expected[k] == deb[k], f'{k} mismatch, expected {expected[k]}, found {deb[k]}'
+        print(f'  {k}: {deb[k]}')
 
 # kick off build
 Builder()
