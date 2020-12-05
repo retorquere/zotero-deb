@@ -10,7 +10,7 @@ from munch import Munch
 from packaging import version as vcomp
 from pydpkg import Dpkg
 from string import Template
-from urllib.request import urlopen, urlretrieve
+from urllib.request import urlopen
 import argparse
 import boto3
 import configparser
@@ -95,6 +95,10 @@ ESR = load_esr_deps()
 
 #### convenience functions ####
 
+#from urllib.request import urlretrieve
+def urlretrieve(url, path):
+  run(f'curl -s -L -o {shlex.quote(path)} {shlex.quote(url)}')
+
 class Repository:
   def __init__(self):
     self.rebuild = 'Packages' not in self._assets # deleting 'Packages' forces re-uploading of everything
@@ -155,15 +159,14 @@ class GitHub(Repository):
     asset = self._assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
-      #urlretrieve(asset.browser_download_url, name)
-      run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.browser_download_url)}')
+      urlretrieve(asset.browser_download_url, name)
       return True
     return False
 
   def restore(self):
     os.makedirs('repo', exist_ok=True)
     for asset in self._release.assets():
-      urlretrieve(asset.download_url, os.path.join('repo', asset.name))
+      urlretrieve(asset.browser_download_url, os.path.join('repo', asset.name))
 
   def publish(self):
     print(f'\n## publishing repo to github', flush=True)
