@@ -115,9 +115,7 @@ class Repository:
   def verify(self):
     with open('repo/Packages') as f:
       packages = f.read()
-      print(textwrap.indent(packages, '=== '), flush=True)
-      packages = []
-      for pkg in f.read().split('\n\n'):
+      for pkg in packages.split('\n\n'):
         pkg = pkg.strip()
         if pkg == '': continue
         print(pkg, flush=True)
