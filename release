@@ -154,8 +154,8 @@ class GitHub(Repository):
     asset = self._assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
-      #urlretrieve(asset.download_url, name)
-      run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
+      #urlretrieve(asset.browser_download_url, name)
+      run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.browser_download_url)}')
       return True
     return False
 
@@ -537,6 +537,7 @@ class Builder:
             versions[-1] = version
           else:
             versions.append(version)
+      versions = versions[-1:]
       versions.append(f'beta-{date.today().isoformat()}')
 
       for version in versions:
