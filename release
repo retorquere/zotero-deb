@@ -110,10 +110,9 @@ class Repository:
   def verify(self):
     packages = [Munch()]
     with open('repo/Packages') as f:
-      print(f.read())
-    with open('repo/Packages') as f:
       for line in f.readlines():
         line = line.strip()
+        print(json.dumps(line))
         if line == '':
           packages.append(Munch())
           continue
@@ -122,6 +121,7 @@ class Repository:
     packages = [pkg for pkg in packages if len(pkg.keys()) > 0]
 
     for deb in packages:
+      print(deb.keys())
       print(deb.Filename)
       expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
       with open(os.path.join('repo', deb.Filename), 'rb') as f:
