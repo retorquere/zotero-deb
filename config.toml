@@ -31,3 +31,6 @@ release = "apt-get"
 [hosting.github]
 repo = "retorquere/zotero-deb"
 release = "test"
+
+["@blueberry".local]
+x = 1
