@@ -113,7 +113,7 @@ class Repository:
       for line in f.readlines():
         line = line.strip()
         if line == '': continue
-        key, val = [p.strip() for p in line.split(':', 2)]
+        key, val = [p.strip() for p in line.split(':', 1)]
         if key == 'Package': packages.append(Munch())
         packages[-1][key] = val
 
