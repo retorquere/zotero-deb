@@ -152,8 +152,8 @@ class GitHub(Repository):
     asset = self._assets.get(os.path.basename(name))
     if asset:
       os.makedirs(os.path.dirname(name), exist_ok=True)
-      urlretrieve(asset.download_url, name)
-      #run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
+      #urlretrieve(asset.download_url, name)
+      run(f'curl -s -L -o {shlex.quote(name)} {shlex.quote(asset.download_url)}')
       return True
     return False
 
@@ -254,11 +254,12 @@ def load_repo():
   return repo
 Repo = load_repo()
 
-def run(cmd):
-  print('  $', cmd)
+def run(cmd, echo=True):
+  if echo: print('  $', cmd)
 
   try:
-   print(textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    '))
+    output = textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    ')
+    if echo: print(output)
   except subprocess.CalledProcessError as e:
     print(textwrap.indent(e.output.decode('utf-8'), '    '))
     sys.exit(1)
@@ -405,11 +406,12 @@ class Deb:
     if exists:
       try:
         # for some bloody reason Github frequently hands us a JSON description of the asset rather than the asset itself
-        Dpkg(self.deb).headers
+        run(f'dpkg --info {self.deb}', echo=False)
         print(exists)
         return
       except ArchiveFormatError:
         print(exists + ', but is corrupted')
+        print(output)
         if os.path.exists(self.deb): os.remove(self.deb)
 
     if not os.path.exists(self.tarball) or args.reload:
