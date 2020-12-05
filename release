@@ -622,6 +622,7 @@ class Builder:
         print(f'::set-output name=url::{Repo.url}')
         print('::set-output name=rebuilt::true')
 
+        repo.verify()
         repo.restore()
         repo.verify()
 
