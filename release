@@ -576,7 +576,7 @@ class Builder:
     if Deb.rebuilt or not os.path.exists('repo/Packages'):
       print(f'\n## preparing repo')
       run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
-      run(f'cd repo && dpkg-scanpackages -m . > Packages')
+      run(f'cd repo && apt-ftparchive packages . > Packages')
       run(f'bzip2 -kf repo/Packages')
       run(f'cd repo && apt-ftparchive release . > Release')
       run(f'gpg --yes -abs -u {Config.maintainer.gpgkey} -o repo/Release.gpg --digest-algo sha256 repo/Release')
