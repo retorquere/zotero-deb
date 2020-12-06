@@ -26,7 +26,7 @@ jobs:
 
     - name: Import GPG key
       id: import_gpg
-      uses: retorquere/ghaction-import-gpg@a2a66a7
+      uses: retorquere/ghaction-import-gpg@master
       with:
         gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
 
