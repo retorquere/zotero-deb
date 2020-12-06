@@ -48,20 +48,15 @@ jobs:
 #        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
 #        restore-keys: |
 #          ${{ runner.os }}-build-${{ env.cache-name }}-
-    - name: refresh repo on master
-      if: github.ref == 'refs/heads/master'
-      id: repo
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYTHONUNBUFFERED: TRUE
-      run: ./release
-    - name: refresh repo on other branches
+    - name: always rebuild off-master
       if: github.ref != 'refs/heads/master'
+      run: echo "REPOREBUILD=--rebuild" >> $GITHUB_ENV
+    - name: refresh repo
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PYTHONUNBUFFERED: TRUE
-      run: ./release --rebuild
+      run: ./release $REPOREBUILD
     - run: |
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}
