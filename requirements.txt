@@ -6,3 +6,4 @@ munch
 lxml
 boto3
 pydpkg
+chevron
