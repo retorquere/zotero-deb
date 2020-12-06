@@ -44,9 +44,7 @@ jobs:
       with:
         path: |
           ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('release') }}-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-build-${{ env.cache-name }}-
+        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('release', 'requirements.txt') }}
     - name: always rebuild off-master
       if: github.ref != 'refs/heads/master'
       run: echo "REPOREBUILD=--rebuild" >> $GITHUB_ENV
