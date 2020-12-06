@@ -137,23 +137,19 @@ class Repository:
           print(f'  = {k}: {deb[k]}')
     print('  verify ready')
 
-  def index(self, as_html=False):
+  def index(self, list_debs=False, as_html=False):
     data = { 'url': self.url }
     for client in Clients:
       data[client] = Deb.select(client=client)[-1]
       data[client] = data[client].version + data[client].apt.patch
     data['debs'] = { 'deb': os.path.basename(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
-    if os.path.exists(f'{self.service}.md'):
-      with open(f'{self.service}.md') as f:
-        index = chevron.render(f.read(), data)
-        if as_html: index = markdown.markdown(index)
-        return index
-    elif os.path.exists(f'{self.service}.html'):
-      with open(f'{self.service}.html') as f:
-        return chevron.render(f.read(), data)
-    else:
-      return None
+    with open('index.md') as f:
+      index = f.read()
+      if list_debs: index += '\n\n---\n\n{{#debs}}{{deb}}{{/debs}}'
+      index = chevron.render(index, data)
+      if as_html: index = markdown.markdown(index)
+      return index
 
 class GitHub(Repository):
   def __init__(self, config):

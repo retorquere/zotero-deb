@@ -2,7 +2,7 @@
 
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them.
 
-This repository updates to new releases of Zotero (currently {{ zotero }} and Juris-M (currently {{ jurism }}) within 24 hours, usually faster.
+This repository updates to new releases of Zotero (currently **{{ zotero }}**) and Juris-M (currently **{{ jurism }}**) within 24 hours, usually faster.
 
 ## Contents of the packages
 
@@ -57,7 +57,3 @@ sudo apt upgrade
 ## Instructions for installation on Crostini-capable Chromebooks
 
 Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
-
-{{#debs}}
-  <b>{{deb}}</b>
-{{/repo}}
