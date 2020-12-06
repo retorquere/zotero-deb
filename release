@@ -1,4 +1,4 @@
-#!/usr/bin/env -S python3 -u
+#!/usr/bin/env python3
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
