@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S python3 -u
 
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -100,10 +100,6 @@ ESR = load_esr_deps()
 def urlretrieve(url, path):
   run(f'curl -s -L -o {shlex.quote(path)} {shlex.quote(url)}')
 
-def say(*args, verbose=False):
-  if not verbose or Args.verbose:
-    print(*args, flush=True)
-
 class Repository:
   def __init__(self):
     self.rebuild = 'Packages' not in self._assets # deleting 'Packages' forces re-uploading of everything
@@ -118,15 +114,15 @@ class Repository:
     return published == available
 
   def verify(self):
-    say('\n## verifying repo hashes/sizes')
+    print('\n## verifying repo hashes/sizes')
     with open('repo/Packages') as f:
       packages = f.read()
       for pkg in packages.split('\n\n'):
         pkg = pkg.strip()
         if pkg == '': continue
-        say(pkg, verbose=True)
+        if Args.verbose: print(pkg)
         deb = Munch.fromDict(dict([tuple([k.strip() for k in kv.split(':', 1)]) for kv in pkg.split('\n')]))
-        say('\n ', os.path.basename(deb.Filename))
+        print('\n ', os.path.basename(deb.Filename))
 
         expected = Munch(MD5sum=hashlib.md5(), SHA1=hashlib.sha1(), SHA256=hashlib.sha256(), SHA512=hashlib.sha512())
         with open(os.path.join('repo', deb.Filename), 'rb') as f:
@@ -137,13 +133,13 @@ class Repository:
         expected.Size = str(os.path.getsize(os.path.join('repo', deb.Filename)))
         for k in expected.keys():
           assert expected[k] == deb[k], f'{k} mismatch, expected {expected[k]}, found {deb[k]}'
-          say(f'  = {k}: {deb[k]}')
-    say('  verify ready')
+          print(f'  = {k}: {deb[k]}')
+    print('  verify ready')
 
   def index(self, as_html=False):
     data = { 'url': self.url }
     for client in Clients:
-      data[client] = Debs.select(client=client)[-1]
+      data[client] = Deb.select(client=client)[-1]
       data[client] = data[client].version + data[client].apt.patch
     data['debs'] = { 'deb': os.path.baesname(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
@@ -190,23 +186,23 @@ class GitHub(Repository):
       urlretrieve(asset.browser_download_url, os.path.join('repo', asset.name))
 
   def publish(self):
-    say(f'\n## publishing repo to github')
+    print(f'\n## publishing repo to github')
     published = []
     for asset in self._release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
-        say('  deleting obsolete asset:', asset.name)
+        print('  deleting obsolete asset:', asset.name)
         asset.delete()
       elif asset.name.endswith('.deb') and not Args.rebuild:
         published.append(asset.name)
       else:
-        say('  refreshing asset:', asset.name)
+        print('  refreshing asset:', asset.name)
         asset.delete()
 
     for asset in sorted(glob.glob('repo/*')):
       if os.path.basename(asset) in published: continue
 
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
-      say(f'  uploading {asset} ({content_type})')
+      print(f'  uploading {asset} ({content_type})')
       with open(asset, 'rb') as f:
         self._release.upload_asset(
           asset=f,
@@ -238,7 +234,7 @@ class Local(Repository):
     return os.path.exists(os.path.join('repo', asset))
 
   def publish(self):
-    say(f'\n## nothing to publish')
+    print(f'\n## nothing to publish')
 
   def restore(self):
     pass
@@ -266,61 +262,61 @@ class S3(Repository):
           self.bucket.download_file(os.path.basename(name), name)
           return True
     except:
-      say('  error: could not get {os.path.basename(name)}')
+      print('  error: could not get {os.path.basename(name)}')
       if os.path.exists(name): os.remove(name)
 
     return False
 
   def publish(self):
-    say(f'\n## publishing repo to S3 bucket')
+    print(f'\n## publishing repo to S3 bucket')
     published = []
     for asset in self.bucket.objects.all():
       if not os.path.exists(f'repo/{asset.key}'):
-        say('  deleting obsolete asset:', asset.key)
+        print('  deleting obsolete asset:', asset.key)
         self.bucket.delete_key(asset)
       elif asset.key.endswith('.deb') and not Args.rebuild:
         published.append(asset.key)
       else:
-        say('  refreshing asset:', asset.key)
+        print('  refreshing asset:', asset.key)
 
     for asset in sorted(glob.glob('repo/*')):
       if os.path.basename(asset) in published: continue
 
       content_type = mimetypes.guess_type(asset)[0] or 'application/octet-stream'
-      say(f'  uploading {asset} ({content_type})')
+      print(f'  uploading {asset} ({content_type})')
       self.bucket.upload_file(asset, os.path.basename(asset))
 
 def load_repo():
   branch = os.environ.get('GITHUB_REF', '')
   branch = branch.split('/')[-1] if branch.startswith('refs/heads/') else f'@{socket.gethostname()}'
   repo = None
-  say(f'\n## branch = {branch}')
+  print(f'\n## branch = {branch}')
   if branch and branch in Config:
     for hosting, config in [(h.lower(), data) for h, data in Config[branch].items() if h.lower() in ('local', 'github', 's3')]:
       if hosting == 'github':
-        say('\n## publish target: Github release')
+        print('\n## publish target: Github release')
         repo = GitHub(config)
       elif hosting == 's3':
-        say('\n## publish target: S3 bucket')
+        print('\n## publish target: S3 bucket')
         repo = S3(config)
       elif hosting == 'local':
-        say('\n## publish target: local')
+        print('\n## publish target: local')
         repo = Local(config)
       break
 
   if not repo:
-    say(f'  no repo found for {branch}')
+    print(f'  no repo found for {branch}')
   return repo
 Repo = load_repo()
 
 def run(cmd, echo=True):
-  if echo: say('  $', cmd)
+  if echo: print('  $', cmd)
 
   try:
-    output = textwrap.indent(subprocess.check_output(cmd, shell=True).decode('utf-8'), '    ')
-    if echo: say(output)
+    output = textwrap.indent(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'), '    ')
+    if echo: print(output)
   except subprocess.CalledProcessError as e:
-    say(textwrap.indent(e.output.decode('utf-8'), '    '))
+    print(textwrap.indent(e.output.decode('utf-8'), '    '))
     sys.exit(1)
 
 class Open():
@@ -439,12 +435,12 @@ class Deb:
   def build(self):
     if not 'patch' in Config[self.client]: Config[self.client].patch = Munch()
 
-    say(f'\n## building {self.deb}')
+    print(f'\n## building {self.deb}')
     self.rebuilt = True
 
     exists = None
     if Args.rebuild:
-      say('  forced rebuild')
+      print('  forced rebuild')
     elif os.path.exists(self.deb):
       exists = f'  {self.deb} already exists'
     elif Repo and Repo.get(self.deb):
@@ -453,21 +449,21 @@ class Deb:
       try:
         # for some bloody reason Github frequently hands us a JSON description of the asset rather than the asset itself
         run(f'dpkg --info {self.deb}', echo=False)
-        say(exists)
+        print(exists)
         return
       except ArchiveFormatError:
-        say(exists + ', but is corrupted')
+        print(exists + ', but is corrupted')
         if os.path.exists(self.deb): os.remove(self.deb)
 
     if not os.path.exists(self.tarball) or Args.reload:
       os.makedirs(os.path.dirname(self.tarball), exist_ok=True)
-      say('  downloading', self.tarball)
+      print('  downloading', self.tarball)
       urlretrieve(self.url, self.tarball)
 
     if os.path.exists('build'): shutil.rmtree('build')
     os.makedirs('build')
   
-    say(f'  unpacking {self.tarball}')
+    print(f'  unpacking {self.tarball}')
     tar = tarfile.open(self.tarball)
     for member in tar.getmembers():
       if not member.isreg(): continue
@@ -479,7 +475,7 @@ class Deb:
       tar.extract(member, f'build/usr/lib/{self.client}{self.apt.postfix}')
     tar.close()
   
-    say(f'  disable auto-update')
+    print(f'  disable auto-update')
     with Open(f'build/usr/lib/{self.client}{self.apt.postfix}/defaults/pref/local-settings.js', 'a') as ls, Open(f'build/usr/lib/{self.client}{self.apt.postfix}/mozilla.cfg', 'a') as cfg:
       # enable mozilla.cfg
       if ls.tell() != 0: print('', file=ls)
@@ -494,7 +490,7 @@ class Deb:
       print('lockPref("app.update.enabled", false);', file=cfg)
       print('lockPref("app.update.auto", false);', file=cfg)
   
-    say(f'  write launcher entry')
+    print(f'  write launcher entry')
     with Open(f'build/usr/share/applications/{self.client}{self.apt.postfix}.desktop', 'w') as f:
       desktop = configparser.RawConfigParser()
       desktop.add_section('Desktop Entry')
@@ -509,7 +505,7 @@ class Deb:
       desktop.set('Desktop Entry', 'MimeType', ';'.join([mt for mi in MimeInfo.values() for mt in mi.mimetypes]))
       desktop.write(f, space_around_delimiters=False)
 
-    say(f'  update mime info')
+    print(f'  update mime info')
     with Open(f'build/usr/share/mime/packages/{self.client}{self.apt.postfix}.xml', 'wb') as f:
       E = ElementMaker(
         namespace='http://www.freedesktop.org/standards/shared-mime-info',
@@ -535,7 +531,7 @@ class Deb:
         _mimetypes.append(MIMETYPE(*children, type=mi.mimetypes[0]))
       f.write(etree.tostring(MIMEINFO(*_mimetypes), pretty_print=True, xml_declaration=True, encoding='utf-8'))
 
-    say(f'  write build control file')
+    print(f'  write build control file')
     with Open('build/DEBIAN/control', 'w') as f:
       dependencies = ', '.join(sorted(list(set(Config[self.client].dependencies + ESR))))
       print(f'Package: {self.client}{self.apt.postfix}', file=f)
@@ -588,7 +584,7 @@ class Builder:
           Deb(client, version, arch)
 
   def cleanup(self):
-    say('\n## pre-build cleanup')
+    print('\n## pre-build cleanup')
     # cleanup interrupted build
     for deb in glob.glob('repo/*.deb.*'):
       os.remove(deb)
@@ -599,7 +595,7 @@ class Builder:
         arch = os.path.basename(os.path.dirname(tarball))
         version = os.path.basename(tarball).replace('.tar.bz2', '')
         if not any(deb for deb in Deb.select(client=client, version=version, arch=arch)):
-          say('  removing', tarball)
+          print('  removing', tarball)
           os.remove(tarball)
 
   def patch(self):
@@ -629,7 +625,7 @@ class Builder:
     # build and download as needed
 
     if not Args.rebuild and Repo and Repo.unchanged():
-      say('\n## repo up to date')
+      print('\n## repo up to date')
       sys.exit()
     if Repo and Repo.rebuild: Args.rebuild = True
 
@@ -638,7 +634,7 @@ class Builder:
 
   def trim(self):
     # cleanup leftover .debs
-    say('\n## Remove obsolete .debs')
+    print('\n## Remove obsolete .debs')
     for deb in glob.glob('repo/*.deb'):
       client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
       if client.endswith('-beta'):
@@ -646,12 +642,12 @@ class Builder:
         client = client.replace('-beta', '')
       if not any(d for d in Deb.select(client=client, patch=version, aptarch=aptarch)):
         if os.path.exists('repo/Packages'): os.remove('repo/Packages')
-        say('  removing', deb)
+        print('  removing', deb)
         os.remove(deb)
 
   def publish(self):
     if Deb.rebuilt or not os.path.exists('repo/Packages'):
-      say(f'\n## preparing repo')
+      print(f'\n## preparing repo')
       run(f'gpg --armor --export {Config.maintainer.gpgkey} > repo/deb.gpg.key')
       run(f'cd repo && apt-ftparchive packages . > Packages')
       run(f'bzip2 -kf repo/Packages')
@@ -667,17 +663,17 @@ class Builder:
 
       if Repo:
         Repo.publish()
-        say(f'::set-output name=url::{Repo.url}')
-        say('::set-output name=rebuilt::true')
+        print(f'::set-output name=url::{Repo.url}')
+        print('::set-output name=rebuilt::true')
 
         Repo.verify()
         Repo.restore()
         Repo.verify()
 
       else:
-        say(f'\n## not publishing repo: no repo specified')
+        print(f'\n## not publishing repo: no repo specified')
     else:
-      say(f'\n## not publishing repo: nothing rebuilt')
+      print(f'\n## not publishing repo: nothing rebuilt')
 
 # kick off build
 Builder()
