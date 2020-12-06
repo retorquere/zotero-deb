@@ -146,12 +146,12 @@ class Repository:
 
     if os.path.exists(f'{self.service}.md'):
       with open(f'{self.service}.md') as f:
-        index = chevron.render(f.read().decode('utf-8'), data)
+        index = chevron.render(f.read(), data)
         if as_html: index = markdown.markdown(index)
         return index
     elif os.path.exists(f'{self.service}.html'):
       with open(f'{self.service}.html') as f:
-        return chevron.render(f.read().decode('utf-8'), data)
+        return chevron.render(f.read(), data)
     else:
       return None
 
