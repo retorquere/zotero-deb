@@ -140,8 +140,7 @@ class Repository:
   def index(self, list_debs=False, as_html=False):
     data = { 'url': self.url }
     for client in Clients:
-      data[client] = Deb.select(client=client)[-1]
-      data[client] = data[client].version + data[client].apt.patch
+      data[client] = Deb.select(client=client)[-1].version
     data['debs'] = { 'deb': os.path.basename(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
     with open('index.md') as f:
