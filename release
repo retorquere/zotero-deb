@@ -141,7 +141,7 @@ class Repository:
     for client in Clients:
       data[client] = Deb.select(client=client)[-1]
       data[client] = data[client].version + data[client].apt.patch
-    data['debs'] = { 'deb': os.path.baesname(deb) for deb in sorted(glob.glob('repo/*.deb')) }
+    data['debs'] = { 'deb': os.path.basename(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
     if os.path.exists(f'{self.service}.md'):
       with open(f'{self.service}.md') as f:
