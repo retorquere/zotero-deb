@@ -2,4 +2,12 @@
 
 if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/apt-key" && $(apt-key --keyring /etc/apt/trusted.gpg list dpkg@iris-advies.com) ]]; then
   sudo apt-key --keyring /etc/apt/trusted.gpg del 1C349BCF
+
+  if [ -x "$(command -v curl)" ]; then
+    curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+    sudo chmod 644 /etc/apt/trusted.gpg.d/zotero.gpg
+  elif [ -x "$(command -v wget)" ]; then
+    wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+    sudo chmod 644 /etc/apt/trusted.gpg.d/zotero.gpg
+  fi
 fi
