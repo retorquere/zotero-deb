@@ -11,6 +11,7 @@ from packaging import version as vcomp
 from pydpkg import Dpkg
 from string import Template
 from urllib.request import urlopen
+from urllib.parse import quote_plus as urlencode
 import argparse
 import boto3
 import configparser
@@ -32,6 +33,9 @@ import tempfile
 import textwrap
 import toml
 import chevron
+
+from ruamel.yaml import YAML
+yaml=YAML()
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--verbose', action='store_true')
@@ -108,6 +112,7 @@ class Repository:
       for asset in self._assets.values():
         self.delete(asset)
       self._assets = {}
+    self.repo = os.environ['GITHUB_REPOSITORY']
 
   def unchanged(self):
     published = set([asset for asset in self._assets.keys() if asset.endswith('.deb')])
@@ -137,13 +142,17 @@ class Repository:
           print(f'  = {k}: {deb[k]}')
     print('  verify ready')
 
-  def index(self, list_debs=False, as_html=False):
+  def page(self, md='index', list_debs=False, as_html=False):
     data = { 'url': self.url }
     for client in Clients:
       data[client] = Deb.select(client=client)[-1].version
     data['debs'] = { 'deb': os.path.basename(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
-    with open('index.md') as f:
+    with open('.github/workflows/publish.yaml') as f:
+      workflow = yaml.load(f)
+      data['badge'] = f'https://github.com/{self.repo}/workflows/{urlencode(workflow["name"])}/badge.svg?branch=master'
+
+    with open(f'{md}.md') as f:
       index = f.read()
       if list_debs: index += '\n\n---\n\n{{#debs}}{{deb}}{{/debs}}'
       index = chevron.render(index, data)
@@ -152,11 +161,12 @@ class Repository:
 
 class GitHub(Repository):
   def __init__(self, config):
+    self.repo = os.environ['GITHUB_REPOSITORY']
     self.service = 'github'
-    self.url = f'https://github.com/{config.repo}/releases/download/{config.release}'
+    self.url = f'https://github.com/{self.repo}/releases/download/{config.release}'
 
     gh = github.GitHub(token=os.getenv('GITHUB_TOKEN'), session=github.session.GitHubSession(default_read_timeout=60))
-    repo = gh.repository(*config.repo.split('/'))
+    repo = gh.repository(*self.repo.split('/'))
 
     self._release = repo.release_from_tag(config.release)
     self._assets = { asset.name: asset for asset in self._release.assets() }
@@ -183,6 +193,14 @@ class GitHub(Repository):
 
   def publish(self):
     print(f'\n## publishing repo to github')
+
+    if building := self.page(md='building'):
+      print(f'  updating release {self._release.name} description')
+      try:
+        self._release.edit(body=index)
+      except Exception as e:
+        print(e)
+
     published = []
     for asset in self._release.assets():
       if not os.path.exists(f'repo/{asset.name}'):
@@ -206,7 +224,7 @@ class GitHub(Repository):
           content_type=content_type
         )
 
-    if index := self.index():
+    if index := self.page(md='index'):
       print(f'  updating release {self._release.name} description')
       try:
         self._release.edit(body=index)

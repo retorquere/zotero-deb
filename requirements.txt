@@ -7,3 +7,4 @@ lxml
 boto3
 pydpkg
 chevron
+ruamel.yaml
