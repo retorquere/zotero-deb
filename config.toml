@@ -22,7 +22,6 @@ description = "Juris-M is a free, easy-to-use tool to help you collect, organize
 "5.0.93" = 1
 
 [jurism.patch]
-"5.0.93m8" = 1
 
 [master.github]
 release = "apt-get"
@@ -31,4 +30,4 @@ release = "apt-get"
 release = "test"
 
 ["@blueberry".local]
-x = 1
+repo = "retorquere/zotero-deb"

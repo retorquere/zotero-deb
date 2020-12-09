@@ -112,7 +112,7 @@ class Repository:
       for asset in self._assets.values():
         self.delete(asset)
       self._assets = {}
-    self.repo = os.environ['GITHUB_REPOSITORY']
+    self.repo = os.environ.get('GITHUB_REPOSITORY')
 
   def unchanged(self):
     published = set([asset for asset in self._assets.keys() if asset.endswith('.deb')])
@@ -148,9 +148,12 @@ class Repository:
       data[client] = Deb.select(client=client)[-1].version
     data['debs'] = { 'deb': os.path.basename(deb) for deb in sorted(glob.glob('repo/*.deb')) }
 
-    with open('.github/workflows/publish.yaml') as f:
-      workflow = yaml.load(f)
-      data['badge'] = f'https://github.com/{self.repo}/workflows/{urlencode(workflow["name"])}/badge.svg?branch=master'
+    if self.repo:
+      with open('.github/workflows/publish.yaml') as f:
+        workflow = yaml.load(f)
+        data['badge'] = f'https://github.com/{self.repo}/workflows/{urlencode(workflow["name"])}/badge.svg?branch=master'
+    else:
+      data['badge'] = ''
 
     with open(f'{md}.md') as f:
       index = f.read()
@@ -556,6 +559,7 @@ class Deb:
       print('Priority: optional', file=f)
       print(f'Version: {self.apt.version}{self.apt.patch}', file=f)
       print(f'Description: {Config[self.client].description}', file=f)
+    shutil.copy('postinst', 'build/DEBIAN/postinst')
 
     os.makedirs('build/usr/local/bin')
     os.symlink(f'/usr/lib/{self.client}{self.apt.postfix}/{self.client}', f'build/usr/local/bin/{self.client}{self.apt.postfix}')
