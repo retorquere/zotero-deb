@@ -675,7 +675,7 @@ class Builder:
 
       if Repo:
         with open('repo/install.sh', 'w') as install, open('install.sh') as tmpl:
-          install.write(Template(tmpl.read()).substitute(url=Repo.url))
+          install.write(chevron.render(tmpl.read(), { 'url': Repo.url }))
       else:
         if os.path.exists('repo/install.sh'): os.remove('repo/install.sh')
 
