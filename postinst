@@ -1,5 +1,5 @@
 #!/bin/bash
 
-if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/apt-key" && "$(apt-key --keyring /etc/apt/trusted.gpg list dpkg@iris-advies.com)" = "" ]]; then
+if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/apt-key" && $(apt-key --keyring /etc/apt/trusted.gpg list dpkg@iris-advies.com) ]]; then
   sudo apt-key --keyring /etc/apt/trusted.gpg del 1C349BCF
 fi
