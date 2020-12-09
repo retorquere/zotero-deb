@@ -19,9 +19,10 @@ section = "Science"
 description = "Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
 [zotero.patch]
-"5.0.93" = 1
+"5.0.93" = 2
 
 [jurism.patch]
+"5.0.93m12" = 1
 
 [master.github]
 release = "apt-get"
