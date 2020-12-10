@@ -559,7 +559,9 @@ class Deb:
       print('Priority: optional', file=f)
       print(f'Version: {self.apt.version}{self.apt.patch}', file=f)
       print(f'Description: {Config[self.client].description}', file=f)
-    shutil.copy('postinst', 'build/DEBIAN/postinst')
+    with Open('build/DEBIAN/postinst', 'w') as postinst, open('postinst') as tmpl:
+      postinst.write(chevron.render(tmpl.read(), { 'client': self.client + self.apt.postfix }))
+    os.chmod('build/DEBIAN/postinst', 0o775)
 
     os.makedirs('build/usr/local/bin')
     os.symlink(f'/usr/lib/{self.client}{self.apt.postfix}/{self.client}', f'build/usr/local/bin/{self.client}{self.apt.postfix}')

@@ -1,16 +1,11 @@
 #!/bin/bash
 
-echo "key format upgrade"
-#echo "The installation of {{ client }} will have shown a message that"
-#echo "  The postinst maintainerscript of the package zotero seems to use X (provided by apt) without depending on gpg, gnupg, or gnupg2. This will BREAK in the future and should be fixed by the package maintainer(s)."
-#echo "You can ignore this specific warning -- it is a known problem that is necessary to prevent people from being affected by https://github.com/retorquere/zotero-deb/issues/33"
+echo "The installation of {{ client }} will show a message that"
+echo "  Warning: apt-key should not be used in scripts (called from postinst maintainerscript of the package {{ client }})"
+echo "You can ignore this specific warning -- it is a side-effect for a fix that is necessary to prevent people from being affected by https://github.com/retorquere/zotero-deb/issues/33 and will be removed in due time"
 
-APTKEY=ap
-APTKEY+=t-
-APTKEY+=key
-
-if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/$APTKEY" && $($APTKEY --keyring /etc/apt/trusted.gpg list dpkg@iris-advies.com) ]]; then
-  sudo $APTKEY --keyring /etc/apt/trusted.gpg del 1C349BCF
+if [[ -f "/etc/apt/trusted.gpg" && -f "/usr/bin/apt-key" && $(apt-key --keyring /etc/apt/trusted.gpg list dpkg@iris-advies.com) ]]; then
+  sudo apt-key --keyring /etc/apt/trusted.gpg del 1C349BCF
 
   if [ -x "$(command -v curl)" ]; then
     curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
