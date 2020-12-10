@@ -4,7 +4,7 @@ on:
   schedule:
     - cron: 0 0 * * *
   push:
-  workflow_displatch:
+  workflow_dispatch:
     inputs:
       releaseOptions:
         description: release options
