@@ -1,7 +1,8 @@
 #!/bin/bash
 
+echo "key format upgrade"
 #echo "The installation of {{ client }} will have shown a message that"
-#echo "  The postinst maintainerscript of the package zotero seems to use apt-key (provided by apt) without depending on gpg, gnupg, or gnupg2. This will BREAK in the future and should be fixed by the package maintainer(s)."
+#echo "  The postinst maintainerscript of the package zotero seems to use X (provided by apt) without depending on gpg, gnupg, or gnupg2. This will BREAK in the future and should be fixed by the package maintainer(s)."
 #echo "You can ignore this specific warning -- it is a known problem that is necessary to prevent people from being affected by https://github.com/retorquere/zotero-deb/issues/33"
 
 APTKEY=ap
