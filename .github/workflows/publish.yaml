@@ -61,6 +61,9 @@ jobs:
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
       run: curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
+    - name: install old signing key verifier
+      if: github.ref != 'refs/heads/master' && steps.repo.outputs.rebuilt == 'true'
+      run: curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
     - name: Update package info
       if: steps.repo.outputs.rebuilt == 'true'
       run: sudo apt-get update
