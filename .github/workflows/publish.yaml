@@ -5,6 +5,11 @@ on:
     - cron: 0 0 * * *
   push:
   workflow_dispatch:
+    inputs:
+      releaseOptions:
+        description: release options
+        required: false
+        default: '--rebuild'
 
 jobs:
   release:
@@ -53,7 +58,7 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         PYTHONUNBUFFERED: TRUE
-      run: ./release $REPOREBUILD
+      run: ./release $REPOREBUILD ${{ github.event.inputs.releaseOptions }}
     - run: |
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}

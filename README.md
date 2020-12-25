@@ -56,7 +56,7 @@ sudo apt upgrade
 
 ## Package signing errors in Debian/Ubuntu/...
 
-The key format seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
+The accepted key format in Debian-based systems seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
 
 ```
 wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
