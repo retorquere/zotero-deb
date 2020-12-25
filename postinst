@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo
 echo "The installation of {{ client }} will show a message that"
 echo "  Warning: apt-key should not be used in scripts (called from postinst maintainerscript of the package {{ client }})"
 echo "You can ignore this specific warning -- it is a side-effect for a fix that is necessary to prevent people from being affected by https://github.com/retorquere/zotero-deb/issues/33 and will be removed in due time"
