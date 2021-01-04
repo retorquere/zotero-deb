@@ -57,7 +57,7 @@ jobs:
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        PYTHONUNBUFFERED: TRUE
+        PYTHONUNBUFFERED: true
       run: ./release $REPOREBUILD ${{ github.event.inputs.releaseOptions }}
     - run: |
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
