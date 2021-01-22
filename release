@@ -33,6 +33,7 @@ import tempfile
 import textwrap
 import toml
 import chevron
+from pushbullet import Pushbullet
 
 from ruamel.yaml import YAML
 yaml=YAML()
@@ -652,7 +653,13 @@ class Builder:
     if Repo and Repo.rebuild: Args.rebuild = True
 
     for deb in Deb.all():
-      deb.build()
+      try:
+        deb.build()
+      except tarfile.ReadError as e:
+        if deb.beta and 'PUSHBULLET_API_KEY' in os.environ:
+            Pushbullet(os.environ['PUSHBULLET_API_KEY']).push_note(f'{deb.client} beta failed to build'), 'Possibly a download error')
+        else:
+          raise e
 
   def trim(self):
     # cleanup leftover .debs
