@@ -57,6 +57,7 @@ jobs:
       id: repo
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        PUSHBULLET_API_KEY: ${{ secrets.PUSHBULLET_API_KEY }}
         PYTHONUNBUFFERED: true
       run: ./release $REPOREBUILD ${{ github.event.inputs.releaseOptions }}
     - run: |
