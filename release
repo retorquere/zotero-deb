@@ -656,6 +656,7 @@ class Builder:
       try:
         deb.build()
       except tarfile.ReadError as e:
+        print(deb.beta, 'PUSHBULLET_API_KEY' in os.environ)
         if deb.beta and 'PUSHBULLET_API_KEY' in os.environ:
             Pushbullet(os.environ['PUSHBULLET_API_KEY']).push_note(f'{deb.client} beta failed to build', 'Possibly a download error')
         else:
