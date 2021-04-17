@@ -90,7 +90,6 @@ def load_mimeinfo():
 MimeInfo = load_mimeinfo()
 
 def load_esr_deps():
-  ignore
   deps = []
   for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
     dep = dep.strip()
