@@ -20,9 +20,10 @@ description = "Juris-M is a free, easy-to-use tool to help you collect, organize
 
 [zotero.patch]
 "5.0.93" = 2
+"5.0.96.2" = 1
 
 [jurism.patch]
-"5.0.93m12" = 1
+"5.0.93m18" = 1
 
 [master.github]
 release = "apt-get"
