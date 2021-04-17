@@ -90,13 +90,15 @@ def load_mimeinfo():
 MimeInfo = load_mimeinfo()
 
 def load_esr_deps():
+  ignore
   deps = []
   for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
     dep = dep.strip()
     if not dep.startswith('Depends:'): continue
     dep = dep.split(':')[1].strip()
-    if dep != 'lsb-release': # why should it need this?
-      deps.append(dep)
+    if dep == 'lsb-release': continue # why should it need this?
+    if 'gcc' in dep: continue #43
+    deps.append(dep)
   return deps
 ESR = load_esr_deps()
 
