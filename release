@@ -330,13 +330,8 @@ Repo = load_repo()
 
 def run(cmd, echo=True):
   if echo: print('  $', cmd)
-
-  try:
-    output = textwrap.indent(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'), '    ')
-    if echo: print(output)
-  except subprocess.CalledProcessError as e:
-    print(textwrap.indent(e.output.decode('utf-8'), '    '))
-    sys.exit(1)
+  output = textwrap.indent(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'), '    ')
+  if echo: print(output)
 
 class Open():
   def __init__(self, path, mode='r', fmode=None):
