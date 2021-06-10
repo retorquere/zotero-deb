@@ -656,7 +656,7 @@ class Builder:
     for deb in Deb.all():
       try:
         deb.build()
-      except e:
+      except Exception as e:
         if deb.beta and 'PUSHBULLET_API_KEY' in os.environ:
           Pushbullet(os.environ['PUSHBULLET_API_KEY']).push_note(f'{deb.client} beta failed to build', 'Possibly a download error')
         else:
