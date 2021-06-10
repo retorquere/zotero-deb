@@ -77,4 +77,8 @@ jobs:
         sudo apt-get update
     - name: Test install
       if: steps.repo.outputs.rebuilt == 'true'
-      run: sudo apt-get install zotero zotero-beta jurism jurism-beta
+      run: sudo apt-get install zotero jurism
+    - name: Test install for betas
+      if: steps.repo.outputs.rebuilt == 'true'
+      continue-on-error: true
+      run: sudo apt-get install zotero-beta jurism-beta
