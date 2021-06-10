@@ -202,7 +202,7 @@ class GitHub(Repository):
     if building := self.page(md='building'):
       print(f'  updating release {self._release.name} description')
       try:
-        self._release.edit(body=index)
+        self._release.edit(body=building)
       except Exception as e:
         print(e)
 
