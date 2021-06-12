@@ -653,7 +653,8 @@ class Builder:
         deb.build()
       except Exception as e:
         if deb.beta and 'PUSHBULLET_API_KEY' in os.environ:
-          Pushbullet(os.environ['PUSHBULLET_API_KEY']).push_note(f'{deb.client} beta failed to build', 'Possibly a download error')
+          # just ignore it. It doesn't look like JM betas will return
+          # Pushbullet(os.environ['PUSHBULLET_API_KEY']).push_note(f'{deb.client} beta failed to build', 'Possibly a download error')
         else:
           raise e
 
