@@ -6,7 +6,7 @@ gpgkey = "dpkg"
 name = "Zotero"
 comment = "Open-source reference manager"
 categories = "Office;Education;Literature"
-dependencies = [ "gnupg", "libnss3-dev",]
+dependencies = [ "gnupg",]
 section = "Science"
 description = "Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
@@ -14,7 +14,7 @@ description = "Zotero is a free, easy-to-use tool to help you collect, organize,
 name = "Juris-M"
 comment = "Open-source reference manager"
 categories = "Office;Education;Literature"
-dependencies = [ "gnupg", "libnss3-dev", "default-jre", "libreoffice-java-common",]
+dependencies = [ "gnupg", "default-jre", "libreoffice-java-common",]
 section = "Science"
 description = "Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research"
 
