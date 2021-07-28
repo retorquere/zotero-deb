@@ -99,7 +99,8 @@ def load_esr_deps():
     if 'gcc' in dep: continue #43
     deps.append(dep)
   return deps
-ESR = load_esr_deps()
+if not Args.bump:
+  ESR = load_esr_deps()
 
 #### convenience functions ####
 
