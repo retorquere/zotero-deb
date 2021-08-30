@@ -11,7 +11,7 @@ from packaging import version as vcomp
 from pydpkg import Dpkg
 from string import Template
 from urllib.request import urlopen
-from urllib.parse import quote_plus as urlencode
+from urllib.parse import quote_plus as urlencode, unquote
 import argparse
 import boto3
 import configparser
@@ -585,6 +585,10 @@ class Builder:
     for client in Clients:
       if client == 'zotero':
         versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
+
+        beta = urlopen('https://www.zotero.org/download/standalone/dl?platform=linux-x86_64&channel=beta')
+        beta = unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', beta.geturl())[1]).replace('-beta', '')
+        versions.append(f'beta-{beta}')
       else:
         versions = []
         # jurism puts out new version in a frenzied burst -- only keep the last m-version
@@ -595,8 +599,8 @@ class Builder:
             versions[-1] = version
           else:
             versions.append(version)
-      #versions = versions[-1:]
-      versions.append(f'beta-{date.today().isoformat()}')
+        # jurism beta's are offline
+        #versions.append(f'beta-{date.today().isoformat()}')
 
       for version in versions:
         for arch in ArchMap.keys():
