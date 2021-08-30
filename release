@@ -62,15 +62,6 @@ def get_clients():
   return clients
 Clients = get_clients()
 
-def pluralize(d, singular):
-  plural = singular + 's'
-  assert not (singular in d and plural in d)
-  if singular in d:
-    d[plural] = d[singular]
-    del d[singular]
-  if plural in d and type(d[plural]) != list:
-    d[plural] = [ d[plural] ]
-
 def load_mimeinfo():
   with open('mimeinfo.toml') as f:
     _mimeinfo = toml.load(f, _dict=Munch)
@@ -389,7 +380,17 @@ class Deb:
   @classmethod
   def select(cls, version = None, patch = None, client = None, arch=None, aptarch=None, beta=None):
     def equal(deb):
-      return all((given is None or given == found) for given, found in [(version, deb.version), (patch, deb.version + deb.apt.patch), (client, deb.client), (arch, deb.arch), (aptarch, deb.apt.arch), (beta, deb.beta)])
+      return all(
+        (given is None or given == found)
+        for given, found in [
+          (version, deb.version),
+          (patch, deb.version + deb.apt.patch),
+          (client, deb.client),
+          (arch, deb.arch),
+          (aptarch, deb.apt.arch),
+          (beta, deb.beta)
+        ]
+      )
     return sorted([deb for deb in cls.__debs if equal(deb)], key=Version)
 
   @classmethod
@@ -408,16 +409,20 @@ class Deb:
     self.client = client
     self.version = version
     self.arch = arch
-    self.beta = version.startswith('beta-')
 
-    # set download URL
-    self.url = {
-      'zotero':       f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}',
-      'zotero-beta':  f'https://www.zotero.org/download/client/dl?channel=beta&platform=linux-{arch}',
+    if type(version) == tuple:
+      self.version, self.url = version
+    else:
+      self.version = version
+      self.url = None
+    self.beta = self.version.startswith('beta-')
 
-      'jurism':       f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2',
-      'jurism-beta':  f'https://our.law.nagoya-u.ac.jp/jurism/dl?channel=beta&platform=linux-{arch}',
-    }[f'{self.client}{"-beta" if self.beta else ""}']
+    if self.url is None:
+      assert not self.beta, f'{version} has no download URL'
+      self.url = {
+        'zotero': f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={version}',
+        'jurism': f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2',
+      }[self.client]
 
   @property
   def deb(self):
@@ -586,9 +591,9 @@ class Builder:
       if client == 'zotero':
         versions = [release.version for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)]
 
-        beta = urlopen('https://www.zotero.org/download/standalone/dl?platform=linux-x86_64&channel=beta')
-        beta = unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', beta.geturl())[1]).replace('-beta', '')
-        versions.append(f'beta-{beta}')
+        beta = urlopen('https://www.zotero.org/download/standalone/dl?platform=linux-x86_64&channel=beta').geturl()
+        version = unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', beta)[1]).replace('-beta', '')
+        versions.append((f'beta-{version}', beta))
       else:
         versions = []
         # jurism puts out new version in a frenzied burst -- only keep the last m-version
@@ -670,7 +675,7 @@ class Builder:
     for deb in glob.glob('repo/*.deb'):
       client, version, aptarch = os.path.splitext(os.path.basename(deb))[0].split('_')[:3]
       if client.endswith('-beta'):
-        version = 'beta-' + version.replace('.', '-')
+        version = 'beta-' + version
         client = client.replace('-beta', '')
       if not any(d for d in Deb.select(client=client, patch=version, aptarch=aptarch)):
         if os.path.exists('repo/Packages'): os.remove('repo/Packages')
