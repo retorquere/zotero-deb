@@ -54,6 +54,10 @@ sudo apt update
 sudo apt upgrade
 ```
 
+## Beta packages
+
+This repo also has the nightly beta's, installable as the `zotero-beta` and `jurism-beta` packages. You can install these alongside the regular packages.
+
 ## Package signing errors in Debian/Ubuntu/...
 
 The accepted key format in Debian-based systems seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
