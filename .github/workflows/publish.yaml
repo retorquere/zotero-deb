@@ -73,7 +73,7 @@ jobs:
       if: steps.repo.outputs.rebuilt == 'true'
       run: |
         mv install-sf.sh build/install.sh
-        rsync -e "ssh -o StrictHostKeyChecking=no" -avz ./build/ retorquere@frs.soucreforge.net:/home/frs/project/zotero-deb/
+        rsync -e "ssh -o StrictHostKeyChecking=no" -avz ./build/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
 
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
