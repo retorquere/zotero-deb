@@ -64,6 +64,17 @@ jobs:
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}
 
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SF_SSH_KEY }}
+        known_hosts: 'sourceforge'
+    - name: Deploy to sourceforge
+      if: steps.repo.outputs.rebuilt == 'true'
+      run: |
+        mv install-sf.sh build/install.sh
+        rsync -e "ssh -o StrictHostKeyChecking=no" -avz ./build/ retorquere@frs.soucreforge.net:/home/frs/project/zotero-deb/
+
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
       run: curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
