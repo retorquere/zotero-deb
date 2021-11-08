@@ -1,6 +1,6 @@
 <img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right">
 
-**PSA: GITHUB DOWNLOADS FOR THIS REPO ARE CURRENTLY BROKEN**
+**PSA: GITHUB DOWNLOADS FOR THIS REPO ARE CURRENTLY BROKEN FOR SOME PEOPLE (myself included)**
 
 I'm trying to reach github about this, but in the interim I've set up a mirror on [SourceForge](https://sourceforge.net/projects/zotero-deb/files/) while github gets its act together -- they're usually super responsive, but I've heard nothing from them yet. You have to run the `install.sh` and `apt update` again but now with the URL explained there, but after that it should just work as usual. When github is back, re-running the same install from the github project will restore things to how they were, but I'll probably just leave the sourceforge mirror updated, it isn't any extra work.
 
