@@ -85,8 +85,10 @@ jobs:
     - name: Update package info
       if: steps.repo.outputs.rebuilt == 'true'
       run: |
-        sleep 120
+        sleep 60
+        sudo add-apt-repository ppa:tj/bugfixes
         sudo apt-get update
+        sudo apt install apt
     - name: Test install
       if: steps.repo.outputs.rebuilt == 'true'
       run: sudo apt-get install zotero jurism zotero-beta
