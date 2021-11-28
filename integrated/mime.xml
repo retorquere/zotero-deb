@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-endnote-refer">
+    <comment>Research Information Systems document</comment>
+    <comment xml:lang="de">Research Information Systems dokument</comment>
+    <glob pattern="*.ris"/>
+    <alias type="application/x-research-info-systems"/>
+    <alias type="text/ris"/>
+    <alias type="text/x-research-info-systems"/>
+  </mime-type>
+  <mime-type type="application/x-inst-for-Scientific-info">
+    <comment>ISI Common Export Format document</comment>
+    <comment xml:lang="de">ISI Common Export Format dokument</comment>
+    <glob pattern="*.isi"/>
+  </mime-type>
+  <mime-type type="application/mods+xml">
+    <comment>Metadata Object Description Schema document</comment>
+    <comment xml:lang="de">Metadata Object Description Schema dokument</comment>
+    <glob pattern="*.mods"/>
+  </mime-type>
+  <mime-type type="application/rdf+xml">
+    <comment>Resource Description Framework document</comment>
+    <comment xml:lang="de">Resource Description Framework dokument</comment>
+    <glob pattern="*.rdf"/>
+  </mime-type>
+  <mime-type type="application/x-bibtex">
+    <comment>BibTeX document</comment>
+    <comment xml:lang="de">BibTeX dokument</comment>
+    <glob pattern="*.bib"/>
+    <alias type="text/x-bibtex"/>
+  </mime-type>
+  <mime-type type="application/marc">
+    <comment>MAchine-Readable Cataloging (MARC) record</comment>
+    <comment xml:lang="de">MAchine-Readable Cataloging (MARC) aufzeichnung</comment>
+    <glob pattern="*.mrc"/>
+    <glob pattern="*.marc"/>
+  </mime-type>
+  <mime-type type="application/vnd.citationstyles.style+xml">
+    <comment>CSL citation style</comment>
+    <comment xml:lang="de">CSL zitatstil</comment>
+    <glob pattern="*.csl"/>
+  </mime-type>
+</mime-info>
