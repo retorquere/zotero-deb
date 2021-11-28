@@ -1,11 +1,5 @@
 <img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right">
 
-**PSA: GITHUB DOWNLOADS FOR THIS REPO ARE CURRENTLY BROKEN FOR SOME PEOPLE (myself included)**
-
-I'm trying to reach github about this, but in the interim I've set up a mirror on [SourceForge](https://sourceforge.net/projects/zotero-deb/files/) while github gets its act together -- they're usually super responsive, but I've heard nothing from them yet. You have to run the `install.sh` and `apt update` again but now with the URL explained there, but after that it should just work as usual. When github is back, re-running the same install from the github project will restore things to how they were, but I'll probably just leave the sourceforge mirror updated, it isn't any extra work.
-
-----
-
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them.
 
 This repository updates to new releases of Zotero and Juris-M within 24 hours, usually faster.
@@ -25,7 +19,7 @@ They manage both desktop file registration and MimeType registration.
 To install Zotero, use the following commands:
 
 ```
-wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
 sudo apt update
 sudo apt install zotero
 ```
@@ -35,7 +29,7 @@ sudo apt install zotero
 To install Juris-M, use the following commands:
 
 ```
-wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
 sudo apt update
 sudo apt install jurism
 ```
@@ -44,7 +38,7 @@ sudo apt install jurism
 
 You can use `curl` instead of `wget` by typing
 ```
-curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
 ```
 
 ## Updating Zotero / Juris-M
@@ -69,17 +63,10 @@ This repo also has the nightly beta's, installable as the `zotero-beta` and `jur
 The accepted key format in Debian-based systems seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
 
 ```
-wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
 ```
 
 ## Instructions for installation on Crostini-capable Chromebooks
 
 Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
 
-# Developers
-
-To rebuild this repo you need:
-
-* a deb-based system (I use Ubuntu)
-* Python 3.9
-* github client (https://cli.github.com/)

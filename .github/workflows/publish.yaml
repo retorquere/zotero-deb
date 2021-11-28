@@ -64,17 +64,31 @@ jobs:
         echo rebuilt=${{ steps.repo.outputs.rebuilt }}
         echo url=${{ steps.repo.outputs.url }}
 
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SF_SSH_KEY }}
+        known_hosts: 'sourceforge'
+    - name: Deploy to sourceforge
+      if: steps.repo.outputs.rebuilt == 'true'
+      run: |
+        cp sourceforge/* repo
+        rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./repo/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+
     - name: Install repo
       if: steps.repo.outputs.rebuilt == 'true'
       run: curl -sL ${{ steps.repo.outputs.url}}/install.sh | sudo bash
+      # run: curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
     - name: install old signing key verifier
       if: github.ref != 'refs/heads/master' && steps.repo.outputs.rebuilt == 'true'
       run: curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
     - name: Update package info
       if: steps.repo.outputs.rebuilt == 'true'
       run: |
-        sleep 120
+        sleep 60
+        sudo add-apt-repository ppa:tj/bugfixes
         sudo apt-get update
+        sudo apt install apt
     - name: Test install
       if: steps.repo.outputs.rebuilt == 'true'
       run: sudo apt-get install zotero jurism zotero-beta
