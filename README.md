@@ -66,3 +66,10 @@ wget -qO- https://github.com/retorquere/zotero-deb/releases/download/apt-get/ins
 
 Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
 
+# Developers
+
+To rebuild this repo you need:
+
+* a deb-based system (I use Ubuntu)
+* Python 3.9
+* github client (https://cli.github.com/)

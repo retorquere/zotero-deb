@@ -7,7 +7,7 @@ from arpy import ArchiveFormatError
 from datetime import date
 from lxml.builder import ElementMaker
 from munch import Munch
-from packaging import version as vcomp
+import packaging.version
 from pydpkg import Dpkg
 from string import Template
 from urllib.request import urlopen
