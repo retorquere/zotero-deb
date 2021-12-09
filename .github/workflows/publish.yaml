@@ -84,7 +84,9 @@ jobs:
       run: curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -
     - name: Test install
       if: steps.repo.outputs.rebuilt == 'true'
-      run: sudo apt-get install zotero jurism zotero-beta
+      run: |
+        sudo apt update
+        sudo apt install zotero jurism zotero-beta
     - name: Test install for jurism beta
       if: steps.repo.outputs.rebuilt == 'true'
       continue-on-error: true
