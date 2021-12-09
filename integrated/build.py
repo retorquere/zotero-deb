@@ -70,7 +70,18 @@ for source in config.source:
 
   deb = types.SimpleNamespace()
 
-  arch = magic.from_file(os.path.join(source, 'zotero-bin'))
+  # get version, binary name, and base dir under
+  with IniFile(os.path.join(source, 'application.ini')) as ini:
+    deb.vendor = ini['App']['Vendor']
+    deb.binary = deb.client = deb.vendor.lower()
+    deb.version = ini['App']['Version']
+    if '-beta' in deb.version:
+      deb.dir = 'beta'
+      deb.binary += '-beta'
+    else:
+      deb.dir = 'release'
+
+  arch = magic.from_file(os.path.join(source, deb.client + '-bin'))
   if arch.startswith('ELF 32-bit LSB executable, Intel 80386,'):
     deb.arch = 'i386'
   elif arch.startswith('ELF 64-bit LSB executable, x86-64,'):
@@ -82,16 +93,6 @@ for source in config.source:
   with tempfile.TemporaryDirectory() as builddir:
     print('created temporary directory', builddir)
     deb.build = builddir
-
-  # get version, binary name, and base dir under
-  with IniFile(os.path.join(source, 'application.ini')) as ini:
-    deb.version = ini['App']['Version']
-    if '-beta' in deb.version:
-      deb.dir = 'beta'
-      deb.binary = 'zotero-beta'
-    else:
-      deb.dir = 'release'
-      deb.binary = 'zotero'
 
   deb.bump = ''
   deb.dependencies = []
@@ -113,10 +114,10 @@ for source in config.source:
 
   # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the update files
   os.makedirs(os.path.join(deb.build, 'usr/lib'), exist_ok=True)
-  shutil.copytree(source, os.path.join(deb.build, 'usr/lib', deb.binary), ignore=shutil.ignore_patterns('zotero.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
-  if deb.binary != 'zotero':
+  shutil.copytree(source, os.path.join(deb.build, 'usr/lib', deb.binary), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
+  if deb.binary != deb.client:
     # rename the 'zotero' binary to 'zotero-beta' for the beta package so they can be installed alongside each other
-    shutil.move(os.path.join(deb.build, 'usr/lib', deb.binary, 'zotero'), os.path.join(deb.build, 'usr/lib', deb.binary, deb.binary))
+    shutil.move(os.path.join(deb.build, 'usr/lib', deb.binary, deb.client), os.path.join(deb.build, 'usr/lib', deb.binary, deb.binary))
 
 
   # disable auto-update
@@ -135,8 +136,8 @@ for source in config.source:
     print('lockPref("app.update.auto", false);', file=cfg)
 
   # create desktop file
-  with IniFile(os.path.join(source, 'zotero.desktop')) as ini:
-    deb.section = ini['Desktop Entry']['Categories'].rstrip(';')
+  with IniFile(os.path.join(source, deb.client + '.desktop')) as ini:
+    deb.section = ini['Desktop Entry'].get('Categories', 'Office;Education;Literature').rstrip(';')
     ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.binary}/{deb.binary} --url %u')
     ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.binary}/chrome/icons/default/default256.png')
     ini.set('Desktop Entry', 'MimeType', ';'.join([
@@ -153,7 +154,7 @@ for source in config.source:
       'application/marc',
       'application/vnd.citationstyles.style+xml'
     ]))
-    ini.set('Desktop Entry', 'Description', deb.description)
+    ini.set('Desktop Entry', 'Description', deb.description.format_map(vars(deb)))
     with Open(os.path.join(deb.build, 'usr/share/applications/{deb.binary}.desktop'), 'w') as f:
       ini.write(f, space_around_delimiters=False)
 
