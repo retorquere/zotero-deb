@@ -60,6 +60,7 @@ with IniFile(args.config) as ini:
   config.ini = ini
 config.maintainer = config.ini['maintainer']['email']
 config.gpgkey = config.ini['maintainer']['gpgkey']
+config.path = dict(config.ini['path'])
 
 # remove trailing slash since it messes with basename
 config.source = [ re.sub(r'/$', '', source) for source in args.source ]
@@ -82,7 +83,7 @@ for source in config.source:
     print('created temporary directory', builddir)
     deb.build = builddir
 
-  # get version, binary name, and base dir under args.root
+  # get version, binary name, and base dir under
   with IniFile(os.path.join(source, 'application.ini')) as ini:
     deb.version = ini['App']['Version']
     if '-beta' in deb.version:
@@ -108,7 +109,7 @@ for source in config.source:
     deb.dependencies.append(dep)
   deb.dependencies = ', '.join(sorted(list(set(deb.dependencies))))
   deb.description = config.ini['deb']['description']
-  deb.deb = os.path.join(args.root, deb.dir, deb.version, f'{deb.binary}_{deb.version}{deb.bump}_{deb.arch}.deb')
+  deb.deb = os.path.join(config.path[deb.dir].format_map(vars(deb)), f'{deb.binary}_{deb.version}{deb.bump}_{deb.arch}.deb')
 
   # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the update files
   os.makedirs(os.path.join(deb.build, 'usr/lib'), exist_ok=True)
@@ -187,11 +188,11 @@ for source in config.source:
   run(f'dpkg-sig -k {shlex.quote(config.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
 # rebuild repo
-config.repo = os.path.abspath(os.path.join(args.root, 'apt'))
+config.repo = config.path['repo']
 os.makedirs(config.repo, exist_ok=True)
 with chdir(config.repo):
   gpgkey = shlex.quote(config.gpgkey)
-  relpath = shlex.quote(os.path.relpath(os.path.commonpath([args.root, config.repo]), config.repo))
+  relpath = shlex.quote(os.path.relpath(os.path.commonpath(config.path.values()), config.repo))
   run(f'apt-ftparchive packages {relpath} > Packages')
   run(f'apt-ftparchive release . > Release')
   run(f'gpg --armor --export {gpgkey} > deb.gpg.key')
