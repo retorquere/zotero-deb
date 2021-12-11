@@ -49,7 +49,7 @@ jobs:
       with:
         path: |
           ./repo
-        key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('release', 'requirements.txt') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('prep.py', 'build.py', 'requirements.txt') }}
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
