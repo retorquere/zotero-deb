@@ -16,7 +16,7 @@ args = argparse.ArgumentParser(description='update Zotero deb repo.')
 args.add_argument('--root', type=str, default='.')
 args.add_argument('--config', type=str, default='config.ini')
 args.add_argument('--mime', type=str, default='mime.xml')
-args.add_argument('source', nargs='+')
+args.add_argument('staged', nargs='+')
 args = args.parse_args()
 args.root = os.path.abspath(args.root)
 
@@ -63,15 +63,15 @@ config.gpgkey = config.ini['maintainer']['gpgkey']
 config.path = dict(config.ini['path'])
 
 # remove trailing slash since it messes with basename
-config.source = [ re.sub(r'/$', '', source) for source in args.source ]
+config.staged = [ re.sub(r'/$', '', staged) for staged in args.staged ]
 
-for source in config.source:
-  assert os.path.isdir(source)
+for staged in config.staged:
+  assert os.path.isdir(staged)
 
   deb = types.SimpleNamespace()
 
   # get version, binary name, and base dir under
-  with IniFile(os.path.join(source, 'application.ini')) as ini:
+  with IniFile(os.path.join(staged, 'application.ini')) as ini:
     deb.vendor = ini['App']['Vendor']
     deb.binary = deb.client = deb.vendor.lower()
     deb.version = ini['App']['Version']
@@ -81,7 +81,7 @@ for source in config.source:
     else:
       deb.dir = 'release'
 
-  arch = magic.from_file(os.path.join(source, deb.client + '-bin'))
+  arch = magic.from_file(os.path.join(staged, deb.client + '-bin'))
   if arch.startswith('ELF 32-bit LSB executable, Intel 80386,'):
     deb.arch = 'i386'
   elif arch.startswith('ELF 64-bit LSB executable, x86-64,'):
@@ -94,13 +94,18 @@ for source in config.source:
     print('created temporary directory', builddir)
     deb.build = builddir
 
-  deb.bump = ''
-  deb.dependencies = []
-  if 'deb' in config.ini:
-    if deb.version in config.ini['deb']:
-      deb.bump = '-' + config.ini['deb'][deb.version]
-    if 'dependencies' in config.ini['deb']:
-      deb.dependencies = [dep.strip() for dep in config.ini['deb']['dependencies'].split(',')]
+  if deb.dir == 'beta' and (bump := config.ini[deb.client].get('beta')):
+    deb.bump = '-' + bump
+  elif bump := config.ini[deb.client].get(deb.version):
+    deb.bump = '-' + bump
+  else:
+    deb.bump = ''
+
+  if dependencies := config.ini[deb.client].get('dependencies'):
+    deb.dependencies = [dep.strip() for dep in dependencies.split(',')]
+  else:
+    deb.dependencies = []
+    
   for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
     dep = dep.strip()
     if not dep.startswith('Depends:'): continue
@@ -109,12 +114,12 @@ for source in config.source:
     if 'gcc' in dep: continue #43
     deb.dependencies.append(dep)
   deb.dependencies = ', '.join(sorted(list(set(deb.dependencies))))
-  deb.description = config.ini['deb']['description']
+  deb.description = config.ini[deb.client]['description']
   deb.deb = os.path.join(config.path[deb.dir].format_map(vars(deb)), f'{deb.binary}_{deb.version}{deb.bump}_{deb.arch}.deb')
 
   # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the update files
   os.makedirs(os.path.join(deb.build, 'usr/lib'), exist_ok=True)
-  shutil.copytree(source, os.path.join(deb.build, 'usr/lib', deb.binary), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
+  shutil.copytree(staged, os.path.join(deb.build, 'usr/lib', deb.binary), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
   if deb.binary != deb.client:
     # rename the 'zotero' binary to 'zotero-beta' for the beta package so they can be installed alongside each other
     shutil.move(os.path.join(deb.build, 'usr/lib', deb.binary, deb.client), os.path.join(deb.build, 'usr/lib', deb.binary, deb.binary))
@@ -136,8 +141,8 @@ for source in config.source:
     print('lockPref("app.update.auto", false);', file=cfg)
 
   # create desktop file
-  with IniFile(os.path.join(source, deb.client + '.desktop')) as ini:
-    deb.section = ini['Desktop Entry'].get('Categories', 'Office;Education;Literature').rstrip(';')
+  with IniFile(os.path.join(staged, deb.client + '.desktop')) as ini:
+    deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
     ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.binary}/{deb.binary} --url %u')
     ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.binary}/chrome/icons/default/default256.png')
     ini.set('Desktop Entry', 'MimeType', ';'.join([
