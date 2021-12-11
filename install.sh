@@ -13,9 +13,9 @@ case `uname -m` in
 esac
 
 if [ -x "$(command -v curl)" ]; then
-  curl --silent -L {{ url }}/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+  curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
 elif [ -x "$(command -v wget)" ]; then
-  wget -qO- {{ url }}/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+  wget -qO- https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
 else
   echo "Error: need wget or curl installed." >&2
   exit 1
@@ -24,6 +24,6 @@ fi
 sudo chmod 644 /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb {{ url }}/ ./
+deb https://downloads.sourceforge.net/project/zotero-deb/ ./
 EOF
 
