@@ -60,6 +60,8 @@ jobs:
       id: repo
       env:
         PYTHONUNBUFFERED: true
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
       run: |
         set -e
         set -x
