@@ -14,7 +14,7 @@ on:
 jobs:
   release:
     env:
-      HOSTING=sourceforge
+      HOSTING: sourceforge
     runs-on: ubuntu-latest
     steps:
     - name: Cancel Previous Runs
