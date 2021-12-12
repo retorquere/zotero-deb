@@ -61,6 +61,7 @@ jobs:
         PYTHONUNBUFFERED: true
       run: |
         set -e
+        set -x
         ./prep.py
         bash send.sh
     - name: Install repo
