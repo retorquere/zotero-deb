@@ -62,7 +62,7 @@ class Sync:
     return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
 
   def b2sync(self, _from, _to):
-    return f'./b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+    return f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
 Sync=Sync()
 
 if args.clear:
@@ -140,8 +140,7 @@ for deb, url in debs:
   modified = True
 
 if args.force or modified:
-  if modified:
-    system('./build.py staging/*')
+  system('./build.py staging/*')
   system('cp install.sh repo')
   system(Sync.publish(), args.send or args.force)
   print('::set-output name=modified::true')
