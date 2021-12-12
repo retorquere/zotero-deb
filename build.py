@@ -93,9 +93,7 @@ for staged in config.staged:
     print('created temporary directory', builddir)
     deb.build = builddir
 
-  if deb.dir == 'beta' and (bump := config.ini[deb.client].get('beta')):
-    deb.bump = '-' + bump
-  elif bump := config.ini[deb.client].get(deb.version):
+  if bump := config.ini[deb.client].get(deb.version):
     deb.bump = '-' + bump
   else:
     deb.bump = ''

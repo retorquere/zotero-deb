@@ -82,7 +82,7 @@ def load(url,parse_json=False):
 
 config = configparser.RawConfigParser()
 config.read('config.ini')
-bump = lambda client, version, beta=None: (version + '-' + bumped) if (bumped := config[client].get(beta or version)) else version
+bump = lambda client, version: (version + '-' + bumped) if (bumped := config[client].get(version)) else version
 
 archmap = {
   'i686': 'i386',
@@ -97,7 +97,7 @@ debs += [
   for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)
   for arch in [ 'i686', 'x86_64' ]
 ] + [
-  ('zotero-beta', bump('zotero', unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', ''), 'beta'), archmap[arch], url)
+  ('zotero-beta', bump('zotero', unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '')), archmap[arch], url)
   for arch, url in [
     (arch, urlopen(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=beta').geturl())
     for arch in [ 'i686', 'x86_64' ]
