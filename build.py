@@ -10,14 +10,13 @@ import argparse
 import re
 import magic
 import contextlib
+import hashlib
 
 args = argparse.ArgumentParser(description='update Zotero deb repo.')
-args.add_argument('--root', type=str, default='.')
 args.add_argument('--config', type=str, default='config.ini')
 args.add_argument('--mime', type=str, default='mime.xml')
 args.add_argument('staged', nargs='+')
 args = args.parse_args()
-args.root = os.path.abspath(args.root)
 
 @contextlib.contextmanager
 def IniFile(path):
@@ -197,11 +196,37 @@ for staged in config.staged:
 config.repo = config.path['repo']
 os.makedirs(config.repo, exist_ok=True)
 with chdir(config.repo):
+  run('rm -f *Package* *Release*')
   gpgkey = shlex.quote(config.gpgkey)
   relpath = shlex.quote(os.path.relpath(os.path.commonpath(config.path.values()), config.repo))
   run(f'apt-ftparchive packages {relpath} > Packages')
-  run(f'apt-ftparchive release . > Release')
-  run(f'gpg --armor --export {gpgkey} > deb.gpg.key')
   run(f'bzip2 -kf Packages')
+  run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+  run(f'gpg --armor --export {gpgkey} > deb.gpg.key')
   run(f'gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
   run(f'gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
+
+  # apt is such a mess. https://blog.packagecloud.io/eng/2016/09/27/fixing-apt-hash-sum-mismatch-consistent-apt-repositories/
+  hash_type = None
+  run('rm -rf by-hash')
+  with open('Release') as f:
+    for line in f.readlines():
+      line = line.rstrip()
+      if line in [ 'MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:' ]:
+        hash_type = line.replace(':', '')
+      elif line.startswith(' '):
+        hsh, size, filename = line.strip().split()
+
+        if filename == 'Release': # how can Release contain it's own size and hash?!
+          continue
+
+        assert os.path.getsize(filename) == int(size), (filename, os.path.getsize(filename), int(size))
+
+        with open(filename, 'rb') as f:
+          hasher = getattr(hashlib, hash_type.lower().replace('sum', ''))
+          should = hasher(f.read()).hexdigest()
+          assert hsh == should, (filename, hash_type, 'mismatch')
+
+        hash_dir = os.path.join('by-hash', hash_type)
+        os.makedirs(hash_dir, exist_ok=True)
+        run(f'cp {filename} {hash_dir}/{hsh}')

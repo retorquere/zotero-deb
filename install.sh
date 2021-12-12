@@ -12,10 +12,14 @@ case `uname -m` in
     ;;
 esac
 
+REPO=https://apt.retorque.re/file/zotero-apt
+REPO=https://downloads.sourceforge.net/project/zotero-deb
+GPGKEY=$REPO/deb.gpg.key
+KEYRING=gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg
 if [ -x "$(command -v curl)" ]; then
-  curl --silent -L https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+  curl --silent -L $GPGKEY | gpg --no-default-keyring --keyring $KEYRING --import -
 elif [ -x "$(command -v wget)" ]; then
-  wget -qO- https://downloads.sourceforge.net/project/zotero-deb/deb.gpg.key | gpg --no-default-keyring --keyring gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg --import -
+  wget -qO- $GPGKEY | gpg --no-default-keyring --keyring $KEYRING --import -
 else
   echo "Error: need wget or curl installed." >&2
   exit 1
@@ -24,6 +28,6 @@ fi
 sudo chmod 644 /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb https://downloads.sourceforge.net/project/zotero-deb/ ./
+deb [by-hash=force] $REPO/ ./
 EOF
 

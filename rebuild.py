@@ -24,13 +24,13 @@ add_boolean_optional_argument(parser, '--fetch')
 #parser.add_argument('--send', action=argparse.BooleanOptionalAction)
 add_boolean_optional_argument(parser, '--send')
 parser.add_argument('--clear', action='store_true')
+parser.add_argument('--host', default='sourceforge')
+parser.add_argument('--force', action='store_true')
 args = parser.parse_args()
 
 exclusive_grp = parser.add_mutually_exclusive_group()
 exclusive_grp.add_argument('--foo', action='store_true', help='do foo')
 exclusive_grp.add_argument('--no-foo', action='store_true', help='do not do foo')
-
-repo = SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/')
 
 def system(cmd, execute=True):
   if execute:
@@ -40,14 +40,37 @@ def system(cmd, execute=True):
   else:
     print('#', cmd)
 
-def rsync(_from, _to):
-  return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+class Sync:
+  def __init__(self):
+    self.repo = {
+      'sourceforge': SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/'),
+      'b2': SimpleNamespace(local='repo', remote='b2://zotero-apt/'),
+    }[args.host]
+
+    self.sync = {
+      'sourceforge': self.rsync,
+      'b2': self.b2sync,
+    }[args.host]
+
+  def fetch(self):
+    return self.sync(self.repo.remote, self.repo.local)
+
+  def publish(self):
+    return self.sync(self.repo.local, self.repo.remote)
+
+  def rsync(self, _from, _to):
+    return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+
+  def b2sync(self, _from, _to):
+    return f'./b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+Sync=Sync()
 
 if args.clear:
   if os.path.exists('repo'):
     shutil.rmtree('repo')
   os.makedirs('repo')
-system(rsync(repo.remote, repo.local), args.fetch)
+
+system(Sync.fetch())
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
@@ -98,7 +121,7 @@ debs += [
 
 debs = [ (f'repo/{client}_{version}_{arch}.deb', url) for client, version, arch, url in debs ]
 
-modified = False
+modified = not os.path.exists('repo/Packages')
 
 for deb in (set(glob.glob('repo/*.deb')) - set( [_deb for _deb, _url in debs])):
   print('delete', deb)
@@ -116,10 +139,11 @@ for deb, url in debs:
   system(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staging)} --strip-components=1')
   modified = True
 
-if modified:
-  system('./build.py staging/*')
+if args.force or modified:
+  if modified:
+    system('./build.py staging/*')
   system('cp install.sh repo')
-  system(rsync(repo.local, repo.remote), args.send)
+  system(Sync.publish(), args.send or args.force)
   print('::set-output name=modified::true')
 else:
   print('echo nothing to do')
