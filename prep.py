@@ -92,7 +92,7 @@ for deb, url in debs:
 
 with open('send.sh', 'w') as f:
   if modified:
-    print('./build.py staging', file=f)
+    print('./build.py staging/*', file=f)
     print('cp install.sh repo', file=f)
     print(rsync(repo.local, repo.remote), file=f)
     print('::set-output name=modified::true')
