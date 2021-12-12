@@ -31,3 +31,4 @@ cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
 deb [by-hash=force] $REPO/ ./
 EOF
 
+sudo apt-get clean
