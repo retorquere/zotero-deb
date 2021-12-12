@@ -1,4 +1,4 @@
-ame: Release Zotero/Juris-M .deb packages
+name: Release Zotero/Juris-M .deb packages
 
 on:
   schedule:
