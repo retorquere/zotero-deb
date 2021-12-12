@@ -64,7 +64,7 @@ jobs:
         set -x
         ./rebuild.py
     - name: Install repo
-      if: steps.repo.outputs.modified == 'true'
+      #if: steps.repo.outputs.modified == 'true'
       run: |
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
         sudo apt update
