@@ -159,7 +159,7 @@ for staged in config.staged:
       'application/vnd.citationstyles.style+xml'
     ]))
     ini.set('Desktop Entry', 'Description', deb.description.format_map(vars(deb)))
-    with Open(os.path.join(deb.build, 'usr/share/applications/{deb.binary}.desktop'), 'w') as f:
+    with Open(os.path.join(deb.build, 'usr/share/applications', f'{deb.binary}.desktop'), 'w') as f:
       ini.write(f, space_around_delimiters=False)
 
   # add mime info
