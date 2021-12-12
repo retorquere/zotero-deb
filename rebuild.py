@@ -43,8 +43,8 @@ def system(cmd, execute=True):
 class Sync:
   def __init__(self):
     self.repo = {
-      'sourceforge': SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/'),
-      'b2': SimpleNamespace(local='repo', remote='b2://zotero-apt/'),
+      'sourceforge': SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
+      'b2': SimpleNamespace(local='repo', remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
     }[args.host]
 
     self.sync = {
@@ -141,7 +141,8 @@ for deb, url in debs:
 
 if args.force or modified:
   system('./build.py staging/*')
-  system('cp install.sh repo')
+  with open('install.sh') as src, open('repo/install.sh', 'w') as tgt:
+    tgt.write(src.read().format(url=Sync.repo.url))
   system(Sync.publish(), args.send or args.force)
   print('::set-output name=modified::true')
 else:

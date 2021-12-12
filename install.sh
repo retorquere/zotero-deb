@@ -12,8 +12,7 @@ case `uname -m` in
     ;;
 esac
 
-REPO=https://downloads.sourceforge.net/project/zotero-deb
-REPO=https://apt.retorque.re/file/zotero-apt
+REPO={url}
 GPGKEY=$REPO/deb.gpg.key
 KEYRING=gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg
 if [ -x "$(command -v curl)" ]; then

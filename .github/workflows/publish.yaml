@@ -13,6 +13,8 @@ on:
 
 jobs:
   release:
+    env:
+      HOSTING=sourceforge
     runs-on: ubuntu-latest
     steps:
     - name: Cancel Previous Runs
@@ -68,12 +70,17 @@ jobs:
         mkdir -p bin
         [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
         chmod +x bin/b2-linux
-        ./rebuild.py --host b2
+        ./rebuild.py --host $HOSTING
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
       run: |
-        curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+        if [ "$HOSTING" = "sourceforge" ]; then
+          curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+        else
+          curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+        fi
+        #elif
+
         sudo apt update
         sudo apt install zotero jurism zotero-beta
 #    - name: install old signing key verifier
