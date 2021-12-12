@@ -62,11 +62,12 @@ jobs:
       run: |
         set -e
         set -x
-        ./rebuild.py
+        ./rebuild.py --host b2
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
       run: |
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+        curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
         sudo apt update
         sudo apt install zotero jurism zotero-beta
 #    - name: install old signing key verifier
