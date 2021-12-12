@@ -1,4 +1,4 @@
-name: Release Zotero/Juris-M .deb packages
+ame: Release Zotero/Juris-M .deb packages
 
 on:
   schedule:
@@ -67,6 +67,7 @@ jobs:
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
       run: |
+        sleep 2m
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
         sudo apt update
         sudo apt install zotero jurism zotero-beta
