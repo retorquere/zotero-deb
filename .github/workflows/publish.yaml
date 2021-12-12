@@ -64,7 +64,7 @@ jobs:
         set -e
         set -x
         mkdir -p bin
-        [[ -e bin/b2-linux ]] || curl -LO https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux
+        [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
         ./rebuild.py --host b2
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
