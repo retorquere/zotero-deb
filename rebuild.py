@@ -4,24 +4,50 @@ from urllib.request import urlopen
 import json
 from urllib.parse import quote_plus as urlencode, unquote
 import re
-import os
+import os, sys
 import configparser
 import glob
 import shlex
 import shutil
 from pathlib import Path
 from types import SimpleNamespace
+import argparse
+
+parser = argparse.ArgumentParser()
+# 3.9 has argparse.BooleanOptionalAction
+def add_boolean_optional_argument(parser, arg):
+  eg = parser.add_mutually_exclusive_group()
+  eg.add_argument(arg.replace('--', '--no-'), action='store_false', dest=arg.replace('-', ''))
+  eg.add_argument(arg, action='store_true', dest=arg.replace('-', ''))
+#parser.add_argument('--fetch', action=argparse.BooleanOptionalAction)
+add_boolean_optional_argument(parser, '--fetch')
+#parser.add_argument('--send', action=argparse.BooleanOptionalAction)
+add_boolean_optional_argument(parser, '--send')
+parser.add_argument('--clear', action='store_true')
+args = parser.parse_args()
+
+exclusive_grp = parser.add_mutually_exclusive_group()
+exclusive_grp.add_argument('--foo', action='store_true', help='do foo')
+exclusive_grp.add_argument('--no-foo', action='store_true', help='do not do foo')
 
 repo = SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/')
 
-def system(cmd):
-  print(cmd)
-  os.system(cmd)
+def system(cmd, execute=True):
+  if execute:
+    print(cmd)
+    if (exitcode := os.system(cmd)) != 0:
+      sys.exit(exitcode)
+  else:
+    print('#', cmd)
 
 def rsync(_from, _to):
   return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
 
-system(rsync(repo.remote, repo.local))
+if args.clear:
+  if os.path.exists('repo'):
+    shutil.rmtree('repo')
+  os.makedirs('repo')
+system(rsync(repo.remote, repo.local), args.fetch)
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
@@ -73,11 +99,11 @@ debs += [
 debs = [ (f'repo/{client}_{version}_{arch}.deb', url) for client, version, arch, url in debs ]
 
 modified = False
-for deb in glob.glob('repo/*.deb'):
-  if not deb in [_deb for _deb, _url in debs]:
-    print('delete', deb)
-    os.remove(deb)
-    modified = True
+
+for deb in (set(glob.glob('repo/*.deb')) - set( [_deb for _deb, _url in debs])):
+  print('delete', deb)
+  os.remove(deb)
+  modified = True
 
 if os.path.exists('staging'):
   shutil.rmtree('staging')
@@ -90,14 +116,11 @@ for deb, url in debs:
   system(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staging)} --strip-components=1')
   modified = True
 
-with open('send.sh', 'w') as f:
-  if modified:
-    print('set -e', file=f)
-    print('set -x', file=f)
-    print('./build.py staging/*', file=f)
-    print('cp install.sh repo', file=f)
-    print(rsync(repo.local, repo.remote), file=f)
-    print('::set-output name=modified::true')
-  else:
-    print('echo nothing to do', file=f)
+if modified:
+  system('./build.py staging/*')
+  system('cp install.sh repo')
+  system(rsync(repo.local, repo.remote), args.send)
+  print('::set-output name=modified::true')
+else:
+  print('echo nothing to do')
   

@@ -77,6 +77,7 @@ for staged in config.staged:
     if '-beta' in deb.version:
       deb.dir = 'beta'
       deb.binary += '-beta'
+      deb.version = deb.version.replace('-beta', '')
     else:
       deb.dir = 'release'
 

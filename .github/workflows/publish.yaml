@@ -49,7 +49,7 @@ jobs:
       with:
         path: |
           ./repo
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('prep.py', 'build.py', 'requirements.txt') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py', 'requirements.txt') }}
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
@@ -62,8 +62,7 @@ jobs:
       run: |
         set -e
         set -x
-        ./prep.py
-        bash send.sh
+        ./rebuild.py
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
       run: |
