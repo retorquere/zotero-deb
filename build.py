@@ -8,7 +8,6 @@ import subprocess
 import tempfile
 import argparse
 import re
-import filetype
 import magic
 import contextlib
 
