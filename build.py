@@ -15,7 +15,7 @@ import hashlib
 args = argparse.ArgumentParser(description='update Zotero deb repo.')
 args.add_argument('--config', type=str, default='config.ini')
 args.add_argument('--mime', type=str, default='mime.xml')
-args.add_argument('staged', nargs='+')
+args.add_argument('staged', nargs='*')
 args = args.parse_args()
 
 @contextlib.contextmanager
@@ -50,6 +50,10 @@ class Open():
     self.f.close()
     if self.mode is not None:
       os.chmod(self.path, self.mode)
+
+def run(cmd):
+  print('$', cmd)
+  print(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'))
 
 config = types.SimpleNamespace()
 
@@ -178,10 +182,6 @@ for staged in config.staged:
   # create symlink to binary
   os.makedirs(os.path.join(deb.build, 'usr/local/bin'))
   os.symlink(f'/usr/lib/{deb.binary}/{deb.binary}', os.path.join(deb.build, 'usr/local/bin', deb.binary))
-
-  def run(cmd):
-    print('$', cmd)
-    print(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'))
 
   # build deb
   if os.path.exists(deb.deb):

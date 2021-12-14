@@ -121,7 +121,7 @@ debs += [
 
 debs = [ (f'repo/{client}_{version}_{arch}.deb', url) for client, version, arch, url in debs ]
 
-modified = not os.path.exists('repo/Packages')
+modified = False
 
 for deb in (set(glob.glob('repo/*.deb')) - set( [_deb for _deb, _url in debs])):
   print('delete', deb)
@@ -140,7 +140,12 @@ for deb, url in debs:
   modified = True
 
 if args.force or modified:
-  system('./build.py staging/*')
+  if args.host == 'b2':
+    system('./shuffle.py')
+  if modified:
+    system('./build.py staging/*')
+  else:
+    system('./build.py')
   with open('install.sh') as src, open('repo/install.sh', 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url))
   system(Sync.publish(), args.send or args.force)
