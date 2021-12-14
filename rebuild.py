@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+from dotenv import load_dotenv, find_dotenv
+load_dotenv(find_dotenv(), override=True)
+
 from urllib.request import urlopen
 import json
 from urllib.parse import quote_plus as urlencode, unquote
@@ -41,6 +44,17 @@ def IniFile(path):
   ini.read(path)
   yield ini
 
+# change directory and back
+class chdir():
+  def __init__(self, path):
+    self.cwd = os.getcwd()
+    self.path = path
+  def __enter__(self):
+    print('changing to', self.path)
+    os.chdir(self.path)
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+    os.chdir(self.cwd)
+
 config = types.SimpleNamespace()
 
 # load build config
@@ -61,15 +75,18 @@ def system(cmd, execute=True):
 class Sync:
   def __init__(self):
     self.repo = {
-      'sourceforge': SimpleNamespace(local=config.path.repo, remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
-      'b2': SimpleNamespace(local=config.path.repo, remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
+      'sourceforge': SimpleNamespace(remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
+      'b2': SimpleNamespace(remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
+      'github': SimpleNamespace(upload=os.path.abspath('./bin/github-release'), remote='https://retorquere/zotero-deb/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
     }[args.host]
+    self.repo.local = config.path.repo
     self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
     self.repo.subdir = '' if self.repo.codename == '.' else self.repo.codename + '/'
 
     self.sync = {
       'sourceforge': self.rsync,
       'b2': self.b2sync,
+      'github': self.ghrelease,
     }[args.host]
 
   def fetch(self):
@@ -79,10 +96,25 @@ class Sync:
     return self.sync(self.repo.local, self.repo.remote + self.repo.subdir)
 
   def rsync(self, _from, _to):
+    if not _from.endswith('/'): _from += '/'
+    if not _to.endswith('/'): _to += '/'
     return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
 
   def b2sync(self, _from, _to):
     return f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+
+  def ghrelease(self, _from, _to):
+    if _from.startswith('http'):
+      return f'echo cannot download release'
+
+    else:
+      _, _, owner, project, release = _to.split('/')
+      uploads = []
+      for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
+        if os.path.isfile(f):
+          uploads.append(f'{self.repo.upload} upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))} --replace')
+      return ' && '.join(uploads)
+
 Sync=Sync()
 
 if args.clear:

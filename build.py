@@ -28,16 +28,15 @@ def IniFile(path):
   yield ini
 
 # change directory and back
-@contextlib.contextmanager
-def chdir(path):
-  cwd= os.getcwd()
-  try:
-    print('changing to', path)
-    os.chdir(path)
-    yield
-  finally:
-    print('changing back to', cwd)
-    os.chdir(cwd)
+class chdir():
+  def __init__(self, path):
+    self.cwd = os.getcwd()
+    self.path = path
+  def __enter__(self):
+    print('changing to', self.path)
+    os.chdir(self.path)
+  def __exit__(self, exc_type, exc_value, exc_traceback):
+    os.chdir(self.cwd)
 
 # context manager to open file for reading or writing, and in the case of write, create paths as required
 class Open():

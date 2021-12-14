@@ -1,6 +1,6 @@
 if [ `whoami` != root ]; then
-    echo Please run this script as root or using sudo
-    exit
+  echo Please run this script as root or using sudo
+  exit
 fi
 
 case `uname -m` in
@@ -31,4 +31,4 @@ cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
 deb [by-hash=force] $BASEURL $CODENAME/
 EOF
 
-sudo apt-get clean
+apt-get clean
