@@ -12,8 +12,9 @@ case `uname -m` in
     ;;
 esac
 
-REPO={url}
-GPGKEY=$REPO/deb.gpg.key
+BASEURL={url}
+CODENAME={codename}
+GPGKEY=$BASEURL/$CODENAME/deb.gpg.key
 KEYRING=gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg
 if [ -x "$(command -v curl)" ]; then
   curl --silent -L $GPGKEY | gpg --no-default-keyring --keyring $KEYRING --import -
@@ -27,7 +28,7 @@ fi
 sudo chmod 644 /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [by-hash=force] $REPO/ ./
+deb [by-hash=force] $BASEURL $CODENAME/
 EOF
 
 sudo apt-get clean

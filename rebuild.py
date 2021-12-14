@@ -12,6 +12,8 @@ import shutil
 from pathlib import Path
 from types import SimpleNamespace
 import argparse
+import contextlib
+import types
 
 parser = argparse.ArgumentParser()
 # 3.9 has argparse.BooleanOptionalAction
@@ -32,6 +34,22 @@ exclusive_grp = parser.add_mutually_exclusive_group()
 exclusive_grp.add_argument('--foo', action='store_true', help='do foo')
 exclusive_grp.add_argument('--no-foo', action='store_true', help='do not do foo')
 
+@contextlib.contextmanager
+def IniFile(path):
+  ini = configparser.RawConfigParser()
+  ini.optionxform=str
+  ini.read(path)
+  yield ini
+
+config = types.SimpleNamespace()
+
+# load build config
+with IniFile('config.ini') as ini:
+  config.path = types.SimpleNamespace(**{ key: os.path.abspath(path) for key, path in dict(ini['path']).items() })
+  bump = lambda client, version: (version + '-' + bumped) if (bumped := ini[client].get(version)) else version
+
+assert config.path.wwwroot == config.path.repo or Path(config.path.wwwroot) in Path(config.path.repo).parents, 'repo must be in wwwroot'
+
 def system(cmd, execute=True):
   if execute:
     print(cmd)
@@ -43,9 +61,11 @@ def system(cmd, execute=True):
 class Sync:
   def __init__(self):
     self.repo = {
-      'sourceforge': SimpleNamespace(local='./repo/', remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
-      'b2': SimpleNamespace(local='repo', remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
+      'sourceforge': SimpleNamespace(local=config.path.repo, remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
+      'b2': SimpleNamespace(local=config.path.repo, remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
     }[args.host]
+    self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
+    self.repo.subdir = '' if self.repo.codename == '.' else self.repo.codename + '/'
 
     self.sync = {
       'sourceforge': self.rsync,
@@ -53,10 +73,10 @@ class Sync:
     }[args.host]
 
   def fetch(self):
-    return self.sync(self.repo.remote, self.repo.local)
+    return self.sync(self.repo.remote + self.repo.subdir, self.repo.local)
 
   def publish(self):
-    return self.sync(self.repo.local, self.repo.remote)
+    return self.sync(self.repo.local, self.repo.remote + self.repo.subdir)
 
   def rsync(self, _from, _to):
     return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
@@ -66,11 +86,12 @@ class Sync:
 Sync=Sync()
 
 if args.clear:
-  if os.path.exists('repo'):
-    shutil.rmtree('repo')
-  os.makedirs('repo')
-
-system(Sync.fetch())
+  if os.path.exists(config.path.repo):
+    shutil.rmtree(config.path.repo)
+  os.makedirs(config.path.repo)
+else:
+  os.makedirs(config.path.repo, exist_ok=True)
+  system(Sync.fetch())
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
@@ -79,10 +100,6 @@ def load(url,parse_json=False):
     return json.loads(response)
   else:
     return response
-
-config = configparser.RawConfigParser()
-config.read('config.ini')
-bump = lambda client, version: (version + '-' + bumped) if (bumped := config[client].get(version)) else version
 
 archmap = {
   'i686': 'i386',
@@ -119,11 +136,12 @@ debs += [
   for arch in [ 'i686', 'x86_64' ]
 ]
 
-debs = [ (f'repo/{client}_{version}_{arch}.deb', url) for client, version, arch, url in debs ]
+print(config)
+debs = [ (os.path.join(config.path.repo, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 
 modified = False
 
-for deb in (set(glob.glob('repo/*.deb')) - set( [_deb for _deb, _url in debs])):
+for deb in (set(glob.glob(os.path.join(config.path.repo, '*.deb'))) - set( [_deb for _deb, _url in debs])):
   print('delete', deb)
   os.remove(deb)
   modified = True
@@ -140,14 +158,12 @@ for deb, url in debs:
   modified = True
 
 if args.force or modified:
-  if args.host == 'b2':
-    system('./shuffle.py')
   if modified:
     system('./build.py staging/*')
   else:
     system('./build.py')
-  with open('install.sh') as src, open('repo/install.sh', 'w') as tgt:
-    tgt.write(src.read().format(url=Sync.repo.url))
+  with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
+    tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   system(Sync.publish(), args.send or args.force)
   print('::set-output name=modified::true')
 else:
