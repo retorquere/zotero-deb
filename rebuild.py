@@ -23,7 +23,7 @@ parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=Tr
 parser.add_argument('--no-send', dest='send', action='store_false', default=True)
 parser.add_argument('--no-build', dest='build', action='store_false', default=True)
 parser.add_argument('--clear', action='store_true')
-parser.add_argument('--host', action='append', default='sourceforge')
+parser.add_argument('--host', default='sourceforge')
 parser.add_argument('--force-send', action='store_true')
 args = parser.parse_args()
 
