@@ -16,9 +16,6 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix:
-        # hosting: [sourceforge, b2, github]
-        hosting: [b2]
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
@@ -61,8 +58,22 @@ jobs:
       with:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: 'sourceforge'
-    - name: refresh repo
-      id: repo
+
+    - name: refresh sourceforge
+      id: sourceforge
+      env:
+        PYTHONUNBUFFERED: true
+      run: |
+        set -e
+        set -x
+        ./rebuild.py --host sourceforge
+        curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+        sudo apt update
+        sudo apt install zotero jurism zotero-beta
+        sudo apt remove zotero jurism zotero-beta
+
+    - name: refresh backblaze
+      id: b2
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
@@ -72,22 +83,26 @@ jobs:
         set -x
         mkdir -p bin
         [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
-        [[ -e bin/linux-amd64-github-release ]] || (curl -L https://github.com/github-release/github-release/releases/download/v0.10.0/linux-amd64-github-release.bz2 -o bin/linux-amd64-github-release.bz2 && bzip2 -d bin/linux-amd64-github-release.bz2)
         chmod +x bin/b2-linux
-        chmod +x bin/linux-amd64-github-release
-        ./rebuild.py --host ${{ matrix.hosting }}
-    - name: Install repo
-      if: steps.repo.outputs.modified == 'true'
-      run: |
-        if [ "${{ matrix.hosting }}" = "sourceforge" ]; then
-          curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        fi
-        if [ "${{ matrix.hosting }}" = "b2" ]; then
-          curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
-        fi
-        if [ "${{ matrix.hosting }}" = "github" ]; then
-          curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-        fi
-
+        ./rebuild.py --host b2
+        curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
         sudo apt update
         sudo apt install zotero jurism zotero-beta
+        sudo apt remove zotero jurism zotero-beta
+
+    - name: refresh github
+      id: github
+      env:
+        PYTHONUNBUFFERED: true
+      run: |
+        set -e
+        set -x
+        mkdir -p bin
+        [[ -e bin/linux-amd64-github-release ]] || (curl -L https://github.com/github-release/github-release/releases/download/v0.10.0/linux-amd64-github-release.bz2 -o bin/linux-amd64-github-release.bz2 && bzip2 -d bin/linux-amd64-github-release.bz2)
+        chmod +x bin/linux-amd64-github-release
+        ./rebuild.py --host github
+        curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+        sudo apt update
+        sudo apt install zotero jurism zotero-beta
+        sudo apt remove zotero jurism zotero-beta
+

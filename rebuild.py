@@ -19,23 +19,14 @@ import contextlib
 import types
 
 parser = argparse.ArgumentParser()
-# 3.9 has argparse.BooleanOptionalAction
-def add_boolean_optional_argument(parser, arg):
-  eg = parser.add_mutually_exclusive_group()
-  eg.add_argument(arg.replace('--', '--no-'), action='store_false', dest=arg.replace('-', ''))
-  eg.add_argument(arg, action='store_true', dest=arg.replace('-', ''))
-#parser.add_argument('--fetch', action=argparse.BooleanOptionalAction)
-add_boolean_optional_argument(parser, '--fetch')
-#parser.add_argument('--send', action=argparse.BooleanOptionalAction)
+add_boolean_optional_argument(parser, '--no-fetch', dest='fetch', action='store_false', default=True)
+add_boolean_optional_argument(parser, '--no-send', dest='send', action='store_false', default=True)
+add_boolean_optional_argument(parser, '--no-build', dest='build', action='store_false', default=True)
 add_boolean_optional_argument(parser, '--send')
 parser.add_argument('--clear', action='store_true')
-parser.add_argument('--host', default='sourceforge')
-parser.add_argument('--force', action='store_true')
+parser.add_argument('--host', action='append', default='sourceforge')
+parser.add_argument('--force-send', action='store_true')
 args = parser.parse_args()
-
-exclusive_grp = parser.add_mutually_exclusive_group()
-exclusive_grp.add_argument('--foo', action='store_true', help='do foo')
-exclusive_grp.add_argument('--no-foo', action='store_true', help='do not do foo')
 
 @contextlib.contextmanager
 def IniFile(path):
@@ -189,15 +180,14 @@ for deb, url in debs:
   system(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staging)} --strip-components=1')
   modified = True
 
-if args.force or modified:
-  if modified:
+if args.force_send or modified:
+  if args.build and modified:
     system('./build.py staging/*')
-  else:
+  elif args.build:
     system('./build.py')
   with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
-  system(Sync.publish(), args.send or args.force)
+  system(Sync.publish(), args.send or args.force_send)
   print('::set-output name=modified::true')
 else:
   print('echo nothing to do')
-  
