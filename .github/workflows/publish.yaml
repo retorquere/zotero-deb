@@ -43,14 +43,13 @@ jobs:
         sudo apt-get update
         sudo apt-get install dpkg-sig fakeroot
 
-    - name: Cache built debs for next round
+    - name: Cache sync tools
       id: cache
       uses: actions/cache@v2
       env:
-        cache-name: v2
+        cache-name: v3
       with:
         path: |
-          ./repo
           ./bin
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py', 'requirements.txt') }}
     - name: Install SSH Key
