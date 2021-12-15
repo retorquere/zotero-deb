@@ -17,7 +17,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, b2, github]
+        # hosting: [sourceforge, b2, github]
+        hosting: [b2]
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
