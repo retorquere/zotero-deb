@@ -19,10 +19,9 @@ import contextlib
 import types
 
 parser = argparse.ArgumentParser()
-add_boolean_optional_argument(parser, '--no-fetch', dest='fetch', action='store_false', default=True)
-add_boolean_optional_argument(parser, '--no-send', dest='send', action='store_false', default=True)
-add_boolean_optional_argument(parser, '--no-build', dest='build', action='store_false', default=True)
-add_boolean_optional_argument(parser, '--send')
+parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
+parser.add_argument('--no-send', dest='send', action='store_false', default=True)
+parser.add_argument('--no-build', dest='build', action='store_false', default=True)
 parser.add_argument('--clear', action='store_true')
 parser.add_argument('--host', action='append', default='sourceforge')
 parser.add_argument('--force-send', action='store_true')
