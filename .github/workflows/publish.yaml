@@ -13,9 +13,11 @@ on:
 
 jobs:
   release:
-    env:
-      HOSTING: sourceforge
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        hosting: [sourceforge, b2, github]
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
@@ -69,20 +71,22 @@ jobs:
         set -x
         mkdir -p bin
         [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
+        [[ -e bin/linux-amd64-github-release ]] || (curl -L https://github.com/github-release/github-release/releases/download/v0.10.0/linux-amd64-github-release.bz2 -o bin/linux-amd64-github-release.bz2 && bzip2 -d bin/linux-amd64-github-release.bz2)
         chmod +x bin/b2-linux
-        ./rebuild.py --host $HOSTING
+        chmod +x bin/linux-amd64-github-release
+        ./rebuild.py --host ${{ matrix.hosting }}
     - name: Install repo
       if: steps.repo.outputs.modified == 'true'
       run: |
-        if [ "$HOSTING" = "sourceforge" ]; then
+        if [ "${{ matrix.hosting }}" = "sourceforge" ]; then
           curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        else
+        fi
+        if [ "${{ matrix.hosting }}" = "b2" ]; then
           curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
         fi
-        #elif
+        if [ "${{ matrix.hosting }}" = "github" ]; then
+          curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+        fi
 
         sudo apt update
         sudo apt install zotero jurism zotero-beta
-#    - name: install old signing key verifier
-#      if: github.ref != 'refs/heads/master' && steps.repo.outputs.rebuilt == 'true'
-#      run: curl --silent -L https://github.com/retorquere/zotero-deb/releases/download/apt-get/deb.gpg.key | sudo apt-key add -

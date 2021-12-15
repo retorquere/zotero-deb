@@ -77,7 +77,7 @@ class Sync:
     self.repo = {
       'sourceforge': SimpleNamespace(remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
       'b2': SimpleNamespace(remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
-      'github': SimpleNamespace(upload=os.path.abspath('./bin/github-release'), remote='https://retorquere/zotero-deb/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
+      'github': SimpleNamespace(upload=os.path.abspath('./bin/linux-amd64-github-release'), remote='https://retorquere/zotero-deb/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
     }[args.host]
     self.repo.local = config.path.repo
     self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
