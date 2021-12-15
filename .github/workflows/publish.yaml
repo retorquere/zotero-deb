@@ -67,9 +67,9 @@ jobs:
         set -x
         ./rebuild.py --host sourceforge
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        sudo apt update
-        sudo apt install zotero jurism zotero-beta
-        sudo apt remove zotero jurism zotero-beta
+        sudo apt-get update
+        sudo apt-get install zotero jurism zotero-beta
+        sudo apt-get remove zotero jurism zotero-beta
 
     - name: refresh backblaze
       id: b2
@@ -85,9 +85,9 @@ jobs:
         chmod +x bin/b2-linux
         ./rebuild.py --host b2
         curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
-        sudo apt update
-        sudo apt install zotero jurism zotero-beta
-        sudo apt remove zotero jurism zotero-beta
+        sudo apt-get update
+        sudo apt-get install zotero jurism zotero-beta
+        sudo apt-get remove zotero jurism zotero-beta
 
     - name: refresh github
       id: github
@@ -100,14 +100,14 @@ jobs:
         # https://github.com/retorquere/zotero-deb/issues/49
         sudo add-apt-repository ppa:tj/bugfixes
         sudo apt-get update
-        sudo apt install apt
+        sudo apt-get install apt
 
         mkdir -p bin
         [[ -e bin/linux-amd64-github-release ]] || (curl -L https://github.com/github-release/github-release/releases/download/v0.10.0/linux-amd64-github-release.bz2 -o bin/linux-amd64-github-release.bz2 && bzip2 -d bin/linux-amd64-github-release.bz2)
         chmod +x bin/linux-amd64-github-release
         ./rebuild.py --host github
         curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-        sudo apt update
-        sudo apt install zotero jurism zotero-beta
-        sudo apt remove zotero jurism zotero-beta
+        sudo apt-get update
+        sudo apt-get install zotero jurism zotero-beta
+        sudo apt-get remove zotero jurism zotero-beta
 
