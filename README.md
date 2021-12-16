@@ -23,7 +23,7 @@ They manage both desktop file registration and MimeType registration.
 To install Zotero, use the following commands:
 
 ```
-wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | bash
 sudo apt update
 sudo apt install zotero
 ```
@@ -33,7 +33,7 @@ sudo apt install zotero
 To install Juris-M, use the following commands:
 
 ```
-wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | bash
 sudo apt update
 sudo apt install jurism
 ```
@@ -42,7 +42,7 @@ sudo apt install jurism
 
 You can use `curl` instead of `wget` by typing
 ```
-curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | bash
 ```
 
 ## Updating Zotero / Juris-M
@@ -57,6 +57,8 @@ Alternatively, you can use the following commands:
 sudo apt update
 sudo apt upgrade
 ```
+
+install.sh will ask for sudo permissions to install the pointer to the apt repo, and to add the signing key to the keyring.
 
 ## Beta packages
 
