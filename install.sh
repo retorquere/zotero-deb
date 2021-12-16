@@ -12,9 +12,9 @@ CODENAME={codename}
 GPGKEY=$BASEURL/$CODENAME/deb.gpg.key
 KEYRING=gnupg-ring:/etc/apt/trusted.gpg.d/zotero.gpg
 if [ -x "$(command -v curl)" ]; then
-  curl --silent -L $GPGKEY | sudo gpg --no-default-keyring --keyring $KEYRING --import -
+  curl --silent -L $GPGKEY | sudo gpg --no-options --no-default-keyring --keyring $KEYRING --import -
 elif [ -x "$(command -v wget)" ]; then
-  wget -qO- $GPGKEY | sudo gpg --no-default-keyring --keyring $KEYRING --import -
+  wget -qO- $GPGKEY | sudo gpg --no-options --no-default-keyring --keyring $KEYRING --import -
 else
   echo "Error: need wget or curl installed." >&2
   exit 1
