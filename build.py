@@ -82,13 +82,13 @@ for staged in config.staged:
   # gather metadata for the deb file
   deb = types.SimpleNamespace()
 
-  # get version and binary name
+  # get version and package name
   with IniFile(os.path.join(staged, 'application.ini')) as ini:
     deb.vendor = ini['App']['Vendor'] # vendor instead of app name because jurism uses the same appname
-    deb.binary = deb.client = deb.vendor.lower()
+    deb.package = deb.client = deb.vendor.lower()
     deb.version = ini['App']['Version']
     if '-beta' in deb.version:
-      deb.binary += '-beta'
+      deb.package += '-beta'
       deb.version = deb.version.replace('-beta', '')
 
   # detect arch from zotero-bin/jurism-bin
@@ -130,19 +130,15 @@ for staged in config.staged:
     # for the desktop entry
     deb.description = config.ini[deb.client]['description']
     # path to the generated deb file
-    deb.deb = os.path.join(config.path.repo, f'{deb.binary}_{deb.version}{deb.bump}_{deb.arch}.deb')
+    deb.deb = os.path.join(config.path.repo, f'{deb.package}_{deb.version}{deb.bump}_{deb.arch}.deb')
 
     # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
     os.makedirs(os.path.join(deb.build, 'usr/lib'), exist_ok=True)
-    shutil.copytree(staged, os.path.join(deb.build, 'usr/lib', deb.binary), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
-
-    if deb.binary != deb.client:
-      # rename the 'zotero' binary to 'zotero-beta' for the beta package so they can be installed alongside each other
-      shutil.move(os.path.join(deb.build, 'usr/lib', deb.binary, deb.client), os.path.join(deb.build, 'usr/lib', deb.binary, deb.binary))
+    shutil.copytree(staged, os.path.join(deb.build, 'usr/lib', deb.package), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
 
     # disable auto-update
-    with Open(os.path.join(deb.build, 'usr/lib/', deb.binary, 'defaults/pref/local-settings.js'), 'a') as ls, Open(os.path.join(deb.build, 'usr/lib/', deb.binary, 'mozilla.cfg'), 'a') as cfg:
+    with Open(os.path.join(deb.build, 'usr/lib/', deb.package, 'defaults/pref/local-settings.js'), 'a') as ls, Open(os.path.join(deb.build, 'usr/lib/', deb.package, 'mozilla.cfg'), 'a') as cfg:
       # enable mozilla.cfg
       if ls.tell() != 0: print('', file=ls) # if the file exists, add an empty line
       print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=ls)
@@ -160,8 +156,8 @@ for staged in config.staged:
     # create desktop file from existing .desktop file, but add mime handlers that Zotero can respond to
     with IniFile(os.path.join(staged, deb.client + '.desktop')) as ini:
       deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
-      ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.binary}/{deb.binary} --url %u')
-      ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.binary}/chrome/icons/default/default256.png')
+      ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} --url %u')
+      ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.package}/chrome/icons/default/default256.png')
       ini.set('Desktop Entry', 'MimeType', ';'.join([
         'x-scheme-handler/zotero',
         'application/x-endnote-refer',
@@ -177,16 +173,16 @@ for staged in config.staged:
         'application/vnd.citationstyles.style+xml'
       ]))
       ini.set('Desktop Entry', 'Description', deb.description.format_map(vars(deb)))
-      with Open(os.path.join(deb.build, 'usr/share/applications', f'{deb.binary}.desktop'), 'w') as f:
+      with Open(os.path.join(deb.build, 'usr/share/applications', f'{deb.package}.desktop'), 'w') as f:
         ini.write(f, space_around_delimiters=False)
 
     # add mime info
-    with open(args.mime) as mime, Open(os.path.join(deb.build, 'usr/share/mime/packages', f'{deb.binary}.xml'), 'w') as f:
+    with open(args.mime) as mime, Open(os.path.join(deb.build, 'usr/share/mime/packages', f'{deb.package}.xml'), 'w') as f:
       f.write(mime.read())
 
     # write build control file
     with Open(os.path.join(deb.build, 'DEBIAN/control'), 'w') as f:
-      print(f'Package: {deb.binary}', file=f)
+      print(f'Package: {deb.package}', file=f)
       print(f'Architecture: {deb.arch}', file=f)
       print(f'Depends: {deb.dependencies}', file=f)
       print(f'Maintainer: {config.maintainer}', file=f)
@@ -197,7 +193,7 @@ for staged in config.staged:
 
     # create symlink to binary
     os.makedirs(os.path.join(deb.build, 'usr/local/bin'))
-    os.symlink(f'/usr/lib/{deb.binary}/{deb.binary}', os.path.join(deb.build, 'usr/local/bin', deb.binary))
+    os.symlink(f'/usr/lib/{deb.package}/{deb.client}', os.path.join(deb.build, 'usr/local/bin', deb.package))
 
     # build deb
     if os.path.exists(deb.deb):
