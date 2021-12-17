@@ -69,6 +69,7 @@ jobs:
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
         sudo apt-get update
         sudo apt-get install zotero jurism zotero-beta
+        ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
         sudo apt-get remove zotero jurism zotero-beta
 
     - name: refresh backblaze
@@ -88,6 +89,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install zotero jurism zotero-beta
         sudo apt-get remove zotero jurism zotero-beta
+        ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
 
     - name: refresh github
       id: github
@@ -110,4 +112,5 @@ jobs:
         sudo apt-get update
         sudo apt-get install zotero jurism zotero-beta
         sudo apt-get remove zotero jurism zotero-beta
+        ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
 
