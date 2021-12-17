@@ -95,11 +95,11 @@ class Sync:
 
   def ghrelease(self, _from, _to):
     if _from.startswith('http'):
-      _, _, _, owner, repo, _, _, release = _from.split('/')
-      return f'cd {shlex.quote(_to)} && githubrelease asset {owner}/{repo} download {release}'
+      _, _, _, owner, project, _, _, release = _from.split('/')
+      return f'cd {shlex.quote(_to)} && githubrelease asset {owner}/{project} download {release}'
     else:
-      _, _, _, owner, repo, _, _, release = _to.split('/')
-      # return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{repo} upload {release} *' # doesn't work
+      _, _, _, owner, project, _, _, release = _to.split('/')
+      # return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{project} upload {release} *' # doesn't work
       uploads = []
       for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
         if os.path.isfile(f):
