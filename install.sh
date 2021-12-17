@@ -7,6 +7,8 @@ case `uname -m` in
     ;;
 esac
 
+export GNUPGHOME="/dev/null"
+
 BASEURL={url}
 CODENAME={codename}
 GPGKEY=$BASEURL/$CODENAME/deb.gpg.key
