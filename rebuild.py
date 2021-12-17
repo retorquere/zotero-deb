@@ -103,11 +103,8 @@ class Sync:
 
 Sync=Sync()
 
-if args.clear:
-  if os.path.exists(config.path.repo):
-    shutil.rmtree(config.path.repo)
-  os.makedirs(config.path.repo)
-
+if args.clear and os.path.exists(config.path.repo):
+  shutil.rmtree(config.path.repo)
 os.makedirs(config.path.repo, exist_ok=True)
 system(Sync.fetch())
 
