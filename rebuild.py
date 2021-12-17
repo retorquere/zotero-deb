@@ -103,7 +103,7 @@ class Sync:
       uploads = []
       for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
         if os.path.isfile(f):
-          uploads.append(f'./bin/linux-amd64-github-release upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))}') # --replace')
+          uploads.append(f'./bin/linux-amd64-github-release upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))} --replace')
       return ' && '.join(uploads)
 
 Sync=Sync()
