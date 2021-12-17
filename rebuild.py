@@ -99,7 +99,12 @@ class Sync:
       return f'cd {shlex.quote(_to)} && githubrelease asset {owner}/{repo} download {release}'
     else:
       _, _, _, owner, repo, _, _, release = _to.split('/')
-      return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{repo} upload {release} *'
+      # return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{repo} upload {release} *' # doesn't work
+      uploads = []
+      for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
+        if os.path.isfile(f):
+          uploads.append(f'./bin/linux-amd64-github-release upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))}') # --replace')
+      return ' && '.join(uploads)
 
 Sync=Sync()
 
