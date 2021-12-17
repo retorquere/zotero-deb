@@ -67,7 +67,7 @@ class Sync:
     self.repo = {
       'sourceforge': SimpleNamespace(remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
       'b2': SimpleNamespace(remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
-      'github': SimpleNamespace(upload=os.path.abspath('./bin/linux-amd64-github-release'), remote='https://retorquere/zotero-deb/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
+      'github': SimpleNamespace(remote='https://github.com/retorquere/zotero-deb/releases/download/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
     }[args.host]
     self.repo.local = config.path.repo
     self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
@@ -95,15 +95,11 @@ class Sync:
 
   def ghrelease(self, _from, _to):
     if _from.startswith('http'):
-      return f'echo cannot download release'
-
+      _, _, _, owner, repo, _, _, release = _from.split('/')
+      return f'cd {shlex.quote(_from} && githubrelease asset {owner}/{repo} download {release}'
     else:
-      _, _, owner, project, release = _to.split('/')
-      uploads = []
-      for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
-        if os.path.isfile(f):
-          uploads.append(f'{self.repo.upload} upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))} --replace')
-      return ' && '.join(uploads)
+      _, _, _, owner, repo, _, _, release = _to.split('/')
+      return f'cd {shlex.quote(_from} && githubrelease asset {owner}/{repo} upload {release} *'
 
 Sync=Sync()
 
@@ -111,9 +107,9 @@ if args.clear:
   if os.path.exists(config.path.repo):
     shutil.rmtree(config.path.repo)
   os.makedirs(config.path.repo)
-else:
-  os.makedirs(config.path.repo, exist_ok=True)
-  system(Sync.fetch())
+
+os.makedirs(config.path.repo, exist_ok=True)
+system(Sync.fetch())
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
