@@ -96,10 +96,10 @@ class Sync:
   def ghrelease(self, _from, _to):
     if _from.startswith('http'):
       _, _, _, owner, repo, _, _, release = _from.split('/')
-      return f'cd {shlex.quote(_from} && githubrelease asset {owner}/{repo} download {release}'
+      return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{repo} download {release}'
     else:
       _, _, _, owner, repo, _, _, release = _to.split('/')
-      return f'cd {shlex.quote(_from} && githubrelease asset {owner}/{repo} upload {release} *'
+      return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{repo} upload {release} *'
 
 Sync=Sync()
 
