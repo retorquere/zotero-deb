@@ -95,6 +95,7 @@ jobs:
       id: github
       env:
         PYTHONUNBUFFERED: true
+        GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -e
         set -x
