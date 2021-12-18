@@ -106,8 +106,7 @@ jobs:
         sudo apt-get install apt
 
         mkdir -p bin
-        [[ -e bin/linux-amd64-github-release ]] || (curl -L https://github.com/github-release/github-release/releases/download/v0.10.0/linux-amd64-github-release.bz2 -o bin/linux-amd64-github-release.bz2 && bzip2 -d bin/linux-amd64-github-release.bz2)
-        chmod +x bin/linux-amd64-github-release
+        [[ -e /usr/bin/gh]] || (curl -LO https://github.com/cli/cli/releases/download/v2.3.0/gh_2.3.0_linux_amd64.deb && sudo dpkg -i gh_2.3.0_linux_amd64.deb)
 
         ./rebuild.py --clear --host github
         curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash

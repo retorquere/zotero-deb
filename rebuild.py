@@ -76,7 +76,7 @@ class Sync:
     self.sync = {
       'sourceforge': self.rsync,
       'b2': self.b2sync,
-      'github': self.ghrelease,
+      'github': self.ghsync,
     }[args.host]
 
   def fetch(self):
@@ -93,18 +93,13 @@ class Sync:
   def b2sync(self, _from, _to):
     return f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
 
-  def ghrelease(self, _from, _to):
+  def ghsync(self, _from, _to):
     if _from.startswith('http'):
       _, _, _, owner, project, _, _, release = _from.split('/')
-      return f'cd {shlex.quote(_to)} && githubrelease asset {owner}/{project} download {release}'
+      return f'cd {shlex.quote(_to)} && gh release download {release} --repo {owner}/{project}'
     else:
       _, _, _, owner, project, _, _, release = _to.split('/')
-      # return f'cd {shlex.quote(_from)} && githubrelease asset {owner}/{project} upload {release} *' # doesn't work
-      uploads = []
-      for f in glob.glob(os.path.join(os.path.abspath(_from), '*')):
-        if os.path.isfile(f):
-          uploads.append(f'./bin/linux-amd64-github-release upload --user {owner} --repo {project} --tag {release} --file {shlex.quote(f)} --name {shlex.quote(os.path.basename(f))} --replace')
-      return ' && '.join(uploads)
+      return f'cd {shlex.quote(_from)} && gh release upload {release} * --repo {owner}/{project}'
 
 Sync=Sync()
 

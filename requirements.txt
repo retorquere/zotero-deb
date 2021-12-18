@@ -2,4 +2,3 @@ python-magic
 
 # only for rebuild on GH release
 python-dotenv
-githubrelease
