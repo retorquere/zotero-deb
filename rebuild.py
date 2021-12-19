@@ -17,6 +17,7 @@ from types import SimpleNamespace
 import argparse
 import contextlib
 import types
+from github3 import login as ghlogin
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
