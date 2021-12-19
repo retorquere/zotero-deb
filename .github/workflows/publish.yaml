@@ -76,7 +76,7 @@ jobs:
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
 
     - name: refresh backblaze
-      if: matrix.hosting == 'b2'
+      if: matrix.hosting == 'x b2'
       id: b2
       env:
         PYTHONUNBUFFERED: true
