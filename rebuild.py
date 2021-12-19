@@ -151,7 +151,6 @@ debs += [
   for arch in [ 'i686', 'x86_64' ]
 ]
 
-print(config)
 debs = [ (os.path.join(config.path.repo, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 
 modified = False
