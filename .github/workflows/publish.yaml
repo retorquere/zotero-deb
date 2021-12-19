@@ -16,8 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
+      matrix:
+        hosting: [sourceforge, b2, github]
     steps:
     - name: Cancel Previous Runs
+      if: ${{ matrix.hosting }} == "sourceforge"
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{ github.token }}
@@ -59,6 +62,7 @@ jobs:
         known_hosts: 'sourceforge'
 
     - name: refresh sourceforge
+      if: ${{ matrix.hosting }} == "sourceforge"
       id: sourceforge
       env:
         PYTHONUNBUFFERED: true
@@ -70,9 +74,9 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -qy remove zotero jurism zotero-beta
 
     - name: refresh backblaze
+      if: ${{ matrix.hosting }} == "b2"
       id: b2
       env:
         PYTHONUNBUFFERED: true
@@ -89,10 +93,10 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -qy remove zotero jurism zotero-beta
 
     - name: refresh github
       id: github
+      if: ${{ matrix.hosting }} == "github"
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
@@ -110,5 +114,4 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -qy remove zotero jurism zotero-beta
 
