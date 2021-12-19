@@ -80,33 +80,51 @@ class Sync:
     }[args.host]
 
   def fetch(self):
-    return self.sync(self.repo.remote + self.repo.subdir, self.repo.local)
+    self.sync(self.repo.remote + self.repo.subdir, self.repo.local)
 
   def publish(self):
-    return self.sync(self.repo.local, self.repo.remote + self.repo.subdir)
+    self.sync(self.repo.local, self.repo.remote + self.repo.subdir)
 
   def rsync(self, _from, _to):
     if not _from.endswith('/'): _from += '/'
     if not _to.endswith('/'): _to += '/'
-    return f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+    system(f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
-    return f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}'
+    system(f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def ghsync(self, _from, _to):
     if _from.startswith('http'):
       _, _, _, owner, project, _, _, release = _from.split('/')
-      return f'cd {shlex.quote(_to)} && gh release download {release} --repo {owner}/{project}'
+      release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
+      files = [os.path.abspath(os.path.join(_to, asset.name)) for asset in release.assets()]
+      # remove files not present in remote
+      for filename in [os.path.abspath(path) for path in glob.glob(os.path.join(_to, '*'))]:
+        if filename not in files and os.path.isfile(filename):
+          print('<x', filename)
+          os.remove(filename)
+      for asset in release.assets():
+        print('<-', filename)
+        asset.download(os.path.join(_to, asset.name))
+
     else:
       _, _, _, owner, project, _, _, release = _to.split('/')
-      return f'cd {shlex.quote(_from)} && gh release upload {release} * --repo {owner}/{project}'
-
+      release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
+      files = [os.path.basename(filename) for filename in glob.glob(os.path.join(_from, '*')) if os.path.isfile(filename)]
+      for asset in release.assets():
+        if asset.name not in files:
+          print('x>', asset.name)
+          asset.delete()
+      for filename in glob.glob(os.path.join(_from, '*')):
+        if os.path.isfile(filename):
+          with open(filename) as f:
+            release.upload('application/octet-stream', os.path.basename(filename), f)
 Sync=Sync()
 
 if args.clear and os.path.exists(config.path.repo):
   shutil.rmtree(config.path.repo)
 os.makedirs(config.path.repo, exist_ok=True)
-system(Sync.fetch())
+Sync.fetch()
 
 def load(url,parse_json=False):
   response = urlopen(url).read()
@@ -139,7 +157,7 @@ debs += [
 # jurism
 debs += [
   ('jurism', bump('jurism', version), archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
-  
+
   for version in ({
     version.rsplit('m', 1)[0] : version
     for version in sorted([
@@ -178,7 +196,8 @@ if args.force_send or modified:
     system('./build.py')
   with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
-  system(Sync.publish(), args.send or args.force_send)
+  if args.send or args.force_send:
+    Sync.publish()
   print('::set-output name=modified::true')
 else:
   print('echo nothing to do')
