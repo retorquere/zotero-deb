@@ -222,7 +222,8 @@ with chdir(config.path.repo):
   run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={shlex.quote(repo + "/")} -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
 
   # export public key so people can install the repo
-  run(f'gpg --armor --export {gpgkey} > deb.gpg.key')
+  run(f'gpg --export {gpgkey} > zotero-archive-keyring.gpg')
+  run(f'gpg --armor --export {gpgkey} > zotero-archive-keyring.asc')
 
   # sign the Release file
   run(f'gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
