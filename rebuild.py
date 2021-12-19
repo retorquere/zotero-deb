@@ -109,7 +109,7 @@ class Sync:
           print('<x', filename)
           os.remove(filename)
       for asset in release.assets():
-        print('<-', filename)
+        print('<-', asset.name)
         asset.download(os.path.join(_to, asset.name))
 
     else:
@@ -122,6 +122,7 @@ class Sync:
           asset.delete()
       for filename in glob.glob(os.path.join(_from, '*')):
         if os.path.isfile(filename):
+          print('->', os.path.basename(filename))
           with open(filename) as f:
             release.upload('application/octet-stream', os.path.basename(filename), f)
 Sync=Sync()
