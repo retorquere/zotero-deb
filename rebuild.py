@@ -124,7 +124,7 @@ class Sync:
         if os.path.isfile(filename):
           print('->', os.path.basename(filename))
           with open(filename) as f:
-            release.upload('application/octet-stream', os.path.basename(filename), f)
+            release.upload_asset('application/octet-stream', os.path.basename(filename), f)
 Sync=Sync()
 
 if args.clear and os.path.exists(config.path.repo):
