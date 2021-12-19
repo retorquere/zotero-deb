@@ -117,9 +117,9 @@ class Sync:
       release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
       files = [os.path.basename(filename) for filename in glob.glob(os.path.join(_from, '*')) if os.path.isfile(filename)]
       for asset in release.assets():
-        if asset.name not in files:
-          print('x>', asset.name)
-          asset.delete()
+        print('x>', asset.name)
+        # always delete because upload_asset does not replace
+        asset.delete()
       for filename in glob.glob(os.path.join(_from, '*')):
         if os.path.isfile(filename):
           print('->', os.path.basename(filename))
