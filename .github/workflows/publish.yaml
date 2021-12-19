@@ -105,9 +105,6 @@ jobs:
         sudo apt-get update
         sudo apt-get -y install apt
 
-        curl -LO https://github.com/cli/cli/releases/download/v2.3.0/gh_2.3.0_linux_amd64.deb
-        sudo dpkg -i gh_2.3.0_linux_amd64.deb
-
         ./rebuild.py --clear --host github ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
         sudo apt-get update
