@@ -89,7 +89,11 @@ class Sync:
   def rsync(self, _from, _to):
     if not _from.endswith('/'): _from += '/'
     if not _to.endswith('/'): _to += '/'
-    system(f'rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
+    if os.environ.get('CI'):
+      progress = ''
+    else:
+      progress = '--progress'
+    system(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
     system(f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}')

@@ -40,8 +40,8 @@ jobs:
     - name: install build requirements
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
-        sudo apt-get update
-        sudo apt-get -y install dpkg-sig fakeroot
+        sudo apt-get -q update
+        sudo apt-get -qy install dpkg-sig fakeroot
 
     - name: Cache sync tools
       id: cache
@@ -67,10 +67,10 @@ jobs:
         set -x
         ./rebuild.py --clear --host sourceforge ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        sudo apt-get update
-        sudo apt-get -y install zotero jurism zotero-beta
+        sudo apt-get -q update
+        sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -y remove zotero jurism zotero-beta
+        sudo apt-get -qy remove zotero jurism zotero-beta
 
     - name: refresh backblaze
       id: b2
@@ -86,10 +86,10 @@ jobs:
         chmod +x bin/b2-linux
         ./rebuild.py --clear --host b2 ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
-        sudo apt-get update
-        sudo apt-get -y install zotero jurism zotero-beta
+        sudo apt-get -q update
+        sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -y remove zotero jurism zotero-beta
+        sudo apt-get -qy remove zotero jurism zotero-beta
 
     - name: refresh github
       id: github
@@ -102,13 +102,13 @@ jobs:
 
         # https://github.com/retorquere/zotero-deb/issues/49
         sudo add-apt-repository ppa:tj/bugfixes
-        sudo apt-get update
-        sudo apt-get -y install apt
+        sudo apt-get -q update
+        sudo apt-get -qy install apt
 
         ./rebuild.py --clear --host github ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-        sudo apt-get update
-        sudo apt-get -y install zotero jurism zotero-beta
+        sudo apt-get -q update
+        sudo apt-get -qy install zotero jurism zotero-beta
         ls /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-        sudo apt-get -y remove zotero jurism zotero-beta
+        sudo apt-get -qy remove zotero jurism zotero-beta
 
