@@ -123,7 +123,7 @@ class Sync:
       for filename in glob.glob(os.path.join(_from, '*')):
         if os.path.isfile(filename):
           print('->', os.path.basename(filename))
-          with open(filename, 'b') as f:
+          with open(filename, 'rb') as f:
             release.upload_asset('application/octet-stream', os.path.basename(filename), f)
 Sync=Sync()
 
