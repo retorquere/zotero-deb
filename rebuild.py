@@ -201,4 +201,4 @@ if args.force_send or modified:
     Sync.publish()
   print('::set-output name=modified::true')
 else:
-  print('echo nothing to do')
+  print('nothing to do')
