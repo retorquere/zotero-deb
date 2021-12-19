@@ -6,10 +6,10 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      releaseOptions:
-        description: release options
+      rebuildOption:
+        description: rebuild options
         required: false
-        default: '--rebuild'
+        default: '--force'
 
 jobs:
   release:
@@ -65,7 +65,7 @@ jobs:
       run: |
         set -e
         set -x
-        ./rebuild.py --clear --host sourceforge
+        ./rebuild.py --clear --host sourceforge ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
         sudo apt-get update
         sudo apt-get -y install zotero jurism zotero-beta
@@ -84,7 +84,7 @@ jobs:
         mkdir -p bin
         [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
         chmod +x bin/b2-linux
-        ./rebuild.py --clear --host b2
+        ./rebuild.py --clear --host b2 ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
         sudo apt-get update
         sudo apt-get -y install zotero jurism zotero-beta
@@ -108,7 +108,7 @@ jobs:
         curl -LO https://github.com/cli/cli/releases/download/v2.3.0/gh_2.3.0_linux_amd64.deb
         sudo dpkg -i gh_2.3.0_linux_amd64.deb
 
-        ./rebuild.py --clear --host github
+        ./rebuild.py --clear --host github ${{ github.event.inputs.rebuildOptions }}
         curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
         sudo apt-get update
         sudo apt-get -y install zotero jurism zotero-beta
