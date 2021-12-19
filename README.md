@@ -1,6 +1,15 @@
 <img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right">
 
-**PSA: THE DOWNLOADS FROM GITHUB FOR THIS REPO ARE BROKEN. RE-RUN install.sh TO SWITCH TO THE SOURCEFORGE-HOSTED REPO**
+**PSA**
+
+I'm in the process of transferring the hosting of these packages to the Zoero organisation. Until that is done, the following options are available:
+
+* download from this repo
+  * (re)install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
+  * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround.
+* download from sourceforge
+  * (re) install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
+  * **caveat**: sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down. If you get errors, try again in a few hours.
 
 ----
 
