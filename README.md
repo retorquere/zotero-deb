@@ -5,7 +5,7 @@
 I'm in the process of transferring the hosting of these packages to the Zoero organisation. Until that is done, the following options are available:
 
 * download from this repo
-  * (re)install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
+  * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`
   * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround.
 * download from sourceforge
   * (re) install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
