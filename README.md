@@ -85,6 +85,10 @@ wget -qO- https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo
 
 Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
 
+## Uninstall
+
+wget -qO- https://downloads.sourceforge.net/project/zotero-deb/uninstall.sh | sudo bash
+
 # Developers
 
 To rebuild this repo you need:
