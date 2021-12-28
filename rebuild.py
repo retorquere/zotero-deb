@@ -202,6 +202,8 @@ if args.force_send or modified:
     system('./build.py')
   with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
+  with open('uninstall.sh') as src, open(os.path.join(config.path.repo, 'uninstall.sh'), 'w') as tgt:
+    tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   if args.send or args.force_send:
     Sync.publish()
   print('::set-output name=modified::true')
