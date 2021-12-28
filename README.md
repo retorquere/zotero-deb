@@ -87,7 +87,10 @@ Instructions for installation on Crostini-capable Chromebooks can be found on th
 
 ## Uninstall
 
+```
 wget -qO- https://downloads.sourceforge.net/project/zotero-deb/uninstall.sh | sudo bash
+sudo apt-get purge zotero
+```
 
 # Developers
 
