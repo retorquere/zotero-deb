@@ -95,7 +95,7 @@ jobs:
         ./rebuild.py --clear --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
 
         curl -sL $INSTALLSH | sudo bash
-        cat /usr/share/keyrings/zotero-archive-keyring.gpg
+        gpg --enarmor < /usr/share/keyrings/zotero-archive-keyring.gpg
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         file /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
