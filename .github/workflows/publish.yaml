@@ -12,7 +12,7 @@ on:
         default: '--force'
 
 jobs:
-  update:
+  refresh:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -88,13 +88,13 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    needs: update
+    needs: refresh
     strategy:
       fail-fast: false
       matrix:
         hosting: [sourceforge, b2, github]
     steps:
-    - name: test ${{ matrix.hosting }}
+    - name: test install ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
       run: |
@@ -124,4 +124,4 @@ jobs:
         gpg --list-packets /usr/share/keyrings/zotero-archive-keyring.gpg
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
-        file /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
+        file /usr/lib/zotero/zotero /usr/lib/zotero/zotero-bin /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/lib/zotero-beta/zotero-bin /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/lib/jurism/jurism-bin /usr/local/bin/jurism
