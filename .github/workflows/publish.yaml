@@ -35,7 +35,6 @@ jobs:
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
     - name: Import GPG key
-      id: import_gpg
       uses: retorquere/ghaction-import-gpg@master
       with:
         gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -47,7 +46,6 @@ jobs:
         sudo apt-get -qy install dpkg-sig fakeroot
 
     - name: Cache sync tools
-      id: cache
       uses: actions/cache@v2
       env:
         cache-name: v3
@@ -55,66 +53,49 @@ jobs:
         path: |
           ./bin
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py', 'requirements.txt') }}
+
     - name: Install SSH Key
+      if: matrix.hosting == 'sourceforge'
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: 'sourceforge'
 
-    - name: refresh sourceforge
-      if: matrix.hosting == 'sourceforge'
-      id: sourceforge
-      env:
-        PYTHONUNBUFFERED: true
-      run: |
-        set -e
-        set -x
-        ./rebuild.py --clear --host sourceforge ${{ github.event.inputs.rebuildOptions }}
-        curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-        cat /usr/share/keyrings/zotero-archive-keyring.gpg
-        sudo apt-get -q update
-        sudo apt-get -qy install zotero jurism zotero-beta
-        file /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-
-    - name: refresh backblaze
-      if: matrix.hosting == 'x b2'
-      id: b2
+    - name: refresh ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
-      run: |
-        set -e
-        set -x
-        mkdir -p bin
-        [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
-        chmod +x bin/b2-linux
-        ./rebuild.py --clear --host b2 ${{ github.event.inputs.rebuildOptions }}
-        curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
-        cat /usr/share/keyrings/zotero-archive-keyring.gpg
-        sudo apt-get -q update
-        sudo apt-get -qy install zotero jurism zotero-beta
-        file /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-
-    - name: refresh github
-      id: github
-      if: matrix.hosting == 'github'
-      env:
-        PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
       run: |
         set -e
         set -x
 
-        # https://github.com/retorquere/zotero-deb/issues/49
-        sudo add-apt-repository ppa:tj/bugfixes
-        sudo apt-get -q update
-        sudo apt-get -qy install apt
+        case "${{ matrix.hosting }}" in
+          sourceforge)
+            export INSTALLSH=https://downloads.sourceforge.net/project/zotero-deb/install.sh
+            ;;
+          b2)
+            echo not building b2
+            exit
 
-        ./rebuild.py --clear --host github ${{ github.event.inputs.rebuildOptions }}
-        curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+            mkdir -p bin
+            [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
+            export INSTALLSH=https://apt.retorque.re/file/zotero-apt/install.sh
+            ;;
+          github)
+            # https://github.com/retorquere/zotero-deb/issues/49
+            sudo add-apt-repository ppa:tj/bugfixes
+            sudo apt-get -q update
+            sudo apt-get -qy install apt
+            export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh
+            ;;
+        esac
+
+        ./rebuild.py --clear --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
+
+        curl -sL $INSTALLSH | sudo bash
         cat /usr/share/keyrings/zotero-archive-keyring.gpg
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         file /usr/lib/zotero/zotero /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/local/bin/jurism
-
