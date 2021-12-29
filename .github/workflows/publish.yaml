@@ -17,10 +17,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, b2, github]
+        hosting: [sourceforge, github]
     steps:
     - name: Cancel Previous Runs
-      if: matrix.hosting == 'sourceforge'
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{ github.token }}
@@ -75,15 +74,13 @@ jobs:
           sourceforge)
             ;;
           b2)
-            echo not building b2
-            exit
-
             mkdir -p bin
             [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
             ;;
           github)
             ;;
         esac
+
         ./rebuild.py --clear --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
 
   test:
@@ -92,8 +89,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, b2, github]
+        hosting: [sourceforge, github]
     steps:
+    - name: install apt fixes
+      if: matrix.hosting == 'github'
+      run: |
+        set -e
+        set -x
+        # https://github.com/retorquere/zotero-deb/issues/49
+        sudo add-apt-repository ppa:tj/bugfixes
+        sudo apt-get -q update
+        sudo apt-get -qy install apt
+
     - name: test install ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
@@ -106,16 +113,9 @@ jobs:
             export INSTALLSH=https://downloads.sourceforge.net/project/zotero-deb/install.sh
             ;;
           b2)
-            echo not testing b2
-            exit
-
             export INSTALLSH=https://apt.retorque.re/file/zotero-apt/install.sh
             ;;
           github)
-            # https://github.com/retorquere/zotero-deb/issues/49
-            sudo add-apt-repository ppa:tj/bugfixes
-            sudo apt-get -q update
-            sudo apt-get -qy install apt
             export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh
             ;;
         esac
