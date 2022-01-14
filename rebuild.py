@@ -20,6 +20,14 @@ import types
 from github3 import login as ghlogin
 import html
 
+from b2blaze import B2
+
+headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' }
+import urllib.request
+opener = urllib.request.build_opener()
+opener.addheaders = [ tuple(kv) for kv in headers.items() ]
+urllib.request.install_opener(opener)
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
 parser.add_argument('--no-send', dest='send', action='store_false', default=True)
@@ -75,6 +83,10 @@ class Sync:
     self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
     self.repo.subdir = '' if self.repo.codename == '.' else self.repo.codename + '/'
 
+    if args.host == 'b2': # do this once to save a call
+      self.b2 = B2(os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
+      self.bucket = self.b2.buckets.get(self.repo.remote[3:].replace('/', ''))
+
     self.sync = {
       'sourceforge': self.rsync,
       'b2': self.b2sync,
@@ -97,7 +109,22 @@ class Sync:
     system(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
-    system(f'./bin/b2-linux sync --compareVersions size --delete {shlex.quote(_from)} {shlex.quote(_to)}')
+    there = set([ f.file_name for f in self.bucket.files.all() ])
+    here = set(os.listdir(self.repo.local))
+
+    if _from.startswith('b2:'):
+      for file in (there - here):
+        if file.endswith('.deb'):
+          urllib.request.urlretrieve(self.repo.url + file, os.path.join(_to, file))
+      for file in (here - there):
+        os.remove(os.path.join(_to, file))
+    else:
+      for file in here:
+        if file.endswith('.deb') and file in there: continue # always upload non-deb files
+        file = os.path.join(_from, file)
+        self.bucket.files.upload(contents=open(file, 'rb'), file_name=file)
+      for file in (there - here):
+        self.bucket.files.get(file_name=os.path.join(_from, file)).delete()
 
   def ghsync(self, _from, _to):
     if _from.startswith('http'):
