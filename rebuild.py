@@ -98,6 +98,9 @@ class Sync:
   def publish(self):
     self.sync(self.repo.local, self.repo.remote + self.repo.subdir)
 
+  def here(self):
+    return set([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*.deb') ])
+
   def rsync(self, _from, _to):
     if not _from.endswith('/'): _from += '/'
     if not _to.endswith('/'): _to += '/'
@@ -115,7 +118,7 @@ class Sync:
     ls = list(bucket.ls(latest_only=True))
     mod = { f.file_name: f.mod_time_millis for f, _ in ls if f.file_name.endswith('.deb') }
     there = set([ f.file_name for f, _ in ls if f.file_name.endswith('.deb')])
-    here = set([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*.deb') if os.path.isfile(str(path)) ])
+    here = self.here()
 
     if _from.startswith('b2:'):
       for filename in sorted(there - here):
@@ -149,32 +152,32 @@ class Sync:
         )
 
   def ghsync(self, _from, _to):
+    _, _, _, owner, project, _, _, release = self.repo.url.split('/')
+    release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
+
+    here = self.here()
+    there = set([asset.name for asset in release.assets()])
+
     if _from.startswith('http'):
-      _, _, _, owner, project, _, _, release = _from.split('/')
-      release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
-      files = [os.path.abspath(os.path.join(_to, asset.name)) for asset in release.assets()]
-      # remove files not present in remote
-      for filename in [os.path.abspath(path) for path in glob.glob(os.path.join(_to, '*'))]:
-        if filename not in files and os.path.isfile(filename):
-          print('<x', filename)
-          os.remove(filename)
+      for filename in sorted(here - there):
+        print('<-', filename)
+        os.remove(os.path.join(_to, filename))
+
       for asset in release.assets():
-        print('<-', asset.name)
+        if asset.name in here or not asset.name.endswith('.deb'): continue
+        print('<+', asset.name)
         asset.download(os.path.join(_to, asset.name))
 
     else:
-      _, _, _, owner, project, _, _, release = _to.split('/')
-      release = ghlogin('', '', os.environ['GITHUB_TOKEN']).repository(owner, project).release_from_tag(release)
-      files = [os.path.basename(filename) for filename in glob.glob(os.path.join(_from, '*')) if os.path.isfile(filename)]
       for asset in release.assets():
-        print('x>', asset.name)
         # always delete because upload_asset does not replace
+        print('->', asset.name)
         asset.delete()
       for filename in glob.glob(os.path.join(_from, '*')):
-        if os.path.isfile(filename):
+        for filename in sorted([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*') if os.path.isfile(str(path)) ]):
           print('->', os.path.basename(filename))
-          with open(filename, 'rb') as f:
-            release.upload_asset('application/octet-stream', os.path.basename(filename), f)
+          with open(os.path.join(self.repo.local, filename), 'rb') as f:
+            release.upload_asset('application/octet-stream', filename, f)
 Sync=Sync()
 
 if args.clear and os.path.exists(config.path.repo):
