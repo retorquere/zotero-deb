@@ -61,9 +61,6 @@ jobs:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: 'sourceforge'
 
-      if: matrix.hosting == 'b2'
-      run: |
-
     - name: refresh ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
