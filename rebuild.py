@@ -18,6 +18,7 @@ import argparse
 import contextlib
 import types
 from github3 import login as ghlogin
+import html
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
@@ -96,7 +97,7 @@ class Sync:
     system(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
-    system(f'./bin/b2-linux sync --replaceNewer --delete {shlex.quote(_from)} {shlex.quote(_to)}')
+    system(f'./bin/b2-linux sync --compareVersions size --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def ghsync(self, _from, _to):
     if _from.startswith('http'):
@@ -204,6 +205,16 @@ if args.force_send or modified:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   with open('uninstall.sh') as src, open(os.path.join(config.path.repo, 'uninstall.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
+  with open(os.path.join(config.path.repo, 'index.json'), 'w') as f:
+    json.dump(os.listdir(config.path.repo), f)
+  with open('index.html') as src, open(os.path.join(config.path.repo, 'index.html'), 'w') as tgt:
+    tgt.write(src.read().format(site=Sync.repo.url))
+    print('\n<ul>', file=tgt)
+    for f in sorted(os.listdir(config.path.repo)):
+      print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)
+    print('</ul>', file=tgt)
+
+  if args.send or args.force_send:
   if args.send or args.force_send:
     Sync.publish()
   print('::set-output name=modified::true')
