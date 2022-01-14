@@ -91,7 +91,8 @@ for staged in config.staged:
     deb.version = ini['App']['Version']
     if '-beta' in deb.version:
       deb.package += '-beta'
-      deb.version = deb.version.replace('-beta', '').replace('+', '~') # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3
+      # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs
+      deb.version = deb.version.replace('-beta', '').replace('+', ':')
 
   # detect arch from zotero-bin/jurism-bin
   arch = magic.from_file(os.path.join(staged, deb.client + '-bin'))
