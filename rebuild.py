@@ -20,7 +20,8 @@ import types
 from github3 import login as ghlogin
 import html
 
-from b2blaze import B2
+import b2sdk.v2 as b2
+import multiprocessing
 
 headers = { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' }
 import urllib.request
@@ -76,16 +77,12 @@ class Sync:
   def __init__(self):
     self.repo = {
       'sourceforge': SimpleNamespace(remote='retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/', url='https://downloads.sourceforge.net/project/zotero-deb'),
-      'b2': SimpleNamespace(remote='b2://zotero-apt/', url='https://apt.retorque.re/file/zotero-apt'),
+      'b2': SimpleNamespace(remote='b2://zotero-apt', url='https://apt.retorque.re/file/zotero-apt'),
       'github': SimpleNamespace(remote='https://github.com/retorquere/zotero-deb/releases/download/apt-get', url='https://github.com/retorquere/zotero-deb/releases/download/apt-get'),
     }[args.host]
     self.repo.local = config.path.repo
     self.repo.codename = os.path.relpath(config.path.repo, config.path.wwwroot)
     self.repo.subdir = '' if self.repo.codename == '.' else self.repo.codename + '/'
-
-    if args.host == 'b2': # do this once to save a call
-      self.b2 = B2(key_id=os.environ['B2_APPLICATION_KEY_ID'], application_key=os.environ['B2_APPLICATION_KEY'])
-      self.bucket = self.b2.buckets.get(self.repo.remote[3:].replace('/', ''))
 
     self.sync = {
       'sourceforge': self.rsync,
@@ -109,26 +106,41 @@ class Sync:
     system(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
-    there = set([ f.file_name for f in self.bucket.files.all() ])
+    b2_api = b2.B2Api(b2.InMemoryAccountInfo())
+    b2_api.authorize_account('production', os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
+    bucket = b2_api.get_bucket_by_name(self.repo.remote.split('/')[-1])
+
+    there = set([ f.file_name for f, _ in bucket.ls(latest_only=True) ])
     here = set(os.listdir(self.repo.local))
 
     if _from.startswith('b2:'):
       for file in (there - here):
         if file.endswith('.deb'):
-          print('<+', file)
-          urllib.request.urlretrieve(self.repo.url + file, os.path.join(_to, file))
+          print('<+', self.repo.url + '/' + file)
+          urllib.request.urlretrieve(self.repo.url + '/' + urlencode(file), os.path.join(_to, file))
       for file in (here - there):
         os.remove(os.path.join(_to, file))
         print('<-', file)
     else:
-      for file in here:
-        if file.endswith('.deb') and file in there: continue # always upload non-deb files
-        print('+>', file)
-        file = os.path.join(_from, file)
-        self.bucket.files.upload(contents=open(file, 'rb'), file_name=file)
-      for file in (there - here):
-        print('->', file)
-        self.bucket.files.get(file_name=os.path.join(_from, file)).delete()
+      policies_manager = b2.ScanPoliciesManager(
+        #exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
+      )
+      synchronizer = b2.Synchronizer(
+        max_workers=10,
+        policies_manager=policies_manager,
+        dry_run=False,
+        allow_empty_source=True,
+        compare_version_mode=CompareVersionMode.NONE,
+        newer_file_mode=NewerFileSyncMode.REPLACE,
+        keep_days_or_delete=KeepOrDeleteMode.DELETE
+      )
+      with b2.SyncReport(sys.stdout, True) as reporter:
+        synchronizer.sync_folders(
+          source_folder=b2.parse_sync_folder(_from, b2_api),
+          dest_folder=b2.parse_sync_folder(_to, b2_api),
+          now_millis=int(round(time.time() * 1000)),
+          reporter=reporter
+        )
 
   def ghsync(self, _from, _to):
     if _from.startswith('http'):
@@ -238,8 +250,6 @@ if args.force_send or modified:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
 
   files = [f for f in os.listdir(config.path.repo) if os.path.isfile(os.path.join(config.path.repo, f))]
-  with open(os.path.join(config.path.repo, 'index.json'), 'w') as f:
-    json.dump(files, f)
   with open('index.html') as src, open(os.path.join(config.path.repo, 'index.html'), 'w') as tgt:
     tgt.write(src.read().format(site=Sync.repo.url))
     print('\n<ul>', file=tgt)
