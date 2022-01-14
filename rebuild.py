@@ -84,7 +84,7 @@ class Sync:
     self.repo.subdir = '' if self.repo.codename == '.' else self.repo.codename + '/'
 
     if args.host == 'b2': # do this once to save a call
-      self.b2 = B2(os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
+      self.b2 = B2(key_id=os.environ['B2_APPLICATION_KEY_ID'], application_key=os.environ['B2_APPLICATION_KEY'])
       self.bucket = self.b2.buckets.get(self.repo.remote[3:].replace('/', ''))
 
     self.sync = {
@@ -115,15 +115,19 @@ class Sync:
     if _from.startswith('b2:'):
       for file in (there - here):
         if file.endswith('.deb'):
+          print('<+', file)
           urllib.request.urlretrieve(self.repo.url + file, os.path.join(_to, file))
       for file in (here - there):
         os.remove(os.path.join(_to, file))
+        print('<-', file)
     else:
       for file in here:
         if file.endswith('.deb') and file in there: continue # always upload non-deb files
+        print('+>', file)
         file = os.path.join(_from, file)
         self.bucket.files.upload(contents=open(file, 'rb'), file_name=file)
       for file in (there - here):
+        print('->', file)
         self.bucket.files.get(file_name=os.path.join(_from, file)).delete()
 
   def ghsync(self, _from, _to):
