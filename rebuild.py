@@ -116,7 +116,7 @@ class Sync:
     if _from.startswith('b2:'):
       for file in (there - here):
         if file.endswith('.deb'):
-          print('<+', self.repo.url + '/' + file)
+          print('<+', self.repo.url + '/' + urlencode(file))
           urllib.request.urlretrieve(self.repo.url + '/' + urlencode(file), os.path.join(_to, file))
       for file in (here - there):
         os.remove(os.path.join(_to, file))
