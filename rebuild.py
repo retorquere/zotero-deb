@@ -213,8 +213,6 @@ if args.force_send or modified:
     for f in sorted(os.listdir(config.path.repo)):
       print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)
     print('</ul>', file=tgt)
-
-  if args.send or args.force_send:
   if args.send or args.force_send:
     Sync.publish()
   print('::set-output name=modified::true')
