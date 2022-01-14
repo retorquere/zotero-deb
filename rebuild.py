@@ -19,6 +19,8 @@ import contextlib
 import types
 from github3 import login as ghlogin
 import html
+import subprocess
+from colorama import Fore, Style
 
 import b2sdk.v2 as b2
 import multiprocessing
@@ -66,13 +68,11 @@ with IniFile('config.ini') as ini:
 
 assert config.path.wwwroot == config.path.repo or Path(config.path.wwwroot) in Path(config.path.repo).parents, 'repo must be in wwwroot'
 
-def system(cmd, execute=True):
+def run(cmd, execute=True):
+  print('$', Fore.GREEN + cmd, Style.RESET_ALL)
   if execute:
-    print(cmd)
-    if (exitcode := os.system(cmd)) != 0:
-      sys.exit(exitcode)
-  else:
-    print('#', cmd)
+    subprocess.run(cmd, shell=True, check=True)
+  print('')
 
 class Sync:
   def __init__(self):
@@ -104,7 +104,7 @@ class Sync:
       progress = ''
     else:
       progress = '--progress'
-    system(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
+    run(f'rsync {progress} -e "ssh -o StrictHostKeyChecking=no" -avhz --delete {shlex.quote(_from)} {shlex.quote(_to)}')
 
   def b2sync(self, _from, _to):
     b2_api = b2.B2Api(b2.InMemoryAccountInfo())
@@ -124,7 +124,8 @@ class Sync:
     else:
       print('^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$')
       policies_manager = b2.ScanPoliciesManager(
-        exclude_file_regexes=[ '^' + re.escape(file) + '$' for file in sorted(there.intersection(here)) ]
+        # exclude means "don't upload" which means "delete"
+        #exclude_file_regexes=[ '^' + re.escape(file) + '$' for file in sorted(there.intersection(here)) ]
       )
       synchronizer = b2.Synchronizer(
         max_workers=10,
@@ -237,14 +238,14 @@ for deb, url in debs:
   staging = os.path.join('staging', Path(deb).stem)
   os.makedirs(staging)
   print('staging', staging)
-  system(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staging)} --strip-components=1')
+  run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staging)} --strip-components=1')
   modified = True
 
 if args.force_send or modified:
   if args.build and modified:
-    system('./build.py staging/*')
+    run('./build.py staging/*')
   elif args.build:
-    system('./build.py')
+    run('./build.py')
   with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   with open('uninstall.sh') as src, open(os.path.join(config.path.repo, 'uninstall.sh'), 'w') as tgt:

@@ -12,6 +12,7 @@ import magic
 import contextlib
 import hashlib
 from pathlib import Path
+from colorama import Fore, Style
 
 args = argparse.ArgumentParser(description='update Zotero deb repo.')
 args.add_argument('--config', type=str, default='config.ini')
@@ -56,8 +57,9 @@ class Open():
 
 # run shell command, error out onm failure
 def run(cmd):
-  print('$', cmd)
-  print(subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT).decode('utf-8'))
+  print('$', Fore.GREEN + cmd, Style.RESET_ALL)
+  subprocess.run(cmd, shell=True, check=True)
+  print('')
 
 # gather build config
 config = types.SimpleNamespace()
@@ -89,7 +91,7 @@ for staged in config.staged:
     deb.version = ini['App']['Version']
     if '-beta' in deb.version:
       deb.package += '-beta'
-      deb.version = deb.version.replace('-beta', '')
+      deb.version = deb.version.replace('-beta', '').replace('+', '~') # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3
 
   # detect arch from zotero-bin/jurism-bin
   arch = magic.from_file(os.path.join(staged, deb.client + '-bin'))

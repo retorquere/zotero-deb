@@ -1,6 +1,7 @@
 python-magic >= 0.4.24
+colorama==0.4.4
 
-# only for rebuild on GH release
+# only for rebuild on GH release/b2
 python-dotenv >= 0.19.2
 github3.py >= 3.0.0
 b2sdk==1.14.0
