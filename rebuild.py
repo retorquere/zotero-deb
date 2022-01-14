@@ -60,6 +60,7 @@ class chdir():
     os.chdir(self.cwd)
 
 config = types.SimpleNamespace()
+config.beta = '~' if args.host == 'b2' else '+'
 
 # load build config
 with IniFile('config.ini') as ini:
@@ -202,7 +203,7 @@ debs += [
   for release in load('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json', parse_json=True)
   for arch in [ 'i686', 'x86_64' ]
 ] + [
-  ('zotero-beta', bump('zotero', unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '').replace('+', 'B')), archmap[arch], url)
+  ('zotero-beta', bump('zotero', unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '').replace('+', config.beta)), archmap[arch], url)
   for arch, url in [
     (arch, urlopen(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=beta').geturl())
     for arch in [ 'i686', 'x86_64' ]
@@ -246,9 +247,9 @@ for deb, url in debs:
 
 if args.force_send or modified:
   if args.build and modified:
-    run('./build.py staging/*')
+    run(f'./build.py --beta {shlex.quote(config.beta)} staging/*')
   elif args.build:
-    run('./build.py')
+    run(f'./build.py --beta {shlex.quote(config.beta)}')
   with open('install.sh') as src, open(os.path.join(config.path.repo, 'install.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   with open('uninstall.sh') as src, open(os.path.join(config.path.repo, 'uninstall.sh'), 'w') as tgt:

@@ -17,6 +17,7 @@ from colorama import Fore, Style
 args = argparse.ArgumentParser(description='update Zotero deb repo.')
 args.add_argument('--config', type=str, default='config.ini')
 args.add_argument('--mime', type=str, default='mime.xml')
+args.add_argument('--beta', type=str, default='+')
 args.add_argument('staged', nargs='*')
 args = args.parse_args()
 
@@ -91,8 +92,8 @@ for staged in config.staged:
     deb.version = ini['App']['Version']
     if '-beta' in deb.version:
       deb.package += '-beta'
-      # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
-      deb.version = deb.version.replace('-beta', '').replace('+', 'B')
+      # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
+      deb.version = deb.version.replace('-beta', '').replace('+', args.beta)
 
   # detect arch from zotero-bin/jurism-bin
   arch = magic.from_file(os.path.join(staged, deb.client + '-bin'))
