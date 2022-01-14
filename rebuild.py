@@ -124,14 +124,14 @@ class Sync:
         print('<-', file)
     else:
       policies_manager = b2.ScanPoliciesManager(
-        #exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
+        exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
       )
       synchronizer = b2.Synchronizer(
         max_workers=10,
         policies_manager=policies_manager,
         dry_run=False,
         allow_empty_source=True,
-        compare_version_mode=b2.CompareVersionMode.NONE,
+        #compare_version_mode=b2.CompareVersionMode.NONE,
         newer_file_mode=b2.NewerFileSyncMode.REPLACE,
         keep_days_or_delete=b2.KeepOrDeleteMode.DELETE
       )
