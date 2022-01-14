@@ -61,6 +61,16 @@ jobs:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: 'sourceforge'
 
+    - name: pre-populate repo from free download
+      if: matrix.hosting == 'b2'
+      run: |
+        mkdir -p repo
+        for f in $(curl -s https://apt.retorque.re/file/zotero-apt/index.json | jq -r '.[]'); do
+          if [ ! -f repo/$f ]; then
+            curl -L https://apt.retorque.re/file/zotero-apt/$f -o repo/$f
+          fi
+        done
+
     - name: refresh ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true

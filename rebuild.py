@@ -205,12 +205,14 @@ if args.force_send or modified:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
   with open('uninstall.sh') as src, open(os.path.join(config.path.repo, 'uninstall.sh'), 'w') as tgt:
     tgt.write(src.read().format(url=Sync.repo.url, codename=Sync.repo.codename))
+
+  files = [f for f in os.listdir(config.path.repo) if os.path.isfile(os.path.join(config.path.repo, f)]
   with open(os.path.join(config.path.repo, 'index.json'), 'w') as f:
-    json.dump(os.listdir(config.path.repo), f)
+    json.dump(files, f)
   with open('index.html') as src, open(os.path.join(config.path.repo, 'index.html'), 'w') as tgt:
     tgt.write(src.read().format(site=Sync.repo.url))
     print('\n<ul>', file=tgt)
-    for f in sorted(os.listdir(config.path.repo)):
+    for f in sorted(files):
       print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)
     print('</ul>', file=tgt)
   if args.send or args.force_send:
