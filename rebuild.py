@@ -111,20 +111,20 @@ class Sync:
     b2_api.authorize_account('production', os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
     bucket = b2_api.get_bucket_by_name(self.repo.remote.split('/')[-1])
 
-    there = set([ f.file_name for f, _ in bucket.ls(latest_only=True) ])
-    here = set([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*') if os.path.isfile(str(path)) ])
+    there = set([ f.file_name for f, _ in bucket.ls(latest_only=True) if f.file_name.endswith('.deb')])
+    here = set([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*.deb') if os.path.isfile(str(path)) ])
 
     if _from.startswith('b2:'):
-      for file in (there - here):
-        if file.endswith('.deb'):
-          print('<+', self.repo.url + '/' + urlencode(file))
-          urllib.request.urlretrieve(self.repo.url + '/' + urlencode(file), os.path.join(_to, file))
+      for file in sorted(there - here):
+        print('<+', self.repo.url + '/' + urlencode(file))
+        urllib.request.urlretrieve(self.repo.url + '/' + urlencode(file), os.path.join(_to, file))
       for file in (here - there):
-        os.remove(os.path.join(_to, file))
         print('<-', file)
+        os.remove(os.path.join(_to, file))
     else:
+      print('^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$')
       policies_manager = b2.ScanPoliciesManager(
-        exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
+        exclude_file_regexes=[ '^' + re.escape(file) + '$' for file in sorted(there.intersection(here)) ]
       )
       synchronizer = b2.Synchronizer(
         max_workers=10,
