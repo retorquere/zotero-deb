@@ -111,7 +111,7 @@ class Sync:
     bucket = b2_api.get_bucket_by_name(self.repo.remote.split('/')[-1])
 
     there = set([ f.file_name for f, _ in bucket.ls(latest_only=True) ])
-    here = set(os.listdir(self.repo.local))
+    here = set([ str(path.relative_to(self.repo.local)) for path in Path(self.repo.local).rglob('*') if os.path.isfile(str(path)) ])
 
     if _from.startswith('b2:'):
       for file in (there - here):
