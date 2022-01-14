@@ -130,9 +130,9 @@ class Sync:
         policies_manager=policies_manager,
         dry_run=False,
         allow_empty_source=True,
-        compare_version_mode=CompareVersionMode.NONE,
-        newer_file_mode=NewerFileSyncMode.REPLACE,
-        keep_days_or_delete=KeepOrDeleteMode.DELETE
+        compare_version_mode=b2.CompareVersionMode.NONE,
+        newer_file_mode=b2.NewerFileSyncMode.REPLACE,
+        keep_days_or_delete=b2.KeepOrDeleteMode.DELETE
       )
       with b2.SyncReport(sys.stdout, True) as reporter:
         synchronizer.sync_folders(
