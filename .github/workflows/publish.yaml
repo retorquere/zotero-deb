@@ -83,7 +83,7 @@ jobs:
             ;;
         esac
 
-        ./rebuild.py --clear --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
+        ./rebuild.py --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
 
   test:
     runs-on: ubuntu-latest
