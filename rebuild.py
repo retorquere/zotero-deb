@@ -124,7 +124,7 @@ class Sync:
         print('<-', file)
     else:
       policies_manager = b2.ScanPoliciesManager(
-        exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
+        #exclude_file_regexes='^(' + '|'.join([re.escape(file) for file in (there - here)]) + ')$'
       )
       synchronizer = b2.Synchronizer(
         max_workers=10,
