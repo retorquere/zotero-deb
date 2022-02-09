@@ -1,4 +1,4 @@
-<a href="https://www.zotero.org/"><img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"></a><a href="https://juris-m.github.io/" align="right"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62"></a>
+<a href="https://www.zotero.org/"><img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"></a><a href="https://juris-m.github.io/"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right"></a>
 
 **PSA**
 
