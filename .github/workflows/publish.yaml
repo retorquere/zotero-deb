@@ -70,6 +70,7 @@ jobs:
       run: |
         set -e
         set -x
+        cat /etc/lsb-release
 
         case "${{ matrix.hosting }}" in
           sourceforge)
