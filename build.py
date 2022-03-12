@@ -1,89 +1,25 @@
 #!/usr/bin/env python3
 
 import os, sys
-import configparser
-import types
-import shutil, shlex
-import subprocess
+from types import SimpleNamespace
 import tempfile
-import argparse
-import re
-import magic
-import contextlib
-import hashlib
-from pathlib import Path
-from colorama import Fore, Style
+#import configparser
+import shutil, shlex
+#import subprocess
+#import argparse
+#import re
+#import contextlib
+#import hashlib
+#from pathlib import Path
+#from colorama import Fore, Style
 
-args = argparse.ArgumentParser(description='update Zotero deb repo.')
-args.add_argument('--config', type=str, default='config.ini')
-args.add_argument('--mime', type=str, default='mime.xml')
-args.add_argument('--beta', type=str, default='+')
-args.add_argument('staged', nargs='*')
-args = args.parse_args()
+from util import Config, run, Open, IniFile
 
-# open inifile with default settings
-@contextlib.contextmanager
-def IniFile(path):
-  ini = configparser.RawConfigParser()
-  ini.optionxform=str
-  ini.read(path)
-  yield ini
-
-# change directory and back
-class chdir():
-  def __init__(self, path):
-    self.cwd = os.getcwd()
-    self.path = path
-  def __enter__(self):
-    print('changing to', self.path)
-    os.chdir(self.path)
-  def __exit__(self, exc_type, exc_value, exc_traceback):
-    os.chdir(self.cwd)
-
-# context manager to open file for reading or writing, and in the case of write, create paths as required
-class Open():
-  def __init__(self, path, mode='r', fmode=None):
-    self.path = path
-    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(self.path), exist_ok=True)
-    self.mode = fmode
-    self.f = open(self.path, mode)
-
-  def __enter__(self):
-    return self.f
-
-  def __exit__(self, exc_type, exc_value, exc_traceback):
-    self.f.close()
-    if self.mode is not None:
-      os.chmod(self.path, self.mode)
-
-# run shell command, error out onm failure
-def run(cmd):
-  print('$', Fore.GREEN + cmd, Style.RESET_ALL)
-  subprocess.run(cmd, shell=True, check=True)
-  print('')
-
-# gather build config
-config = types.SimpleNamespace()
-
-# load build config from ini file
-with IniFile(args.config) as ini:
-  config.ini = ini
-config.maintainer = config.ini['maintainer']['email']
-config.gpgkey = config.ini['maintainer']['gpgkey']
-
-# need wwwroot and repo path separate so the right subdir of wwwroot is written to. These are both full paths, but the repo path must be inside the wwwroot
-config.path = types.SimpleNamespace(**{ key: os.path.abspath(path) for key, path in config.ini['path'].items() })
-assert config.path.wwwroot == config.path.repo or Path(config.path.wwwroot) in Path(config.path.repo).parents, 'repo must be in wwwroot'
-
-# remove trailing slash from staged directories since it messes with basename
-config.staged = [ re.sub(r'/$', '', staged) for staged in args.staged ]
-
-# loop through all staged directories (can be one, or none)
-for staged in config.staged:
+def package(staged, betadelim):
   assert os.path.isdir(staged)
 
   # gather metadata for the deb file
-  deb = types.SimpleNamespace()
+  deb = SimpleNamespace()
 
   # get version and package name
   with IniFile(os.path.join(staged, 'application.ini')) as ini:
@@ -93,33 +29,18 @@ for staged in config.staged:
     if '-beta' in deb.version:
       deb.package += '-beta'
       # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
-      deb.version = deb.version.replace('-beta', '').replace('+', args.beta)
+      deb.version = deb.version.replace('-beta', '').replace('+', betadelim)
+    deb.version = Config[deb.client].bumped(deb.version)
 
-  # detect arch from zotero-bin/jurism-bin
-  arch = magic.from_file(os.path.join(staged, deb.client + '-bin'))
-  if arch.startswith('ELF 32-bit LSB executable, Intel 80386,'):
-    deb.arch = 'i386'
-  elif arch.startswith('ELF 64-bit LSB executable, x86-64,'):
-    deb.arch = 'amd64'
-  else:
-    print('unsupported architecture', arch)
-    sys.exit(1)
+  # detect arch from staged dir
+  deb.arch = staged.split('_')[-1]
 
   with tempfile.TemporaryDirectory() as builddir:
     print('created temporary directory', builddir)
     deb.build = builddir
 
-    # add package "bump" version so we can offer updates for existing Zotero versions (use this to create a fix for the packaging process itself)
-    if bump := config.ini[deb.client].get(deb.version):
-      deb.bump = '-' + bump
-    else:
-      deb.bump = ''
-
     # get package dependencies
-    if dependencies := config.ini[deb.client].get('dependencies'):
-      deb.dependencies = [dep.strip() for dep in dependencies.split(',')]
-    else:
-      deb.dependencies = []
+    deb.dependencies = Config[deb.client].dependencies[:]
 
     # inherit the firefox-esr dependencies except lsb-release and libgcc
     for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
@@ -132,9 +53,9 @@ for staged in config.staged:
     deb.dependencies = ', '.join(sorted(list(set(deb.dependencies))))
 
     # for the desktop entry
-    deb.description = config.ini[deb.client]['description']
+    deb.description = Config[deb.client].description
     # path to the generated deb file
-    deb.deb = os.path.join(config.path.repo, f'{deb.package}_{deb.version}{deb.bump}_{deb.arch}.deb')
+    deb.deb = os.path.join(Config.repo.path, f'{deb.package}_{deb.version}_{deb.arch}.deb')
 
     # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
@@ -181,7 +102,7 @@ for staged in config.staged:
         ini.write(f, space_around_delimiters=False)
 
     # add mime info
-    with open(args.mime) as mime, Open(os.path.join(deb.build, 'usr/share/mime/packages', f'{deb.package}.xml'), 'w') as f:
+    with open('mime.xml') as mime, Open(os.path.join(deb.build, 'usr/share/mime/packages', f'{deb.package}.xml'), 'w') as f:
       f.write(mime.read())
 
     # write build control file
@@ -189,10 +110,10 @@ for staged in config.staged:
       print(f'Package: {deb.package}', file=f)
       print(f'Architecture: {deb.arch}', file=f)
       print(f'Depends: {deb.dependencies}', file=f)
-      print(f'Maintainer: {config.maintainer}', file=f)
+      print(f'Maintainer: {Config.maintainer.email}', file=f)
       print(f'Section: {deb.section}', file=f)
       print('Priority: optional', file=f)
-      print(f'Version: {deb.version}{deb.bump}', file=f)
+      print(f'Version: {deb.version}', file=f)
       print(f'Description: {deb.description}', file=f)
 
     # create symlink to binary
@@ -204,60 +125,61 @@ for staged in config.staged:
       os.remove(deb.deb)
     os.makedirs(os.path.dirname(deb.deb), exist_ok=True)
     run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(deb.build)} {shlex.quote(deb.deb)}')
-    run(f'dpkg-sig -k {shlex.quote(config.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
+    run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
-# rebuild repo
-os.makedirs(config.path.repo, exist_ok=True)
-with chdir(config.path.repo):
-  # these will be recreated, but just to be sure
-  run('rm -f *Package* *Release*')
-
-  gpgkey = shlex.quote(config.gpgkey)
-  repo = os.path.relpath(config.path.repo, config.path.wwwroot)
-
-  with chdir(config.path.wwwroot):
-    # collects the Package metadata
-    # needs to be ran from the wwwroot so the packages have the path relative to wwwroot
-    run(f'apt-ftparchive packages {shlex.quote(repo)} > {shlex.quote(os.path.join(repo, "Packages"))}')
-
-  run(f'bzip2 -kf Packages')
-
-  # creates the Release file with pointers to the Packages file and sig
-  run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={shlex.quote(repo + "/")} -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
-
-  # export public key so people can install the repo
-  run(f'gpg --export {gpgkey} > zotero-archive-keyring.gpg')
-  run(f'gpg --armor --export {gpgkey} > zotero-archive-keyring.asc')
-
-  # sign the Release file
-  run(f'gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
-  run(f'gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
-
-  # apt has race conditions. https://blog.packagecloud.io/eng/2016/09/27/fixing-apt-hash-sum-mismatch-consistent-apt-repositories/
-  hash_type = None
-  run('rm -rf by-hash')
-  # parse the Release file to get the hashes and copy the Package files to their hashes
-  with open('Release') as f:
-    for line in f.readlines():
-      line = line.rstrip()
-      if line in [ 'MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:' ]:
-        hash_type = line.replace(':', '')
-      elif line.startswith(' '):
-        hsh, size, filename = line.strip().split()
-
-        if filename == 'Release': # Release can't possibly contain it's own size and hash?!
-          continue
-
-        # check size -- probably overkill
-        assert os.path.getsize(filename) == int(size), (filename, os.path.getsize(filename), int(size))
-
-        # check hash -- probably overkill
-        with open(filename, 'rb') as f:
-          hasher = getattr(hashlib, hash_type.lower().replace('sum', ''))
-          should = hasher(f.read()).hexdigest()
-          assert hsh == should, (filename, hash_type, 'mismatch')
-
-        # copy file
-        hash_dir = os.path.join('by-hash', hash_type)
-        os.makedirs(hash_dir, exist_ok=True)
-        run(f'cp {filename} {hash_dir}/{hsh}')
+def rebuild():
+  # rebuild repo
+  os.makedirs(Config.repo.path, exist_ok=True)
+  with chdir(Config.repo.path):
+    # these will be recreated, but just to be sure
+    run('rm -f *Package* *Release*')
+  
+    gpgkey = shlex.quote(Config.maintainer.gpgkey)
+    repo = os.path.relpath(Config.repo.path, Config.repo.build)
+  
+    with chdir(Config.repo.build):
+      # collects the Package metadata
+      # needs to be ran from the wwwroot so the packages have the path relative to wwwroot
+      run(f'apt-ftparchive packages {shlex.quote(repo)} > {shlex.quote(os.path.join(repo, "Packages"))}')
+  
+    run(f'bzip2 -kf Packages')
+  
+    # creates the Release file with pointers to the Packages file and sig
+    run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={shlex.quote(repo + "/")} -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+  
+    # export public key so people can install the repo
+    run(f'gpg --export {gpgkey} > zotero-archive-keyring.gpg')
+    run(f'gpg --armor --export {gpgkey} > zotero-archive-keyring.asc')
+  
+    # sign the Release file
+    run(f'gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
+    run(f'gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
+  
+    # apt has race conditions. https://blog.packagecloud.io/eng/2016/09/27/fixing-apt-hash-sum-mismatch-consistent-apt-repositories/
+    hash_type = None
+    run('rm -rf by-hash')
+    # parse the Release file to get the hashes and copy the Package files to their hashes
+    with open('Release') as f:
+      for line in f.readlines():
+        line = line.rstrip()
+        if line in [ 'MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:' ]:
+          hash_type = line.replace(':', '')
+        elif line.startswith(' '):
+          hsh, size, filename = line.strip().split()
+  
+          if filename == 'Release': # Release can't possibly contain it's own size and hash?!
+            continue
+  
+          # check size -- probably overkill
+          assert os.path.getsize(filename) == int(size), (filename, os.path.getsize(filename), int(size))
+  
+          # check hash -- probably overkill
+          with open(filename, 'rb') as f:
+            hasher = getattr(hashlib, hash_type.lower().replace('sum', ''))
+            should = hasher(f.read()).hexdigest()
+            assert hsh == should, (filename, hash_type, 'mismatch')
+  
+          # copy file
+          hash_dir = os.path.join('by-hash', hash_type)
+          os.makedirs(hash_dir, exist_ok=True)
+          run(f'cp {filename} {hash_dir}/{hsh}')

@@ -3,6 +3,8 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 
+from util import Config
+
 from b2sdk.v2 import SyncPolicyManager, ScanPoliciesManager
 from b2sdk.v2 import parse_sync_folder
 from b2sdk.v2 import Synchronizer
@@ -14,6 +16,9 @@ from b2sdk.v2 import NewerFileSyncMode, CompareVersionMode
 import time
 import os, sys
 import pathlib
+import requests
+import multiprocessing
+from types import SimpleNamespace
 
 class RepoPolicyManager:
   """
@@ -43,7 +48,6 @@ class RepoPolicyManager:
     #       local-to-b2 False   LocalFolder(/Users/emile/github/debs/repo)  LocalSyncPath('InRelease', 1642160794155, 2153)
     print(source_path, source_folder)
     policy = UpAndDeletePolicy if delete else UpPolicy
-    deb = source_path is not None and pathlib.Path(source_path.absolute_path).suffix == '.deb'
     return policy(
       source_path,
       source_folder,
@@ -51,44 +55,54 @@ class RepoPolicyManager:
       dest_folder,
       now_millis,
       keep_days,
-      NewerFileSyncMode.SKIP if deb else NewerFileSyncMode.REPLACE, # newer_file_mode
+      NewerFileSyncMode.REPLACE, # newer_file_mode
       compare_threshold,
       CompareVersionMode.NONE, # compare_version_mode
       encryption_settings_provider,
     )
 
-b2_api = B2Api(InMemoryAccountInfo())
-b2_api.authorize_account('production', os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
+class Sync:
+  def __init__(self):
+    self.b2_api = B2Api(InMemoryAccountInfo())
+    self.b2_api.authorize_account('production', os.environ['B2_APPLICATION_KEY_ID'], os.environ['B2_APPLICATION_KEY'])
 
-bucket_name = 'zotero-apt'
-source = '/Users/emile/github/debs/repo'
-destination = f'b2://{bucket_name}'
+    self.bucket = self.b2_api.get_bucket_by_name(Config.repo.bucket)
 
-bucket = b2_api.get_bucket_by_name(bucket_name)
+    self.source = parse_sync_folder(Config.repo.path, self.b2_api)
+    self.target = parse_sync_folder(f'b2://{Config.repo.bucket}', self.b2_api)
 
-try:
-  from prep import prep
-  prep(source, bucket, f'https://apt.retorque.re/file/{bucket_name}')
-except ModuleNotFoundError:
-  pass
+    self.url = f'https://{Config.repo.hostname}/file/{Config.repo.bucket}'
 
-source = parse_sync_folder(source, b2_api)
-destination = parse_sync_folder(destination, b2_api)
+  def fetch(self):
+    # first download missing assets using the free path
+    for file_info, folder_name in self.bucket.ls():
+      if os.path.basename(file_info.file_name) == '.bzEmpty':
+        continue
+      asset = os.path.join(Config.repo.path, file_info.file_name)
+      if not os.path.exists(asset):
+        with open(asset, 'wb') as f:
+          print('Downloading', file_info.file_name, asset)
+          f.write(requests.get(self.url + '/' + file_info.file_name, allow_redirects=True).content)
 
-synchronizer = Synchronizer(
-  max_workers=10,
-  policies_manager = ScanPoliciesManager(exclude_all_symlinks=True), # object which decides which files to process
-  sync_policy_manager = RepoPolicyManager(), # object which decides what to do with each file (upload, download, delete, copy, hide etc)
-  dry_run=False,
-  allow_empty_source=True,
-)
+  def update(self):
+    synchronizer = Synchronizer(
+      max_workers=multiprocessing.cpu_count(),
+      policies_manager = ScanPoliciesManager(exclude_all_symlinks=True), # object which decides which files to process
+      sync_policy_manager = RepoPolicyManager(), # object which decides what to do with each file (upload, download, delete, copy, hide etc)
+      dry_run=False,
+      allow_empty_source=True,
+    )
 
-no_progress = False
+    no_progress = False
 
-with SyncReport(sys.stdout, no_progress) as reporter:
-  synchronizer.sync_folders(
-    source_folder=source,
-    dest_folder=destination,
-    now_millis=int(round(time.time() * 1000)),
-    reporter=reporter,
-  )
+    with SyncReport(sys.stdout, no_progress) as reporter:
+      synchronizer.sync_folders(
+        source_folder=self.source,
+        dest_folder=self.target,
+        now_millis=int(round(time.time() * 1000)),
+        reporter=reporter,
+      )
+
+if __name__ == '__main__':
+  sync = Sync()
+  sync.fetch()

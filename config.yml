@@ -1,0 +1,26 @@
+maintainer:
+  email: emiliano.heyns@iris-advies.com
+  gpgkey: dpkg
+zotero:
+  description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
+  dependencies:
+    - gnupg
+  bump:
+    5.0.96.2: 3
+    5.0.96.3: 3
+    5.0.97.57+07df7d0de: 3
+jurism:
+  description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
+  dependencies:
+    - gnupg
+    - default-jre
+    - libreoffice-java-common
+  bump:
+    5.0.93m18: 3
+repo:
+  build: repo
+  bucket: zotero-apt
+  hostname: apt.retorque.re
+  staging: staging
+mirror:
+  sourceforge:
