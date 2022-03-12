@@ -5,15 +5,15 @@ from types import SimpleNamespace
 import tempfile
 #import configparser
 import shutil, shlex
+import hashlib
 #import subprocess
 #import argparse
 #import re
 #import contextlib
-#import hashlib
 #from pathlib import Path
 #from colorama import Fore, Style
 
-from util import Config, run, Open, IniFile
+from util import Config, run, Open, IniFile, chdir
 
 def package(staged, betadelim):
   assert os.path.isdir(staged)

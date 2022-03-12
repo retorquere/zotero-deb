@@ -11,7 +11,7 @@ esac
 
 export GNUPGHOME="/dev/null"
 
-BASEURL={url}
+BASEURL={baseurl}
 CODENAME={codename}
 KEYNAME=zotero-archive-keyring.gpg
 GPGKEY=$BASEURL/$CODENAME/$KEYNAME

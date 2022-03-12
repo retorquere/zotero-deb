@@ -71,22 +71,20 @@ class Sync:
     self.source = parse_sync_folder(Config.repo.path, self.b2_api)
     self.target = parse_sync_folder(f'b2://{Config.repo.bucket}', self.b2_api)
 
-    self.url = f'https://{Config.repo.hostname}/file/{Config.repo.bucket}'
-
-    self.todo = []
+    self.remote = []
     for file_info, folder_name in self.bucket.ls():
       if os.path.basename(file_info.file_name) == '.bzEmpty':
         continue
       asset = os.path.join(Config.repo.path, file_info.file_name)
-      if not os.path.exists(asset):
-        self.todo.append(asset)
+      self.remote.append(asset)
 
   def fetch(self):
     # first download missing assets using the free path
-    for asset in self.todo:
-      with open(asset, 'wb') as f:
-        print('Downloading', file_info.file_name, asset)
-        f.write(requests.get(self.url + '/' + file_info.file_name, allow_redirects=True).content)
+    for asset in self.remote:
+      if not os.path.exists(asset):
+        with open(asset, 'wb') as f:
+          print('Downloading', file_info.file_name, asset)
+          f.write(requests.get(Config.repo.url + '/' + file_info.file_name, allow_redirects=True).content)
 
   def update(self):
     synchronizer = Synchronizer(

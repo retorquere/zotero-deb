@@ -16,7 +16,7 @@ import shlex
 #import contextlib
 #import types
 #from github3 import login as ghlogin
-#import html
+import html
 
 from util import run, Config
 import build
@@ -29,6 +29,7 @@ request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 1
 parser = argparse.ArgumentParser()
 parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
 parser.add_argument('--no-send', dest='send', action='store_false', default=True)
+parser.add_argument('--sync', dest='sync', action='store_true', default=False)
 parser.add_argument('--no-build', dest='build', action='store_false', default=True)
 parser.add_argument('--mirror', action='store_true')
 parser.add_argument('--clear', action='store_true')
@@ -76,16 +77,21 @@ debs += [
 ]
 
 debs = [ (os.path.join(Config.repo.path, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
-print('Rehydrate')
 # fetch what we can so we don't have to rebuild
 b2sync = Sync()
+
+modified = set(b2sync.remote) != set([deb for deb, url in debs])
+if not args.sync and not modified:
+  print('nothing to do')
+  sys.exit()
+
+print('Rehydrate')
 b2sync.fetch()
-modified = False
 
 for deb in (set(glob.glob(os.path.join(Config.repo.path, '*.deb'))) - set( [_deb for _deb, _url in debs])):
   print('delete', deb)
-  os.remove(deb)
   modified = True
+  os.remove(deb)
 
 Config.repo.staged = []
 for deb, url in debs:
@@ -105,21 +111,21 @@ for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(C
     print('unstaged', unstage)
     shutil.rmtree(unstage)
 
-if not args.force_send and not modified:
-  print('nothing to do')
+if not args.sync and not modified:
+  print('again nothing to do')
   sys.exit()
 
 if args.build or modified:
   build.rebuild()
 
 with open('install.sh') as src, open(os.path.join(Config.repo.path, 'install.sh'), 'w') as tgt:
-  tgt.write(src.read().format(url=Sync.repo.url, codename=Config.repo.bucket))
+  tgt.write(src.read().format(baseurl=Config.repo.url.replace(f'/{Config.repo.bucket}', ''), codename=Config.repo.bucket))
 with open('uninstall.sh') as src, open(os.path.join(Config.repo.path, 'uninstall.sh'), 'w') as tgt:
-  tgt.write(src.read().format(url=Sync.repo.url, codename=Config.repo.bucket))
+  tgt.write(src.read())
 
 files = [f for f in os.listdir(Config.repo.path) if os.path.isfile(os.path.join(Config.repo.path, f))]
 with open('index.html') as src, open(os.path.join(Config.repo.path, 'index.html'), 'w') as tgt:
-  tgt.write(src.read().format(site=Sync.repo.url))
+  tgt.write(src.read().format(site=Config.repo.url))
   print('\n<ul>', file=tgt)
   for f in sorted(files):
     print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)

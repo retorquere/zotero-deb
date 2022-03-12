@@ -36,7 +36,9 @@ def bumped(client, version):
 ## load config
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
+  Config.repo.build = os.path.abspath(Config.repo.build)
   Config.repo.path = os.path.abspath(os.path.join(Config.repo.build, Config.repo.bucket))
+  Config.repo.url = f'https://{Config.repo.hostname}/file/{Config.repo.bucket}'
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)
   Config.jurism.bumped = lambda version: bumped('jurism', version)

@@ -19,8 +19,10 @@ jurism:
     5.0.93m18: 3
 repo:
   build: repo
-  bucket: zotero-apt
-  hostname: apt.retorque.re
   staging: staging
+#  bucket: zotero-apt
+#  hostname: apt.retorque.re
+  bucket: apt-package-archive
+  hostname: zotero.retorque.re
 mirror:
   sourceforge:
