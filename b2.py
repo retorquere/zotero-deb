@@ -73,16 +73,20 @@ class Sync:
 
     self.url = f'https://{Config.repo.hostname}/file/{Config.repo.bucket}'
 
-  def fetch(self):
-    # first download missing assets using the free path
+    self.todo = []
     for file_info, folder_name in self.bucket.ls():
       if os.path.basename(file_info.file_name) == '.bzEmpty':
         continue
       asset = os.path.join(Config.repo.path, file_info.file_name)
       if not os.path.exists(asset):
-        with open(asset, 'wb') as f:
-          print('Downloading', file_info.file_name, asset)
-          f.write(requests.get(self.url + '/' + file_info.file_name, allow_redirects=True).content)
+        self.todo.append(asset)
+
+  def fetch(self):
+    # first download missing assets using the free path
+    for asset in self.todo:
+      with open(asset, 'wb') as f:
+        print('Downloading', file_info.file_name, asset)
+        f.write(requests.get(self.url + '/' + file_info.file_name, allow_redirects=True).content)
 
   def update(self):
     synchronizer = Synchronizer(
