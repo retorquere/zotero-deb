@@ -112,9 +112,6 @@ jobs:
         rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
         echo "::set-output name=repo::$NEW"
 
-    - uses: actions/setup-go@v2
-      with:
-        go-version: '^1.13.1' # The Go version to download (if necessary) and use.
     - name: refresh github
       env:
         PYTHONUNBUFFERED: true
@@ -126,7 +123,6 @@ jobs:
         NEW: beta
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        go get github.com/pauldotknopf/github-release-sync
         mv repo/$OLD repo/$NEW
         cd repo
         apt-ftparchive packages $NEW > $NEW/Packages
@@ -148,7 +144,8 @@ jobs:
         cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
         cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
 
-        github-release-sync --owner retorquere --repo zotero-deb --tag $NEW --overwrite --prune .
+        gh release view $NEW --json assets | ../../ghr $NEW | bash
+
 
   test:
     runs-on: ubuntu-latest

@@ -5,6 +5,8 @@ import json
 import glob
 import shlex
 
+print('set -x')
+print('set -e')
 remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
 local = set(glob.glob('*'))
 for asset in remote - local:
