@@ -21,9 +21,9 @@ class chdir():
     os.chdir(self.cwd)
 
 ## run and exit on error
-def run(cmd):                                                                                                                                                                                                                                
-  print('$', Fore.GREEN + cmd, Style.RESET_ALL)                                                                                                                                                                                              
-  subprocess.run(cmd, shell=True, check=True)                                                                                                                                                                                                
+def run(cmd):
+  print('$', Fore.GREEN + cmd, Style.RESET_ALL)
+  subprocess.run(cmd, shell=True, check=True)
   print('')
 
 def bumped(client, version):
@@ -48,15 +48,15 @@ with open('config.yml') as f:
     'x86_64': 'amd64',
   }
 
-  # context manager to open file for reading or writing, and in the case of write, create paths as required                                                                                                                                    
-class Open():                                                                                                                                                                                                                                
-  def __init__(self, path, mode='r', fmode=None):                                                                                                                                                                                            
-    self.path = path                                                                                                                                                                                                                         
-    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(self.path), exist_ok=True)                                                                                                                                                    
-    self.mode = fmode                                                                                                                                                                                                                        
-    self.f = open(self.path, mode)                                                                                                                                                                                                           
-                                                                                                                                                                                                                                             
-  def __enter__(self):                                                                                                                                                                                                                       
+  # context manager to open file for reading or writing, and in the case of write, create paths as required
+class Open():
+  def __init__(self, path, mode='r', fmode=None):
+    self.path = path
+    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(self.path), exist_ok=True)
+    self.mode = fmode
+    self.f = open(self.path, mode)
+
+  def __enter__(self):
     return self.f
 
   def __exit__(self, exc_type, exc_value, exc_traceback):

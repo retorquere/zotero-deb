@@ -30,6 +30,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
 parser.add_argument('--no-send', dest='send', action='store_false', default=True)
 parser.add_argument('--sync', dest='sync', action='store_true', default=False)
+parser.add_argument('--clean', dest='clean', action='store_true', default=False)
 parser.add_argument('--no-build', dest='build', action='store_false', default=True)
 parser.add_argument('--mirror', action='store_true')
 parser.add_argument('--clear', action='store_true')
@@ -97,6 +98,7 @@ Config.repo.staged = []
 for deb, url in debs:
   if os.path.exists(deb):
     continue
+  print('## building', deb)
   modified = True
   staged = os.path.join(Config.repo.staging, Path(deb).stem)
   # remove trailing slash from staged directories since it messes with basename
@@ -106,10 +108,11 @@ for deb, url in debs:
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
   build.package(staged, '+')
-for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
-  if unstage not in Config.repo.staged:
-    print('unstaged', unstage)
-    shutil.rmtree(unstage)
+if args.clean:
+  for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
+    if unstage not in Config.repo.staged:
+      print('unstaged', unstage)
+      shutil.rmtree(unstage)
 
 if not args.sync and not modified:
   print('again nothing to do')
@@ -131,6 +134,6 @@ with open('index.html') as src, open(os.path.join(Config.repo.path, 'index.html'
     print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)
   print('</ul>', file=tgt)
 
-#if args.send or args.force_send:
-#  b2sync.update()
-#print('::set-output name=modified::true')
+if args.send or args.force_send:
+  b2sync.update()
+print(f'::set-output name=bucket::{Config.repo.bucket}')

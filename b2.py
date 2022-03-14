@@ -15,10 +15,11 @@ from b2sdk.v2 import CopyAndDeletePolicy, CopyAndKeepDaysPolicy, CopyPolicy, Dow
 from b2sdk.v2 import NewerFileSyncMode, CompareVersionMode
 import time
 import os, sys
-import pathlib
+from pathlib import Path
 import requests
 import multiprocessing
 from types import SimpleNamespace
+import magic
 
 class RepoPolicyManager:
   """
@@ -46,7 +47,8 @@ class RepoPolicyManager:
 
     #print( sync_type,  delete, source_folder,                              source_path)
     #       local-to-b2 False   LocalFolder(/Users/emile/github/debs/repo)  LocalSyncPath('InRelease', 1642160794155, 2153)
-    print(source_path, source_folder)
+    assert sync_type == 'local-to-b2', sync_type
+    deb = source_path is not None and Path(source_path.absolute_path).suffix == '.deb'
     policy = UpAndDeletePolicy if delete else UpPolicy
     return policy(
       source_path,
@@ -55,9 +57,9 @@ class RepoPolicyManager:
       dest_folder,
       now_millis,
       keep_days,
-      NewerFileSyncMode.REPLACE, # newer_file_mode
+      NewerFileSyncMode.SKIP if deb else NewerFileSyncMode.REPLACE, # newer_file_mode
       compare_threshold,
-      CompareVersionMode.NONE, # compare_version_mode
+      CompareVersionMode.NONE if deb else CompareVersionMode.MODTIME, # compare_version_mode
       encryption_settings_provider,
     )
 
@@ -81,10 +83,12 @@ class Sync:
   def fetch(self):
     # first download missing assets using the free path
     for asset in self.remote:
-      if not os.path.exists(asset):
+      if asset.endswith('.deb') and not os.path.exists(asset):
         with open(asset, 'wb') as f:
-          print('Downloading', file_info.file_name, asset)
-          f.write(requests.get(Config.repo.url + '/' + file_info.file_name, allow_redirects=True).content)
+          print('Downloading', asset)
+          f.write(requests.get(Config.repo.url + '/' + os.path.basename(asset), allow_redirects=True).content)
+          filetype = magic.from_file(asset)
+          assert filetype.startswith('Debian binary package'), (asset, filetype)
 
   def update(self):
     synchronizer = Synchronizer(

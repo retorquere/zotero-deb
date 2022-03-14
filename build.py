@@ -139,8 +139,10 @@ def rebuild():
   
     with chdir(Config.repo.build):
       # collects the Package metadata
+      # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
+      awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
       # needs to be ran from the wwwroot so the packages have the path relative to wwwroot
-      run(f'apt-ftparchive packages {shlex.quote(repo)} > {shlex.quote(os.path.join(repo, "Packages"))}')
+      run(f'apt-ftparchive packages {shlex.quote(repo)} | awk {shlex.quote(awkcheck)} > {shlex.quote(os.path.join(repo, "Packages"))}')
   
     run(f'bzip2 -kf Packages')
   

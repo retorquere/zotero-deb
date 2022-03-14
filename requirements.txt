@@ -6,3 +6,4 @@ github3.py >= 3.0.0
 b2sdk==1.14.1
 requests
 ruamel.yaml
+python-magic
