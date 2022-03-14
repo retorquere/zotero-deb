@@ -15,7 +15,7 @@ import hashlib
 
 from util import Config, run, Open, IniFile, chdir
 
-def package(staged, betadelim):
+def package(staged):
   assert os.path.isdir(staged)
 
   # gather metadata for the deb file
@@ -29,7 +29,7 @@ def package(staged, betadelim):
     if '-beta' in deb.version:
       deb.package += '-beta'
       # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
-      deb.version = deb.version.replace('-beta', '').replace('+', betadelim)
+      deb.version = deb.version.replace('-beta', '').replace('+', '~')
     deb.version = Config[deb.client].bumped(deb.version)
 
   # detect arch from staged dir

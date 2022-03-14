@@ -107,7 +107,7 @@ for deb, url in debs:
   if not os.path.exists(staged):
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
-  build.package(staged, '+')
+  build.package(staged)
 if args.clean:
   for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
     if unstage not in Config.repo.staged:

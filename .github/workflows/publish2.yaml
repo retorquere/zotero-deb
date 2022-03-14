@@ -87,6 +87,7 @@ jobs:
         OLD: ${{ steps.b2.outputs.bucket }}
         NEW: zotero-better-bibtex
       run: |
+        set -x
         mv repo/$OLD repo/$NEW
         cd repo
         apt-ftparchive packages $NEW > $NEW/Packages
