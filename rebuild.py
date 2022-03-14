@@ -89,7 +89,11 @@ if not args.sync and not modified:
 print('Rehydrate')
 b2sync.fetch()
 
-for deb in (set(glob.glob(os.path.join(Config.repo.path, '*.deb'))) - set( [_deb for _deb, _url in debs])):
+allowed = set([deb for deb, url in debs])
+found = set(glob.glob(os.path.join(Config.repo.path, '*.deb')))
+print('allowed:', allowed)
+print('found:', found)
+for deb in found - allowed:
   print('delete', deb)
   modified = True
   os.remove(deb)
