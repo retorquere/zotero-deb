@@ -44,7 +44,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
         sudo apt-get -q update
-        sudo apt-get -qy install dpkg-sig fakeroot
+        sudo apt-get -qy install dpkg-sig fakeroot sponge
 
     - name: Cache sync tools and binaries
       uses: actions/cache@v2
