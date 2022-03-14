@@ -94,7 +94,7 @@ class Sync:
           filetype = magic.from_file(asset)
           if not filetype.startswith('Debian binary package'):
             raise ValueError(filetype)
-        except ValueError as e:
+        except (ValueError, requests.exceptions.HTTPError) as e:
           print(os.path.basename(asset), e)
           if os.path.exists(asset):
             os.remove(asset)
