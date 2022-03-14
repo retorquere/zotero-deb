@@ -20,6 +20,7 @@ import requests
 import multiprocessing
 from types import SimpleNamespace
 import magic
+import urllib.parse
 
 class RepoPolicyManager:
   """
@@ -86,7 +87,7 @@ class Sync:
       if asset.endswith('.deb') and not os.path.exists(asset):
         print('Downloading', asset)
         try:
-          with open(asset, 'wb') as f, requests.get(Config.repo.url + '/' + os.path.basename(asset), allow_redirects=True, stream=True) as r:
+          with open(asset, 'wb') as f, requests.get(Config.repo.url + '/' + urllib.parse.quote(os.path.basename(asset)), allow_redirects=True, stream=True) as r:
             r.raise_for_status()
             for chunk in r.iter_content(chunk_size=8192): 
               f.write(chunk)

@@ -29,7 +29,7 @@ def package(staged):
     if '-beta' in deb.version:
       deb.package += '-beta'
       # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
-      deb.version = deb.version.replace('-beta', '').replace('+', '~')
+      deb.version = deb.version.replace('-beta', '')
     deb.version = Config[deb.client].bumped(deb.version)
 
   # detect arch from staged dir
