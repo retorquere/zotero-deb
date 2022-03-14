@@ -7,3 +7,4 @@ b2sdk==1.14.1
 requests
 ruamel.yaml
 python-magic
+munch
