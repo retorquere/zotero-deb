@@ -92,7 +92,7 @@ jobs:
         apt-ftparchive packages $NEW > $NEW/Packages
 
         cd $NEW
-        bzip2 -kf Packages)
+        bzip2 -kf Packages
         apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release
         #(cd repo/$NEW && gpg --export dpkg > zotero-archive-keyring.gpg)
         #(cd repo/$NEW && gpg --armor --export dpkg > zotero-archive-keyring.asc)
