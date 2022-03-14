@@ -1,0 +1,15 @@
+#!/usr/bin/env python3
+
+import sys
+import json
+import glob
+import shlex
+
+remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
+local = set(glob.glob('*'))
+for asset in remote - local:
+  print(f'gh release delete-asset {sys.argv[1]} {shlex.quote(asset)} -y')
+add = [shlex.quote(asset) for asset in local - remote]
+if len(add) > 0:
+  add = ' '.join(add)
+  print(f'gh release upload {sys.argv[1]} {add} --clobber')
