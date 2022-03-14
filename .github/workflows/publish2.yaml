@@ -100,14 +100,14 @@ jobs:
         gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release
         gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release
 
-        cp Packages by-hash/MD5Sum/`md5sum Packages`
-        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2`
-        cp Packages by-hash/SHA1/`sha1sum Packages`
-        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2`
-        cp Packages by-hash/SHA256/`sha256sum Packages`
-        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2`
-        cp Packages by-hash/SHA512/`sha512sum Packages`
-        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2`
+        cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
 
         rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
         echo "::set-output name=repo::$NEW"
@@ -139,14 +139,14 @@ jobs:
         gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release
         gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release
 
-        cp Packages by-hash/MD5Sum/`md5sum Packages`
-        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2`
-        cp Packages by-hash/SHA1/`sha1sum Packages`
-        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2`
-        cp Packages by-hash/SHA256/`sha256sum Packages`
-        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2`
-        cp Packages by-hash/SHA512/`sha512sum Packages`
-        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2`
+        cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`
+        cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
+        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
 
         github-release-sync --owner retorquere --repo zotero-deb --tag $NEW --overwrite --prune .
 
