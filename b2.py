@@ -84,11 +84,20 @@ class Sync:
     # first download missing assets using the free path
     for asset in self.remote:
       if asset.endswith('.deb') and not os.path.exists(asset):
-        with open(asset, 'wb') as f:
-          print('Downloading', asset)
-          f.write(requests.get(Config.repo.url + '/' + os.path.basename(asset), allow_redirects=True).content)
+        print('Downloading', asset)
+        try:
+          with open(asset, 'wb') as f, requests.get(Config.repo.url + '/' + os.path.basename(asset), allow_redirects=True, stream=True) as r:
+            r.raise_for_status()
+            for chunk in r.iter_content(chunk_size=8192): 
+              f.write(chunk)
+
           filetype = magic.from_file(asset)
-          assert filetype.startswith('Debian binary package'), (asset, filetype)
+          if not filetype.startswith('Debian binary package'):
+            raise ValueError(filetype)
+        except ValueError as e:
+          print(os.path.basename(asset), e)
+          if os.path.exists(asset):
+            os.remove(asset)
 
   def update(self):
     synchronizer = Synchronizer(
