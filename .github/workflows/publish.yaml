@@ -4,6 +4,8 @@ on:
   schedule:
     - cron: 0 */2 * * *
   push:
+    branches:
+    - master
   workflow_dispatch:
     inputs:
       rebuildOption:
@@ -17,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, github, b2]
+        hosting: [sourceforge, github]
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
