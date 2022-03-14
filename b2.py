@@ -52,6 +52,7 @@ class RepoPolicyManager:
     assert sync_type == 'local-to-b2', sync_type
     deb = source_path is not None and Path(source_path.absolute_path).suffix == '.deb'
     policy = UpAndDeletePolicy if delete else UpPolicy
+    print(source_path, 'deb' if deb else 'other', 'delete' if delete else 'add', policy.__name__)
     return policy(
       source_path,
       source_folder,
