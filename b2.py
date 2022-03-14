@@ -21,6 +21,7 @@ import multiprocessing
 from types import SimpleNamespace
 import magic
 import urllib.parse
+import glob
 
 class RepoPolicyManager:
   """
