@@ -101,7 +101,7 @@ class Sync:
             os.remove(asset)
 
   def update(self):
-    print('prediction'):
+    print('prediction:')
     for deb in glob.glob(os.path.join(Config.repo.path, '*.deb')):
       if not deb in self.remote:
         print('+', deb)
