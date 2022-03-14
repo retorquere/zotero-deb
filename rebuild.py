@@ -91,8 +91,6 @@ b2sync.fetch()
 
 allowed = set([deb for deb, url in debs])
 found = set(glob.glob(os.path.join(Config.repo.path, '*.deb')))
-print('allowed:', allowed)
-print('found:', found)
 for deb in found - allowed:
   print('delete', deb)
   modified = True

@@ -101,6 +101,13 @@ class Sync:
             os.remove(asset)
 
   def update(self):
+    print('prediction'):
+    for deb in glob.glob(os.path.join(Config.repo.path, '*.deb')):
+      if not deb in self.remote:
+        print('+', deb)
+    for deb in self.remote:
+      if not os.path.exists(deb):
+        print('-', deb)
     synchronizer = Synchronizer(
       max_workers=multiprocessing.cpu_count(),
       policies_manager = ScanPoliciesManager(exclude_all_symlinks=True), # object which decides which files to process
