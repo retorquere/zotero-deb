@@ -111,7 +111,7 @@ jobs:
       run: |
         mv repo/$OLD repo/$NEW
         cd repo
-        ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download
+        ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download '~'
 
         gh release view $NEW --json assets | ../ghr $NEW | bash
 

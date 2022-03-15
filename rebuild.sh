@@ -1,5 +1,11 @@
 #!/bin/bash
 
+if [ "$3" != "" ]; then
+  for beta in $1/zotero-beta*; do
+    mv $beta `echo $beta | awk sed "s/+/$3/"`
+  done
+fi
+
 apt-ftparchive packages $1 > $1/Packages
 
 cd $1
@@ -20,4 +26,4 @@ cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
 cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
 
 awk "{ switch (\$0) { case /^BASEURL=/: print(\"BASEURL=$2\"); break; case /^CODENAME=/: print(\"CODENAME=$1\"); break; default: print; break; } }" install.sh | sponge install.sh
-cat install.sh
+
