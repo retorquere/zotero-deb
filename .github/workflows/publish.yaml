@@ -72,7 +72,6 @@ jobs:
       run: |
         ./rebuild.py ${{ github.event.inputs.rebuildOptions }}
 
-        update old mirror
         cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
         mv repo/apt-package-archive repo/zotero-apt
         ./rebuild.py --sync
