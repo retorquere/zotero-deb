@@ -78,7 +78,7 @@ def fetch_url(entry):
   with open(path, 'wb') as f:
     for chunk in r:
       f.write(chunk)
-  print('Downloaded', asset)
+  print('Downloaded', path)
   return path
 
 class Sync:
