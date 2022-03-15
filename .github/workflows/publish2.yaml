@@ -72,10 +72,10 @@ jobs:
       run: |
         ./rebuild.py ${{ github.event.inputs.rebuildOptions }}
 
-        # update old mirror
-        # cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
-        # mv repo/apt-package-archive repo/zotero-apt
-        # ./rebuild.py --sync
+        update old mirror
+        cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
+        mv repo/apt-package-archive repo/zotero-apt
+        ./rebuild.py --sync
 
     - name: refresh sourceforge
       id: sf
@@ -85,7 +85,7 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         GITHUB_TOKEN: ${{ github.token }}
         OLD: ${{ steps.b2.outputs.bucket }}
-        NEW: zotero-better-bibtex
+        NEW: zotero-deb
       run: |
         set -x
         mv repo/$OLD repo/$NEW
@@ -108,15 +108,13 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         GITHUB_TOKEN: ${{ github.token }}
         OLD: ${{ steps.sf.outputs.repo }}
-        # NEW: apt-get
-        NEW: beta
+        NEW: apt-get
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
         mv repo/$OLD repo/$NEW
         cd repo
         ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download
 
-        ls ../../..
         gh release view $NEW --json assets | ../ghr $NEW | bash
 
   test:
