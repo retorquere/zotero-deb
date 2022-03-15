@@ -91,9 +91,15 @@ jobs:
         mv repo/$OLD repo/$NEW
         cd repo
         ../rebuild.sh $NEW https://downloads.sourceforge.net/project
-
-        rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/$NEW/
+        # rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/$NEW/
         echo "::set-output name=repo::$NEW"
+
+    - uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        # because SF sync is garbage all around
+        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/${{ steps.sf.outputs.repo }}/
 
     - name: refresh github
       env:
