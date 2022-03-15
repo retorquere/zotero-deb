@@ -81,7 +81,8 @@ debs = [ (os.path.join(Config.repo.path, f'{client}_{version}_{arch}.deb'), url)
 # fetch what we can so we don't have to rebuild
 b2sync = Sync()
 
-modified = set(b2sync.remote) != set([deb for deb, url in debs])
+modified = set([deb for deb in b2sync.remote if deb.endswith('.deb')]) != set([deb for deb, url in debs])
+modified = modified or 'Packages' not in b2sync.remote
 if not args.sync and not modified:
   print('nothing to do')
   sys.exit()
