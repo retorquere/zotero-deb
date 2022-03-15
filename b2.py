@@ -12,7 +12,7 @@ from b2sdk.v2 import SyncReport
 from b2sdk.v2 import InMemoryAccountInfo
 from b2sdk.v2 import B2Api
 from b2sdk.v2 import CopyAndDeletePolicy, CopyAndKeepDaysPolicy, CopyPolicy, DownAndDeletePolicy, DownAndKeepDaysPolicy, DownPolicy, UpAndDeletePolicy, UpAndKeepDaysPolicy, UpPolicy
-from b2sdk.v2 import NewerFileSyncMode, CompareVersionMode
+from b2sdk.v2 import NewerFileSyncMode, CompareVersionMode, KeepOrDeleteMode
 import time
 import os, sys
 from pathlib import Path
@@ -124,6 +124,7 @@ class Sync:
       sync_policy_manager = RepoPolicyManager(), # object which decides what to do with each file (upload, download, delete, copy, hide etc)
       dry_run=False,
       allow_empty_source=True,
+      keep_days_or_delete=KeepOrDeleteMode.DELETE,
     )
 
     no_progress = False
