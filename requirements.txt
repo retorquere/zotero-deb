@@ -8,3 +8,4 @@ requests
 ruamel.yaml
 python-magic
 munch
+tenacity

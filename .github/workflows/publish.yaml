@@ -77,7 +77,6 @@ jobs:
         ./rebuild.py --sync
 
     - name: refresh sourceforge
-      id: sf
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
@@ -86,18 +85,7 @@ jobs:
         OLD: ${{ steps.b2.outputs.bucket }}
         NEW: zotero-deb
       run: |
-        mv repo/$OLD repo/$NEW
-        cd repo
-        ../rebuild.sh $NEW https://downloads.sourceforge.net/project
-        # rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/$NEW/
-        echo "::set-output name=repo::$NEW"
-
-    - uses: nick-fields/retry@v2
-      with:
-        timeout_minutes: 10
-        max_attempts: 3
-        # because SF sync is garbage all around
-        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete repo/${{ steps.sf.outputs.repo }}/ retorquere@frs.sourceforge.net:/home/frs/project/${{ steps.sf.outputs.repo }}/
+        ./republish.py --repo=repo/zotero-apt --codename=zotero-deb --baseurl=https://downloads.sourceforge.net/project --sync='rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/'
 
     - name: refresh github
       env:
@@ -109,11 +97,7 @@ jobs:
         NEW: apt-get
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        mv repo/$OLD repo/$NEW
-        cd repo
-        ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download '~'
-
-        gh release view $NEW --json assets | ../ghr $NEW | bash
+        ./republish.py --repo=repo/zotero-apt --codename=apt-get --beta-delim='~' --baseurl=https://github.com/retorquere/zotero-deb/releases/download --sync='gh release view apt-get --json assets | ../ghr apt-get | bash'
 
   test:
     runs-on: ubuntu-latest
