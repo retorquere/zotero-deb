@@ -22,6 +22,8 @@ from types import SimpleNamespace
 import magic
 import urllib.parse
 import glob
+from multiprocessing.pool import ThreadPool
+import multiprocessing
 
 class RepoPolicyManager:
   """
@@ -66,6 +68,16 @@ class RepoPolicyManager:
       encryption_settings_provider,
     )
 
+def fetch_url(entry):
+  path, uri = entry
+  if not os.path.exists(path):
+    r = requests.get(uri, stream=True)
+    r.raise_for_status()
+    with open(path, 'wb') as f:
+      for chunk in r:
+        f.write(chunk)
+    return path
+
 class Sync:
   def __init__(self):
     self.b2_api = B2Api(InMemoryAccountInfo())
@@ -85,22 +97,17 @@ class Sync:
 
   def fetch(self):
     # first download missing assets using the free path
+    assets = []
     for asset in self.remote:
       if asset.endswith('.deb') and not os.path.exists(asset):
         print('Downloading', asset)
-        try:
-          with open(asset, 'wb') as f, requests.get(Config.repo.url + '/' + urllib.parse.quote(os.path.basename(asset)), allow_redirects=True, stream=True) as r:
-            r.raise_for_status()
-            for chunk in r.iter_content(chunk_size=8192): 
-              f.write(chunk)
+        assets.append((asset, Config.repo.url + '/' + urllib.parse.quote(os.path.basename(asset))))
 
-          filetype = magic.from_file(asset)
-          if not filetype.startswith('Debian binary package'):
-            raise ValueError(filetype)
-        except (ValueError, requests.exceptions.HTTPError) as e:
-          print(os.path.basename(asset), e)
-          if os.path.exists(asset):
-            os.remove(asset)
+    for asset in ThreadPool(multiprocessing.cpu_count()).imap_unordered(fetch_url, assets)
+      print('Downloaded', path)
+      filetype = magic.from_file(asset)
+      if not filetype.startswith('Debian binary package'):
+        raise ValueError(f'{path}: {filetype}')
 
   def update(self):
     print('prediction:')
