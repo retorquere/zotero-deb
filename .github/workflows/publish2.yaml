@@ -92,7 +92,7 @@ jobs:
         cd repo
         ../rebuild.sh $NEW https://downloads.sourceforge.net/project
 
-        rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb
+        rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/$NEW/
         echo "::set-output name=repo::$NEW"
 
     - name: refresh github
