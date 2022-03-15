@@ -87,7 +87,6 @@ jobs:
         OLD: ${{ steps.b2.outputs.bucket }}
         NEW: zotero-deb
       run: |
-        set -x
         mv repo/$OLD repo/$NEW
         cd repo
         ../rebuild.sh $NEW https://downloads.sourceforge.net/project
@@ -128,8 +127,6 @@ jobs:
     - name: install apt fixes
       if: matrix.hosting == 'github'
       run: |
-        set -e
-        set -x
         # https://github.com/retorquere/zotero-deb/issues/49
         sudo add-apt-repository ppa:tj/bugfixes
         sudo apt-get -q update
@@ -138,19 +135,16 @@ jobs:
     - name: test install ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
-        SFPROJECT: zotero-better-bibtex
-        GHRELEASE: beta
-        B2BUCKET: zotero-test
+        SFPROJECT: zotero-deb
+        GHRELEASE: apt-get
+        B2BUCKET: apt-package-archive
       run: |
-        set -e
-        set -x
-
         case "${{ matrix.hosting }}" in
           sourceforge)
             export INSTALLSH=https://downloads.sourceforge.net/project/$SFPROJECT/install.sh
             ;;
           b2)
-            export INSTALLSH=https://apt.retorque.re/file/$B2BUCKET/install.sh
+            export INSTALLSH=https://zotero.retorque.re/file/$B2BUCKET/install.sh
             ;;
           github)
             export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/$GHRELEASE/install.sh
