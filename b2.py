@@ -104,7 +104,7 @@ class Sync:
         assets.append((asset, Config.repo.url + '/' + urllib.parse.quote(os.path.basename(asset))))
 
     for asset in ThreadPool(multiprocessing.cpu_count()).imap_unordered(fetch_url, assets):
-      print('Downloaded', path)
+      print('Downloaded', asset)
       filetype = magic.from_file(asset)
       if not filetype.startswith('Debian binary package'):
         raise ValueError(f'{path}: {filetype}')
