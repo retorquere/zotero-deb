@@ -19,5 +19,5 @@ cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`
 cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
 cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
 
-awk "{ switch (\$0) { case /^BASEURL=/: print('BASEURL=$2'); break; case /^CODENAME=/: print('CODENAME=$1'); break; default: print; break; } }" install.sh | sponge install.sh
+awk "{ switch (\$0) { case /^BASEURL=/: print(\"BASEURL=$2\"); break; case /^CODENAME=/: print(\"CODENAME=$1\"); break; default: print; break; } }" install.sh | sponge install.sh
 cat install.sh
