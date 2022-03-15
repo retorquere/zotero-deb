@@ -90,26 +90,9 @@ jobs:
         set -x
         mv repo/$OLD repo/$NEW
         cd repo
-        apt-ftparchive packages $NEW > $NEW/Packages
+        ../rebuild.sh $NEW https://downloads.sourceforge.net/project
 
-        cd $NEW
-        bzip2 -kf Packages
-        apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release
-        #(cd repo/$NEW && gpg --export dpkg > zotero-archive-keyring.gpg)
-        #(cd repo/$NEW && gpg --armor --export dpkg > zotero-archive-keyring.asc)
-        gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release
-        gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release
-
-        cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
-
-        rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+        rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb
         echo "::set-output name=repo::$NEW"
 
     - name: refresh github
@@ -125,27 +108,9 @@ jobs:
       run: |
         mv repo/$OLD repo/$NEW
         cd repo
-        apt-ftparchive packages $NEW > $NEW/Packages
-
-        cd $NEW
-        bzip2 -kf Packages
-        apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release
-        #(cd repo/$NEW && gpg --export dpkg > zotero-archive-keyring.gpg)
-        #(cd repo/$NEW && gpg --armor --export dpkg > zotero-archive-keyring.asc)
-        gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release
-        gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release
-
-        cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`
-        cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`
-        cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`
+        ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download
 
         gh release view $NEW --json assets | ../../ghr $NEW | bash
-
 
   test:
     runs-on: ubuntu-latest
@@ -168,19 +133,22 @@ jobs:
     - name: test install ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
+        SFPROJECT: zotero-better-bibtex
+        GHRELEASE: beta
+        B2BUCKET: zotero-test
       run: |
         set -e
         set -x
 
         case "${{ matrix.hosting }}" in
           sourceforge)
-            export INSTALLSH=https://downloads.sourceforge.net/project/zotero-deb/install.sh
+            export INSTALLSH=https://downloads.sourceforge.net/project/$SFPROJECT/install.sh
             ;;
           b2)
-            export INSTALLSH=https://apt.retorque.re/file/zotero-apt/install.sh
+            export INSTALLSH=https://apt.retorque.re/file/$B2BUCKET/install.sh
             ;;
           github)
-            export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh
+            export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/$GHRELEASE/install.sh
             ;;
         esac
 
