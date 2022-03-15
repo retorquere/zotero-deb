@@ -99,7 +99,7 @@ jobs:
         timeout_minutes: 10
         max_attempts: 3
         # because SF sync is garbage all around
-        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/${{ steps.sf.outputs.repo }}/
+        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete repo/${{ steps.sf.outputs.repo }}/ retorquere@frs.sourceforge.net:/home/frs/project/${{ steps.sf.outputs.repo }}/
 
     - name: refresh github
       env:
