@@ -4,8 +4,6 @@ on:
   schedule:
     - cron: 0 */2 * * *
   push:
-    branches:
-    - master
   workflow_dispatch:
     inputs:
       rebuildOption:
@@ -16,10 +14,6 @@ on:
 jobs:
   refresh:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        hosting: [sourceforge, github]
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
@@ -34,6 +28,12 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install b2sdk beta
+      run: |
+        git clone https://github.com/Backblaze/b2-sdk-python.git
+        cd b2-sdk-python
+        git checkout sync_customizability
+        pip install .
 
     - name: Import GPG key
       uses: retorquere/ghaction-import-gpg@master
@@ -44,7 +44,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
         sudo apt-get -q update
-        sudo apt-get -qy install dpkg-sig fakeroot
+        sudo apt-get -qy install dpkg-sig fakeroot moreutils
 
     - name: Cache sync tools and binaries
       uses: actions/cache@v2
@@ -54,39 +54,68 @@ jobs:
         path: |
           ./bin
           ./repo
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ matrix.hosting }}-${{ hashFiles('rebuild.py', 'build.py', 'requirements.txt') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py') }}
 
     - name: Install SSH Key
-      if: matrix.hosting == 'sourceforge'
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: 'sourceforge'
 
-    - name: refresh ${{ matrix.hosting }}
+    - name: refresh b2
+      id: b2
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        set -e
+        ./rebuild.py ${{ github.event.inputs.rebuildOptions }}
+
+        update old mirror
+        cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
+        mv repo/apt-package-archive repo/zotero-apt
+        ./rebuild.py --sync
+
+    - name: refresh sourceforge
+      id: sf
+      env:
+        PYTHONUNBUFFERED: true
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        GITHUB_TOKEN: ${{ github.token }}
+        OLD: ${{ steps.b2.outputs.bucket }}
+        NEW: zotero-deb
+      run: |
         set -x
-        cat /etc/lsb-release
+        mv repo/$OLD repo/$NEW
+        cd repo
+        ../rebuild.sh $NEW https://downloads.sourceforge.net/project
+        # rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/$NEW/
+        echo "::set-output name=repo::$NEW"
 
-        case "${{ matrix.hosting }}" in
-          sourceforge)
-            ;;
-          b2)
-            mkdir -p bin
-            [[ -e bin/b2-linux ]] || curl -L https://github.com/Backblaze/B2_Command_Line_Tool/releases/latest/download/b2-linux -o bin/b2-linux
-            chmod +x bin/b2-linux
-            ;;
-          github)
-            ;;
-        esac
+    - uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 10
+        max_attempts: 3
+        # because SF sync is garbage all around
+        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete repo/${{ steps.sf.outputs.repo }}/ retorquere@frs.sourceforge.net:/home/frs/project/${{ steps.sf.outputs.repo }}/
 
-        ./rebuild.py --host ${{ matrix.hosting }} ${{ github.event.inputs.rebuildOptions }}
+    - name: refresh github
+      env:
+        PYTHONUNBUFFERED: true
+        B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
+        B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
+        GITHUB_TOKEN: ${{ github.token }}
+        OLD: ${{ steps.sf.outputs.repo }}
+        NEW: apt-get
+        GITHUB_ACCESS_TOKEN: ${{ github.token }}
+      run: |
+        mv repo/$OLD repo/$NEW
+        cd repo
+        ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download
+
+        gh release view $NEW --json assets | ../ghr $NEW | bash
 
   test:
     runs-on: ubuntu-latest
@@ -109,19 +138,22 @@ jobs:
     - name: test install ${{ matrix.hosting }}
       env:
         PYTHONUNBUFFERED: true
+        SFPROJECT: zotero-better-bibtex
+        GHRELEASE: beta
+        B2BUCKET: zotero-test
       run: |
         set -e
         set -x
 
         case "${{ matrix.hosting }}" in
           sourceforge)
-            export INSTALLSH=https://downloads.sourceforge.net/project/zotero-deb/install.sh
+            export INSTALLSH=https://downloads.sourceforge.net/project/$SFPROJECT/install.sh
             ;;
           b2)
-            export INSTALLSH=https://apt.retorque.re/file/zotero-apt/install.sh
+            export INSTALLSH=https://apt.retorque.re/file/$B2BUCKET/install.sh
             ;;
           github)
-            export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh
+            export INSTALLSH=https://github.com/retorquere/zotero-deb/releases/download/$GHRELEASE/install.sh
             ;;
         esac
 
