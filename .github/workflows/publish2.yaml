@@ -111,7 +111,7 @@ jobs:
         ../rebuild.sh $NEW https://github.com/retorquere/zotero-deb/releases/download
 
         ls ../../..
-        gh release view $NEW --json assets | ../../../ghr $NEW | bash
+        gh release view $NEW --json assets | ../ghr $NEW | bash
 
   test:
     runs-on: ubuntu-latest
