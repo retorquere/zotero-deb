@@ -70,13 +70,16 @@ class RepoPolicyManager:
 
 def fetch_url(entry):
   path, uri = entry
-  if not os.path.exists(path):
-    r = requests.get(uri, stream=True)
-    r.raise_for_status()
-    with open(path, 'wb') as f:
-      for chunk in r:
-        f.write(chunk)
+  if os.path.exists(path):
     return path
+
+  r = requests.get(uri, stream=True)
+  r.raise_for_status()
+  with open(path, 'wb') as f:
+    for chunk in r:
+      f.write(chunk)
+  print('Downloaded', asset)
+  return path
 
 class Sync:
   def __init__(self):
@@ -98,13 +101,11 @@ class Sync:
   def fetch(self):
     # first download missing assets using the free path
     assets = []
-    for asset in self.remote:
+    for asset in sorted(self.remote):
       if asset.endswith('.deb') and not os.path.exists(asset):
-        print('Downloading', asset)
         assets.append((asset, Config.repo.url + '/' + urllib.parse.quote(os.path.basename(asset))))
 
     for asset in ThreadPool(multiprocessing.cpu_count()).imap_unordered(fetch_url, assets):
-      print('Downloaded', asset)
       filetype = magic.from_file(asset)
       if not filetype.startswith('Debian binary package'):
         raise ValueError(f'{path}: {filetype}')
