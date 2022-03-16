@@ -27,6 +27,7 @@ codename = shlex.quote(args.codename)
 assert not os.path.exists(args.codename), f'{codename} exists'
 
 run(f'cp -r {shlex.quote(args.repo)} {codename}')
+# https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
 if args.beta_delim:
   for deb in glob.glob(os.path.join(args.codename, 'zotero-beta*.deb')):
     run(f'mv {shlex.quote(deb)} {shlex.quote(deb.replace("+", args.beta_delim))}')
