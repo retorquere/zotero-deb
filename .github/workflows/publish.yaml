@@ -73,6 +73,7 @@ jobs:
 
         cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
         mv repo/apt-package-archive repo/zotero-apt
+        find repo -type f
         ./rebuild.py --sync
 
     - name: refresh sourceforge
