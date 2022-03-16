@@ -28,7 +28,7 @@ with tempfile.TemporaryDirectory() as builddir:
     run(f'cp -r {shlex.quote(args.repo)} {codename}')
     if args.beta_delim:
       for deb in glob.glob(os.path.join(args.codename, 'zotero-beta*.deb')):
-        run('mv {shlex.quote(deb)} {shlex.quote(deb.replace("+", args.beta_delim))}')
+        run(f'mv {shlex.quote(deb)} {shlex.quote(deb.replace("+", args.beta_delim))}')
 
     run(f'apt-ftparchive packages {codename} > {codename}/Packages')
 
