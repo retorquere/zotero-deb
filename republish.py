@@ -47,7 +47,7 @@ with chdir(args.codename):
   for asset in ['Packages', 'Packages.bz2']:
     for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
       run(f'mkdir -p by-hash/{hsh}')
-      run(f"cp {asset} by-hash/{hsh}/`{hsh.lower().replace('sum', '')}sum Packages | awk '{print $1}'`")
+      run(f"cp {asset} by-hash/{hsh}/`{hsh.lower().replace('sum', '')}sum Packages " + " | awk '{print $1}'`")
 
   def replace(line):
     if line.startswith('BASEURL='):
