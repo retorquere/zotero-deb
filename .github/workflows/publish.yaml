@@ -46,13 +46,12 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install dpkg-sig fakeroot moreutils
 
-    - name: Cache sync tools and binaries
+    - name: Cache repo
       uses: actions/cache@v2
       env:
         cache-name: v3
       with:
         path: |
-          ./bin
           ./repo
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py') }}
 
