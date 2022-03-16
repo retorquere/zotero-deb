@@ -16,7 +16,5 @@ for asset in remote - local:
 
 remotedebs = set([r for r in remote if r.endswith('.deb')])
 # republish locals
-add = sorted([shlex.quote(f'{asset}#{asset}') for asset in local - remotedebs])
-if len(add) > 0:
-  add = '\\\n'.join(add)
+for add in sorted([shlex.quote(f'{asset}#{asset}') for asset in local - remotedebs]):
   print(f'gh release upload {sys.argv[1]} {add} --clobber')
