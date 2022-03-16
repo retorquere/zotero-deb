@@ -50,11 +50,10 @@ with tempfile.TemporaryDirectory() as builddir:
       run("cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`")
 
       def replace(line):
-        match line:
-          case line if line.startswith('BASEURL='):
-            return f'BASEURL={args.baseurl}\n'
-          case line if line.startswith('CODENAME='):
-            return f'CODENAME={args.codename}\n'
+        if line.startswith('BASEURL='):
+          return f'BASEURL={args.baseurl}\n'
+        elif line.startswith('CODENAME='):
+          return f'CODENAME={args.codename}\n'
         return line
 
       with open('install.sh') as f:
