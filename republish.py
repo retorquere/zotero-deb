@@ -14,7 +14,7 @@ args.repo = os.path.abspath(args.repo)
 import tempfile
 import shlex
 import glob
-from tenacity import retry
+from tenacity import retry, stop_after_attempt
 
 from util import run, chdir
 
