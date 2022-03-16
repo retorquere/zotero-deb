@@ -36,7 +36,7 @@ run(f'apt-ftparchive packages {codename} > {codename}/Packages')
 
 with chdir(args.codename):
   run('bzip2 -kf Packages')
-  run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+  run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={args.codename}/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
   #(cd repo/$1 && gpg --export dpkg > zotero-archive-keyring.gpg)
   #(cd repo/$1 && gpg --armor --export dpkg > zotero-archive-keyring.asc)
   run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
