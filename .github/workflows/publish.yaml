@@ -69,7 +69,9 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         GITHUB_TOKEN: ${{ github.token }}
       run: |
+        find repo -type f
         ./rebuild.py ${{ github.event.inputs.rebuildOptions }}
+        find repo -type f
 
         cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
         mv repo/apt-package-archive repo/zotero-apt
