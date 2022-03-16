@@ -11,7 +11,7 @@ parser.add_argument('--beta-delim')
 args = parser.parse_args()
 args.repo = os.path.abspath(args.repo)
 
-import tempdir
+import tempfile
 import shlex
 import glob
 from tenacity import retry
