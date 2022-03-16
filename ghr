@@ -2,13 +2,13 @@
 
 import sys, os
 import json
-import glob
+from pathlib import Path
 import shlex
 
 print('set -e')
 print('set -x')
 remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
-local = set([asset for asset in (glob.glob('**/*') + glob.glob('*')) if os.path.isfile(asset)])
+local = set([str(asset) for asset in Path(".").rglob("*") if os.path.isfile(asset)])
 
 # delete superfluous remotes
 for asset in remote - local:
