@@ -9,7 +9,7 @@ remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
 local = set([asset for asset in (glob.glob('**/*') + glob.glob('*')) if os.path.isfile(asset)])
 for asset in remote - local:
   print(f'gh release delete-asset {sys.argv[1]} {shlex.quote(asset)} -y')
-add = [shlex.quote(asset) for asset in local - remote]
+add = [shlex.quote(f'{asset}#{asset}') for asset in local - remote]
 if len(add) > 0:
   add = ' '.join(add)
   print(f'gh release upload {sys.argv[1]} {add} --clobber')
