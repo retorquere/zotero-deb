@@ -22,43 +22,43 @@ from util import run, chdir
 def sync():
   run(args.sync)
 
-with tempfile.TemporaryDirectory() as builddir:
-  with chdir(builddir):
-    codename = shlex.quote(args.codename)
-    run(f'cp -r {shlex.quote(args.repo)} {codename}')
-    if args.beta_delim:
-      for deb in glob.glob(os.path.join(args.codename, 'zotero-beta*.deb')):
-        run(f'mv {shlex.quote(deb)} {shlex.quote(deb.replace("+", args.beta_delim))}')
+codename = shlex.quote(args.codename)
+assert not os.path.exists(args.codename), f'{codename} exists'
 
-    run(f'apt-ftparchive packages {codename} > {codename}/Packages')
+run(f'cp -r {shlex.quote(args.repo)} {codename}')
+if args.beta_delim:
+  for deb in glob.glob(os.path.join(args.codename, 'zotero-beta*.deb')):
+    run(f'mv {shlex.quote(deb)} {shlex.quote(deb.replace("+", args.beta_delim))}')
 
-    with chdir(args.codename):
-      run('bzip2 -kf Packages')
-      run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
-      #(cd repo/$1 && gpg --export dpkg > zotero-archive-keyring.gpg)
-      #(cd repo/$1 && gpg --armor --export dpkg > zotero-archive-keyring.asc)
-      run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
-      run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
+run(f'apt-ftparchive packages {codename} > {codename}/Packages')
 
-      run("cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`")
-      run("cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`")
-      run("cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`")
-      run("cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`")
-      run("cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`")
-      run("cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`")
-      run("cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`")
-      run("cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`")
+with chdir(args.codename):
+  run('bzip2 -kf Packages')
+  run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=apt-package-archive/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+  #(cd repo/$1 && gpg --export dpkg > zotero-archive-keyring.gpg)
+  #(cd repo/$1 && gpg --armor --export dpkg > zotero-archive-keyring.asc)
+  run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
+  run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
 
-      def replace(line):
-        if line.startswith('BASEURL='):
-          return f'BASEURL={args.baseurl}\n'
-        elif line.startswith('CODENAME='):
-          return f'CODENAME={args.codename}\n'
-        return line
+  run("cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`")
+  run("cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`")
+  run("cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`")
+  run("cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`")
+  run("cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`")
+  run("cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`")
+  run("cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`")
+  run("cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`")
 
-      with open('install.sh') as f:
-        installsh = [replace(line) for line in f.readlines()]
-      with open('install.sh', 'w') as f:
-        f.write(''.join(installsh))
+  def replace(line):
+    if line.startswith('BASEURL='):
+      return f'BASEURL={args.baseurl}\n'
+    elif line.startswith('CODENAME='):
+      return f'CODENAME={args.codename}\n'
+    return line
 
-      sync()
+  with open('install.sh') as f:
+    installsh = [replace(line) for line in f.readlines()]
+  with open('install.sh', 'w') as f:
+    f.write(''.join(installsh))
+
+  sync()
