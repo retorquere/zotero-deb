@@ -5,11 +5,18 @@ import json
 import glob
 import shlex
 
+print('set -e')
+print('set -x')
 remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
 local = set([asset for asset in (glob.glob('**/*') + glob.glob('*')) if os.path.isfile(asset)])
+
+# delete superfluous remotes
 for asset in remote - local:
   print(f'gh release delete-asset {sys.argv[1]} {shlex.quote(asset)} -y')
-add = [shlex.quote(f'{asset}#{asset}') for asset in local - remote]
+
+remotedebs = set([r for r in remote if r.endswith('.deb')])
+# republish locals
+add = [shlex.quote(f'{asset}#{asset}') for asset in local - remotedebs]
 if len(add) > 0:
   add = ' '.join(add)
   print(f'gh release upload {sys.argv[1]} {add} --clobber')
