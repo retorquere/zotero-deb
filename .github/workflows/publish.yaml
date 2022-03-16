@@ -69,16 +69,10 @@ jobs:
         B2_APPLICATION_KEY_ID: ${{ secrets.B2_APPLICATION_KEY_ID }}
         GITHUB_TOKEN: ${{ github.token }}
       run: |
-        find repo -type f
         ./rebuild.py ${{ github.event.inputs.rebuildOptions }}
-        find repo -type f
-
-        cat config.yml | sed 's/apt-package-archive/zotero-apt/' | sed 's/zotero.retorque.re/apt.retorque.re/' | sponge config.yml
-        mv repo/apt-package-archive repo/zotero-apt
-        find repo -type f
-        ./rebuild.py --sync
 
     - name: refresh sourceforge
+      if: ${{ steps.b2.outputs.bucket }}
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}
@@ -90,6 +84,7 @@ jobs:
         ./republish.py --repo=repo/zotero-apt --codename=zotero-deb --baseurl=https://downloads.sourceforge.net/project --sync='rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/'
 
     - name: refresh github
+      if: ${{ steps.b2.outputs.bucket }}
       env:
         PYTHONUNBUFFERED: true
         B2_APPLICATION_KEY: ${{ secrets.B2_APPLICATION_KEY }}

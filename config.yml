@@ -20,7 +20,7 @@ jurism:
 repo:
   build: repo
   staging: staging
-  bucket: apt-package-archive
-  hostname: zotero.retorque.re
+  bucket: zotero-apt
+  hostname: apt.retorque.re
 mirror:
   sourceforge:
