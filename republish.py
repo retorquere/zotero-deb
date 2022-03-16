@@ -20,6 +20,7 @@ from util import run, chdir
 
 @retry(stop=stop_after_attempt(5)) # sourceforge rsync is ridiculously unreliable
 def sync():
+  print('running sync in', os.getcwd())
   run(args.sync)
 
 codename = shlex.quote(args.codename)
