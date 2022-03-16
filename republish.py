@@ -21,12 +21,13 @@ from util import run, chdir
 @retry(stop=stop_after_attempt(5)) # sourceforge rsync is ridiculously unreliable
 def sync():
   print('running sync in', os.getcwd())
+  run('find . -type f')
   run(args.sync)
 
 codename = shlex.quote(args.codename)
 assert not os.path.exists(args.codename), f'{codename} exists'
-
 run(f'cp -r {shlex.quote(args.repo)} {codename}')
+
 # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
 if args.beta_delim:
   for deb in glob.glob(os.path.join(args.codename, 'zotero-beta*.deb')):
@@ -35,6 +36,7 @@ if args.beta_delim:
 run(f'apt-ftparchive packages {codename} > {codename}/Packages')
 
 with chdir(args.codename):
+  run('rm -rf by-hash')
   run('bzip2 -kf Packages')
   run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={args.codename}/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
   #(cd repo/$1 && gpg --export dpkg > zotero-archive-keyring.gpg)
@@ -42,14 +44,10 @@ with chdir(args.codename):
   run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
   run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
 
-  run("cp Packages by-hash/MD5Sum/`md5sum Packages | awk '{print $1}'`")
-  run("cp Packages.bz2 by-hash/MD5Sum/`md5sum Packages.bz2 | awk '{print $1}'`")
-  run("cp Packages by-hash/SHA1/`sha1sum Packages | awk '{print $1}'`")
-  run("cp Packages.bz2 by-hash/SHA1/`sha1sum Packages.bz2 | awk '{print $1}'`")
-  run("cp Packages by-hash/SHA256/`sha256sum Packages | awk '{print $1}'`")
-  run("cp Packages.bz2 by-hash/SHA256/`sha256sum Packages.bz2 | awk '{print $1}'`")
-  run("cp Packages by-hash/SHA512/`sha512sum Packages | awk '{print $1}'`")
-  run("cp Packages.bz2 by-hash/SHA512/`sha512sum Packages.bz2 | awk '{print $1}'`")
+  for asset in ['Packages', 'Packages.bz2']:
+    for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
+      run(f'mkdir -p by-hash/{hsh}')
+      run(f"cp {asset} by-hash/{hsh}/`{hsh.lower().replace('sum', '')}sum Packages | awk '{print $1}'`")
 
   def replace(line):
     if line.startswith('BASEURL='):
