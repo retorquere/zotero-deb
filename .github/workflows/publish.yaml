@@ -97,7 +97,7 @@ jobs:
         NEW: apt-get
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        ./republish.py --repo=repo/zotero-apt --codename=apt-get --beta-delim='~' --baseurl=https://github.com/retorquere/zotero-deb/releases/download --sync='gh release view apt-get --json assets | ../ghr apt-get | bash'
+        ./republish.py --repo=repo/zotero-apt --codename=apt-get --beta-delim='~' --baseurl=https://github.com/retorquere/zotero-deb/releases/download --sync='gh release view apt-get --json assets | ../../ghr apt-get | bash'
 
   test:
     runs-on: ubuntu-latest
