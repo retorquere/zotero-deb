@@ -1,10 +1,8 @@
-![build status]({{ badge }})
-
 <img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right">
 
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them.
 
-This repository updates to new releases of Zotero (currently **{{ zotero }}**) and Juris-M (currently **{{ jurism }}**) within 24 hours, usually faster.
+This repository updates to new releases of Zotero and Juris-M within 24 hours, usually faster.
 
 ## Contents of the packages
 
@@ -21,7 +19,7 @@ They manage both desktop file registration and MimeType registration.
 To install Zotero, use the following commands:
 
 ```
-wget -qO- {{ url }}/install.sh | sudo bash
+wget -qO- %baseurl%/install.sh | sudo bash
 sudo apt update
 sudo apt install zotero
 ```
@@ -31,7 +29,7 @@ sudo apt install zotero
 To install Juris-M, use the following commands:
 
 ```
-wget -qO- {{ url }}/install.sh | sudo bash
+wget -qO- %baseurl%/install.sh | sudo bash
 sudo apt update
 sudo apt install jurism
 ```
@@ -40,7 +38,7 @@ sudo apt install jurism
 
 You can use `curl` instead of `wget` by typing
 ```
-curl -sL {{ url }}/install.sh | sudo bash
+curl -sL %baseurl%/install.sh | sudo bash
 ```
 
 ## Updating Zotero / Juris-M
@@ -59,3 +57,65 @@ sudo apt upgrade
 ## Instructions for installation on Crostini-capable Chromebooks
 
 Instructions for installation on Crostini-capable Chromebooks can be found on the [wiki](https://github.com/retorquere/zotero-deb/wiki).
+
+## What goes on under the hood
+
+The install.sh is convenient, there's a risk to running random scripts from the internet as root. What the scripts do, and what you could manually do yourself, is:
+
+Check whether you are installing on a supported architecture:
+
+```
+case `uname -m` in
+  "i386" | "i686" | "x86_64")
+    ;;
+  *)
+    echo "Zotero is only available for architectures i686 and x86_64"
+    exit
+    ;;
+esac
+```
+
+Set up some basic information about the repo and your environment:
+
+```
+BASEURL=%baseurl%
+CODENAME=.
+KEYNAME=zotero-archive-keyring.gpg
+GPGKEY=$BASEURL/$KEYNAME
+KEYRING=/usr/share/keyrings/$KEYNAME
+```
+
+checks whether you have `curl` or `wget`, use that to download the public key used to verify the dignature, and save that in a separate keyring
+
+```
+if [ -x "$(command -v curl)" ]; then
+  sudo curl -L $GPGKEY -o $KEYRING
+elif [ -x "$(command -v wget)" ]; then
+  sudo wget -O $KEYRING $GPGKEY
+else
+  echo "Error: need wget or curl installed." >&2
+  exit 1
+fi
+sudo chmod 644 $KEYRING
+```
+
+Clean up a deprecated key if it exists
+
+```
+# old key with too broad reach
+sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
+```
+
+set up the repo pointer
+
+```
+cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
+deb [signed-by=$KEYRING by-hash=force] $BASEURL $CODENAME/
+EOF
+```
+
+and clean up old pointers
+
+```
+sudo apt-get clean
+```
