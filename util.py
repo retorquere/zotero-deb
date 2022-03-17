@@ -1,5 +1,5 @@
 import subprocess
-import os, sys
+import os
 from colorama import Fore, Style
 import json
 from munch import Munch
@@ -37,8 +37,6 @@ def bumped(client, version):
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
   Config.repo.build = os.path.abspath(Config.repo.build)
-  Config.repo.codename = sys.argv[1]
-  Config.repo.path = os.path.abspath(os.path.join(Config.repo.build, Config.repo.codename))
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)
   Config.jurism.bumped = lambda version: bumped('jurism', version)

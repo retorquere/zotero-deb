@@ -55,7 +55,7 @@ def package(staged):
     # for the desktop entry
     deb.description = Config[deb.client].description
     # path to the generated deb file
-    deb.deb = os.path.join(Config.repo.path, f'{deb.package}_{deb.version}_{deb.arch}.deb')
+    deb.deb = os.path.join(Config.repo.build, f'{deb.package}_{deb.version}_{deb.arch}.deb')
 
     # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
@@ -127,61 +127,20 @@ def package(staged):
     run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(deb.build)} {shlex.quote(deb.deb)}')
     run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
-def rebuild():
-  # rebuild repo
-  os.makedirs(Config.repo.path, exist_ok=True)
-  with chdir(Config.repo.path):
-    # these will be recreated, but just to be sure
-    run('rm -f *Package* *Release*')
-  
-    gpgkey = shlex.quote(Config.maintainer.gpgkey)
-    repo = os.path.relpath(Config.repo.path, Config.repo.build)
-  
-    with chdir(Config.repo.build):
-      # collects the Package metadata
-      # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
-      awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
-      # needs to be ran from the wwwroot so the packages have the path relative to wwwroot
-      run(f'apt-ftparchive packages {shlex.quote(repo)} | awk {shlex.quote(awkcheck)} > {shlex.quote(os.path.join(repo, "Packages"))}')
-  
-    run(f'bzip2 -kf Packages')
-  
-    # creates the Release file with pointers to the Packages file and sig
-    run(f'apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename={shlex.quote(repo + "/")} -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
-  
-    # export public key so people can install the repo
-    run(f'gpg --export {gpgkey} > zotero-archive-keyring.gpg')
-    run(f'gpg --armor --export {gpgkey} > zotero-archive-keyring.asc')
-  
-    # sign the Release file
-    run(f'gpg --yes -abs -u {gpgkey} -o Release.gpg --digest-algo sha256 Release')
-    run(f'gpg --yes -abs -u {gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
-  
-    # apt has race conditions. https://blog.packagecloud.io/eng/2016/09/27/fixing-apt-hash-sum-mismatch-consistent-apt-repositories/
-    hash_type = None
-    run('rm -rf by-hash')
-    # parse the Release file to get the hashes and copy the Package files to their hashes
-    with open('Release') as f:
-      for line in f.readlines():
-        line = line.rstrip()
-        if line in [ 'MD5Sum:', 'SHA1:', 'SHA256:', 'SHA512:' ]:
-          hash_type = line.replace(':', '')
-        elif line.startswith(' '):
-          hsh, size, filename = line.strip().split()
-  
-          if filename == 'Release': # Release can't possibly contain it's own size and hash?!
-            continue
-  
-          # check size -- probably overkill
-          assert os.path.getsize(filename) == int(size), (filename, os.path.getsize(filename), int(size))
-  
-          # check hash -- probably overkill
-          with open(filename, 'rb') as f:
-            hasher = getattr(hashlib, hash_type.lower().replace('sum', ''))
-            should = hasher(f.read()).hexdigest()
-            assert hsh == should, (filename, hash_type, 'mismatch')
-  
-          # copy file
-          hash_dir = os.path.join('by-hash', hash_type)
-          os.makedirs(hash_dir, exist_ok=True)
-          run(f'cp {filename} {hash_dir}/{hsh}')
+def mkrepo():
+
+  # collects the Package metadata
+  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
+  awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
+  run(f'apt-ftparchive packages . | awk {shlex.quote(awkcheck)} > Packages')
+
+  run('rm -rf by-hash')
+  run('bzip2 -kf Packages')
+  run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=$CODENAME/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+  run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
+  run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
+
+  for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
+    run(f'mkdir -p by-hash/{hsh}')
+    for pkg in ['Packages', 'Packages.bz2']
+    run(f"cp {pkg} by-hash/MD5Sum/`{hsh.lower().replace('sum', '')}sum {pkg} | awk '{print $1}'`")

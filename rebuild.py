@@ -90,4 +90,5 @@ for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(C
     shutil.rmtree(unstage)
 
 if modified:
+  build.mkrepo()
   print(f'::set-output name=publish::true')

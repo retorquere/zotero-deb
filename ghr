@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 import shlex
 
+release = sys.argv[1]
+
 print('set -e')
 print('set -x')
 remote = set([asset['name'] for asset in json.load(sys.stdin)['assets']])
@@ -12,9 +14,9 @@ local = set([str(asset) for asset in Path(".").rglob("*") if os.path.isfile(asse
 
 # delete superfluous remotes
 for asset in remote - local:
-  print(f'gh release delete-asset {sys.argv[1]} {shlex.quote(asset)} -y')
+  print(f'gh release delete-asset {release} {shlex.quote(asset)} -y')
 
 remotedebs = set([r for r in remote if r.endswith('.deb')])
 # republish locals
 for add in sorted([shlex.quote(f'{asset}#{asset}') for asset in local - remotedebs]):
-  print(f'gh release upload {sys.argv[1]} {add} --clobber')
+  print(f'gh release upload {release} {add} --clobber')
