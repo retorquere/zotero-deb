@@ -81,23 +81,27 @@ jobs:
         EOF
 
     - name: refresh b2
-      if: ${{ steps.repo.outputs.publish }}
+      #if: ${{ steps.repo.outputs.publish }}
       run: |
         ./mkrepo.sh repo/master zotero-apt
-        rclone sync --progress zotero-apt b2-zotero-apt:zotero-apt
+        rclone sync zotero-apt b2-zotero-apt:zotero-apt
+        rclone cleanup b2-zotero-apt:zotero-apt
+
         ./mkrepo.sh repo/master apt-package-archive
-        rclone sync --progress zotero-apt b2-apt-package-archive:zotero-apt
+        rclone sync zotero-apt b2-apt-package-archive:b2-apt-package-archive
+        rclone cleanup b2-apt-package-archive:b2-apt-package-archive
 
     - name: refresh sourceforge
-      if: ${{ steps.repo.outputs.publish }}
+      #if: ${{ steps.repo.outputs.publish }}
       run: |
         ./mkrepo.sh repo/master zotero-deb
     - uses: nick-fields/retry@v2
+      #if: ${{ steps.repo.outputs.publish }}
       with:
         timeout_minutes: 10
         max_attempts: 3
         # because SF sync is garbage all around
-        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ./ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete zotero-deb/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
 
     - name: refresh github
       if: ${{ steps.repo.outputs.publish }}
