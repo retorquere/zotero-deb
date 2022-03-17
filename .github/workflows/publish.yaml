@@ -90,15 +90,12 @@ jobs:
         rclone cleanup b2-apt-package-archive:apt-package-archive
 
     - name: refresh sourceforge
-      #if: ${{ steps.repo.outputs.publish }}
-      run: |
-        ./mkrepo.sh repo/master zotero-deb
-    - uses: nick-fields/retry@v2
-      #if: ${{ steps.repo.outputs.publish }}
+      # because SF sync is garbage all around
+      uses: nick-fields/retry@v2
+      if: ${{ steps.repo.outputs.publish }}
       with:
         timeout_minutes: 10
         max_attempts: 3
-        # because SF sync is garbage all around
         command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete repo/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
 
     - name: refresh github
