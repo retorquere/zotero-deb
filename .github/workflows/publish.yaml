@@ -86,8 +86,8 @@ jobs:
         rclone sync repo b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
-        rclone sync repo b2-apt-package-archive:b2-apt-package-archive
-        rclone cleanup b2-apt-package-archive:b2-apt-package-archive
+        rclone sync repo b2-apt-package-archive:apt-package-archive
+        rclone cleanup b2-apt-package-archive:apt-package-archive
 
     - name: refresh sourceforge
       #if: ${{ steps.repo.outputs.publish }}
