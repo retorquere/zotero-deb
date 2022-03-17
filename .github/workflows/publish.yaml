@@ -83,6 +83,8 @@ jobs:
     - name: refresh b2
       if: ${{ steps.repo.outputs.publish }}
       run: |
+        find repo -type f
+
         rclone sync repo b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
@@ -105,7 +107,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        cd repo && gh release view apt-get --json assets | ../ghr repo | bash
+        cd repo && gh release view apt-get --json assets | ../ghr apt-get | bash
 
   test:
     runs-on: ubuntu-latest

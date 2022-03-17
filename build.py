@@ -128,7 +128,6 @@ def package(staged):
     run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
 def mkrepo():
-
   # collects the Package metadata
   # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
   awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
