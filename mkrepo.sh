@@ -16,8 +16,6 @@ cd $CODENAME
 rm -rf by-hash
 bzip2 -kf Packages
 apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=$CODENAME/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release
-gpg --export dpkg > zotero-archive-keyring.gpg
-gpg --armor --export dpkg > zotero-archive-keyring.asc
 gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release
 gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release
 

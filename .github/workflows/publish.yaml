@@ -62,7 +62,6 @@ jobs:
       run: ./rebuild.py master
 
     - name: configure rclone
-      env:
       run: |
         cat <<EOF > rclone.conf
         [b2-zotero-apt]
