@@ -128,18 +128,19 @@ def package(staged):
     run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
 def mkrepo():
-  # collects the Package metadata
-  # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
-  awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
-  run(f'apt-ftparchive packages . | awk {shlex.quote(awkcheck)} > Packages')
+  with chdir(Config.repo.build):
+    # collects the Package metadata
+    # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
+    awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
+    run(f'apt-ftparchive packages . | awk {shlex.quote(awkcheck)} > Packages')
 
-  run('rm -rf by-hash')
-  run('bzip2 -kf Packages')
-  run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=$CODENAME/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
-  run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
-  run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
+    run('rm -rf by-hash')
+    run('bzip2 -kf Packages')
+    run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=$CODENAME/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+    run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
+    run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
 
-  for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
-    run(f'mkdir -p by-hash/{hsh}')
-    for pkg in ['Packages', 'Packages.bz2']:
-      run(f'cp {pkg} by-hash/MD5Sum/`{hsh.lower().replace("sum", "")}sum {pkg} ' + " | awk '{print $1}'`")
+    for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
+      run(f'mkdir -p by-hash/{hsh}')
+      for pkg in ['Packages', 'Packages.bz2']:
+        run(f'cp {pkg} by-hash/MD5Sum/`{hsh.lower().replace("sum", "")}sum {pkg} ' + " | awk '{print $1}'`")

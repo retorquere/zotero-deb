@@ -59,7 +59,7 @@ jobs:
       id: repo
       env:
         PYTHONUNBUFFERED: true
-      run: ./rebuild.py
+      run: ./rebuild.py && find repo -type f
 
     - name: configure rclone
       run: |
@@ -83,8 +83,6 @@ jobs:
     - name: refresh b2
       if: ${{ steps.repo.outputs.publish }}
       run: |
-        find repo -type f
-
         rclone sync repo b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
