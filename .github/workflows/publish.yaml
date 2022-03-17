@@ -63,7 +63,8 @@ jobs:
 
     - name: configure rclone
       run: |
-        cat <<EOF > rclone.conf
+        mkdir -p ~/.config/rclone
+        cat <<EOF > ~/.config/rclone/rclone.conf
         [b2-zotero-apt]
         type = b2
         account = ${{ secrets.B2_APPLICATION_KEY_ID }}
