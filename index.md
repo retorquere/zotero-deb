@@ -78,14 +78,12 @@ esac
 Set up some basic information about the repo and your environment:
 
 ```
-BASEURL=%baseurl%
-CODENAME=.
 KEYNAME=zotero-archive-keyring.gpg
-GPGKEY=$BASEURL/$KEYNAME
+GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
 KEYRING=/usr/share/keyrings/$KEYNAME
 ```
 
-checks whether you have `curl` or `wget`, use that to download the public key used to verify the dignature, and save that in a separate keyring
+checks whether you have `curl` or `wget` and use that to download the public key for signature verification
 
 ```
 if [ -x "$(command -v curl)" ]; then
@@ -99,22 +97,21 @@ fi
 sudo chmod 644 $KEYRING
 ```
 
-Clean up a deprecated key if it exists
+remove old key with too broad reach if present
 
 ```
-# old key with too broad reach
 sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 ```
 
-set up the repo pointer
+install repo pointer
 
 ```
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] $BASEURL $CODENAME/
+deb [signed-by=$KEYRING by-hash=force] {sys.arv[1]} ./
 EOF
 ```
 
-and clean up old pointers
+clean up remnants from previous use of another mirror, if any
 
 ```
 sudo apt-get clean

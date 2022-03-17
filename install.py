@@ -1,3 +1,8 @@
+#!/usr/bin/env python3
+
+import sys
+
+print(f"""
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 
 case `uname -m` in
@@ -11,10 +16,8 @@ esac
 
 export GNUPGHOME="/dev/null"
 
-BASEURL={baseurl}
-CODENAME={codename}
 KEYNAME=zotero-archive-keyring.gpg
-GPGKEY=$BASEURL/$CODENAME/$KEYNAME
+GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
 KEYRING=/usr/share/keyrings/$KEYNAME
 if [ -x "$(command -v curl)" ]; then
   sudo curl -L $GPGKEY -o $KEYRING
@@ -30,7 +33,8 @@ sudo chmod 644 $KEYRING
 sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] $BASEURL $CODENAME/
+deb [signed-by=$KEYRING by-hash=force] {sys.argv[1]} ./
 EOF
 
 sudo apt-get clean
+""")

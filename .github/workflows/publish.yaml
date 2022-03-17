@@ -85,13 +85,21 @@ jobs:
       run: |
         rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
-        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=http://apt.retorque.re/zotero-apt index.md -o index.html
-        rclone copy index.html b2-zotero-apt:zotero-apt/index.html
+
+        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=https://apt.retorque.re/zotero-apt index.md -o index.html
+        ./install.py https://apt.retorque.re/zotero-apt > install.sh
+        for f in install.sh index.html; do
+          rclone copy $f b2-zotero-apt:zotero-apt/$f
+        done
 
         rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive
         rclone cleanup b2-apt-package-archive:apt-package-archive
-        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=http://zotero.retorque.re/apt-package-archive index.md -o index.html
-        rclone copy index.html b2-apt-package-archive:apt-package-archive/index.html
+
+        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=https://zotero.retorque.re/apt-package-archive index.md -o index.html
+        ./install.py https://zotero.retorque.re/apt-package-archive > install.sh
+        for f in install.sh index.html; do
+          rclone copy $f b2-apt-package-archive:apt-package-archive/$f
+        done
 
     - name: refresh sourceforge
       # because SF sync is garbage all around
