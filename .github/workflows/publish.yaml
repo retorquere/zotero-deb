@@ -86,7 +86,7 @@ jobs:
         rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
-        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=https://apt.retorque.re/zotero-apt index.md -o index.html
+        cat index.md | sed 's;%baseurl%;https://apt.retorque.re/zotero-apt;' | pandoc -f markdown - -o index.html
         ./install.py https://apt.retorque.re/zotero-apt > install.sh
         for f in install.sh index.html; do
           rclone copy $f b2-zotero-apt:zotero-apt/$f
@@ -95,7 +95,7 @@ jobs:
         rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive
         rclone cleanup b2-apt-package-archive:apt-package-archive
 
-        pandoc --lua-filter=meta-vars.lua --metadata=baseurl=https://zotero.retorque.re/apt-package-archive index.md -o index.html
+        cat index.md | sed 's;%baseurl%;https://zotero.retorque.re/apt-package-archive;' | pandoc -f markdown - -o index.html
         ./install.py https://zotero.retorque.re/apt-package-archive > install.sh
         for f in install.sh index.html; do
           rclone copy $f b2-apt-package-archive:apt-package-archive/$f
