@@ -25,7 +25,7 @@ import build
 request = Session()
 request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
 
-os.makedirs(Config.repo.path, exist_ok=True)
+os.makedirs(Config.repo.build, exist_ok=True)
 
 debs = []
 
@@ -59,11 +59,11 @@ debs += [
   for arch in [ 'i686', 'x86_64' ]
 ]
 
-debs = [ (os.path.join(Config.repo.path, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
+debs = [ (os.path.join(Config.repo.build, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 # fetch what we can so we don't have to rebuild
 
 allowed = set([deb for deb, url in debs])
-found = set(glob.glob(os.path.join(Config.repo.path, '*.deb')))
+found = set(glob.glob(os.path.join(Config.repo.build, '*.deb')))
 for deb in found - allowed:
   print('delete', deb)
   modified = True
