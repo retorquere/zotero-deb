@@ -143,4 +143,4 @@ def mkrepo():
   for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
     run(f'mkdir -p by-hash/{hsh}')
     for pkg in ['Packages', 'Packages.bz2']:
-      run(f"cp {pkg} by-hash/MD5Sum/`{hsh.lower().replace('sum', '')}sum {pkg} | awk '{print $1}'`")
+      run(f'cp {pkg} by-hash/MD5Sum/`{hsh.lower().replace("sum", "")}sum {pkg} | awk \'{print $1}\'`')
