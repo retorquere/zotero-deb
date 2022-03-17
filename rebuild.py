@@ -26,23 +26,6 @@ from b2 import Sync
 request = Session()
 request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
 
-parser = argparse.ArgumentParser()
-parser.add_argument('--no-fetch', dest='fetch', action='store_false', default=True)
-parser.add_argument('--no-send', dest='send', action='store_false', default=True)
-parser.add_argument('--sync', dest='sync', action='store_true', default=False)
-parser.add_argument('--clean', dest='clean', action='store_true', default=False)
-parser.add_argument('--no-build', dest='build', action='store_false', default=True)
-parser.add_argument('--mirror', action='store_true')
-parser.add_argument('--clear', action='store_true')
-args = parser.parse_args()
-
-assert not args.clear or not args.mirror, 'cannot clear for mirror'
-## might have to rebuild for beta's on SF and GH
-# config.beta = '~' if args.host == 'b2' else '+'
-
-## clear for a full rebuild
-if args.clear and os.path.exists(Config.repo.path):
-  shutil.rmtree(Config.repo.path)
 os.makedirs(Config.repo.path, exist_ok=True)
 
 debs = []
@@ -79,16 +62,6 @@ debs += [
 
 debs = [ (os.path.join(Config.repo.path, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 # fetch what we can so we don't have to rebuild
-b2sync = Sync()
-
-modified = set([deb for deb in b2sync.remote if deb.endswith('.deb')]) != set([deb for deb, url in debs])
-modified = modified or 'Packages' not in b2sync.remote
-if not args.sync and not modified:
-  print('nothing to do')
-  sys.exit()
-
-print('Rehydrate')
-b2sync.fetch()
 
 allowed = set([deb for deb, url in debs])
 found = set(glob.glob(os.path.join(Config.repo.path, '*.deb')))
@@ -111,32 +84,11 @@ for deb, url in debs:
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
   build.package(staged)
-if args.clean:
-  for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
-    if unstage not in Config.repo.staged:
-      print('unstaged', unstage)
-      shutil.rmtree(unstage)
 
-if not args.sync and not modified:
-  print('again nothing to do')
-  sys.exit()
+for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
+  if unstage not in Config.repo.staged:
+    print('unstaged', unstage)
+    shutil.rmtree(unstage)
 
-if args.build or modified:
-  build.rebuild()
-
-with open('install.sh') as src, open(os.path.join(Config.repo.path, 'install.sh'), 'w') as tgt:
-  tgt.write(src.read().format(baseurl=Config.repo.url.replace(f'/{Config.repo.bucket}', ''), codename=Config.repo.bucket))
-with open('uninstall.sh') as src, open(os.path.join(Config.repo.path, 'uninstall.sh'), 'w') as tgt:
-  tgt.write(src.read())
-
-files = [f for f in os.listdir(Config.repo.path) if os.path.isfile(os.path.join(Config.repo.path, f))]
-with open('index.html') as src, open(os.path.join(Config.repo.path, 'index.html'), 'w') as tgt:
-  tgt.write(src.read().format(site=Config.repo.url))
-  print('\n<ul>', file=tgt)
-  for f in sorted(files):
-    print('<li><a href="' + f + '">', html.escape(f), '</a></li>', file=tgt)
-  print('</ul>', file=tgt)
-
-if args.send or args.force_send:
-  b2sync.update()
-print(f'::set-output name=bucket::{Config.repo.bucket}')
+if modified:
+  print(f'::set-output name=publish::true')
