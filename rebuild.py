@@ -20,7 +20,6 @@ import html
 
 from util import run, Config
 import build
-from b2 import Sync
 
 ## set UA for web requests
 request = Session()
