@@ -19,13 +19,13 @@ import shlex
 import html
 
 from util import run, Config
-import build
+import apt
 
 ## set UA for web requests
 request = Session()
 request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
 
-os.makedirs(Config.repo.build, exist_ok=True)
+os.makedirs(Config.apt, exist_ok=True)
 
 debs = []
 
@@ -59,36 +59,36 @@ debs += [
   for arch in [ 'i686', 'x86_64' ]
 ]
 
-debs = [ (os.path.join(Config.repo.build, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
+debs = [ (os.path.join(Config.apt, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 # fetch what we can so we don't have to rebuild
 
 allowed = set([deb for deb, url in debs])
-found = set(glob.glob(os.path.join(Config.repo.build, '*.deb')))
+found = set(glob.glob(os.path.join(Config.apt, '*.deb')))
 for deb in found - allowed:
   print('delete', deb)
   modified = True
   os.remove(deb)
 
-Config.repo.staged = []
+Config.staged = []
 for deb, url in debs:
   if os.path.exists(deb):
     continue
   print('## building', deb)
   modified = True
-  staged = os.path.join(Config.repo.staging, Path(deb).stem)
+  staged = os.path.join(Config.staging, Path(deb).stem)
   # remove trailing slash from staged directories since it messes with basename
-  Config.repo.staged.append(re.sub(r'/$', '', staged))
+  Config.staged.append(re.sub(r'/$', '', staged))
   print('staging', staged)
   if not os.path.exists(staged):
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
-  build.package(staged)
+  apt.package(staged)
 
-for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.repo.staging, '*'))]:
-  if unstage not in Config.repo.staged:
+for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.staging, '*'))]:
+  if unstage not in Config.staged:
     print('unstaged', unstage)
     shutil.rmtree(unstage)
 
 if modified:
-  build.mkrepo()
-  print(f'::set-output name=publish::true')
+  apt.mkrepo()
+  print(f'::set-output name=apt::{Config.apt}')

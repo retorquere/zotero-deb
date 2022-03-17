@@ -46,7 +46,7 @@ jobs:
         cache-name: v3
       with:
         path: |
-          ./repo
+          ./apt
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py') }}
 
     - name: Install SSH Key
@@ -81,31 +81,31 @@ jobs:
         EOF
 
     - name: refresh b2
-      if: ${{ steps.repo.outputs.publish }}
+      if: ${{ steps.repo.outputs.apt }}
       run: |
-        rclone sync repo b2-zotero-apt:zotero-apt
+        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
-        rclone sync repo b2-apt-package-archive:apt-package-archive
+        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive
         rclone cleanup b2-apt-package-archive:apt-package-archive
 
     - name: refresh sourceforge
       # because SF sync is garbage all around
       uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.publish }}
+      if: ${{ steps.repo.outputs.apt }}
       with:
         timeout_minutes: 10
         max_attempts: 3
-        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete repo/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
 
     - name: refresh github
-      if: ${{ steps.repo.outputs.publish }}
+      if: ${{ steps.repo.outputs.apt }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        cd repo && gh release view apt-get --json assets | ../ghr apt-get | bash
+        cd ${{ steps.repo.outputs.apt }} && gh release view apt-get --json assets | ../ghr apt-get | bash
 
   test:
     runs-on: ubuntu-latest

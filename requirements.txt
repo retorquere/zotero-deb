@@ -8,4 +8,4 @@ requests
 ruamel.yaml
 python-magic
 munch
-tenacity
+lsb_release_ex

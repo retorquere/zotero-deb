@@ -17,6 +17,5 @@ jurism:
     - libreoffice-java-common
   bump:
     5.0.93m18: 3
-repo:
-  build: repo
-  staging: staging
+staging: staging
+apt: apt
