@@ -104,7 +104,7 @@ jobs:
         cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
         ./install.py https://apt.retorque.re/file/zotero-apt > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-zotero-apt:zotero-apt/$f -v
+          rclone copy $f b2-zotero-apt:zotero-apt -v
         done
 
         rclone sync $DEBS b2-apt-package-archive:apt-package-archive -v
@@ -114,7 +114,7 @@ jobs:
         cat README.md | pandoc -f markdown - -o index.html
         ./install.py https://zotero.retorque.re/file/apt-package-archive > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-apt-package-archive:apt-package-archive/$f -v
+          rclone copy $f b2-apt-package-archive:apt-package-archive -v
         done
 
     - name: refresh sourceforge
