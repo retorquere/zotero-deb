@@ -107,8 +107,8 @@ jobs:
       if: ${{ steps.repo.outputs.apt }}
       with:
         timeout_minutes: 10
-        max_attempts: 3
-        command: rsync --progress -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/ && scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
+        max_attempts: 10
+        command: rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/ && scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
 
     - name: refresh github
       if: ${{ steps.repo.outputs.apt }}
