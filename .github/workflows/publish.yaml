@@ -6,10 +6,14 @@ on:
   push:
   workflow_dispatch:
     inputs:
-      rebuildOption:
-        description: rebuild options
+      build:
+        description: forced rebuild
         required: false
-        default: '--force'
+        default: 'false'
+      publish:
+        description: forced publish
+        required: false
+        default: 'false'
 
 jobs:
   refresh:
@@ -47,7 +51,11 @@ jobs:
       with:
         path: |
           ./apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'build.py') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+
+    - name: force rebuild
+      if: ${{ github.event.inputs.build }}
+      run: rm -rf apt
 
     - name: Install SSH Key
       uses: shimataro/ssh-key-action@v2
@@ -81,7 +89,7 @@ jobs:
         EOF
 
     - name: refresh b2
-      if: ${{ steps.repo.outputs.apt }}
+      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish }}
       run: |
         rclone sync --log-level INFO ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt
         rclone cleanup --log-level INFO b2-zotero-apt:zotero-apt
@@ -104,7 +112,7 @@ jobs:
     - name: refresh sourceforge
       # because SF sync is garbage all around
       uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.apt }}
+      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish }}
       with:
         timeout_minutes: 10
         max_attempts: 10
@@ -114,7 +122,7 @@ jobs:
           scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
 
     - name: refresh github
-      if: ${{ steps.repo.outputs.apt }}
+      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}

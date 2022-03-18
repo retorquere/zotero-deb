@@ -62,6 +62,7 @@ debs += [
 debs = [ (os.path.join(Config.apt, f'{client}_{version}_{arch}.deb'), url) for client, version, arch, url in debs ]
 # fetch what we can so we don't have to rebuild
 
+modified = false
 allowed = set([deb for deb, url in debs])
 found = set(glob.glob(os.path.join(Config.apt, '*.deb')))
 for deb in found - allowed:
