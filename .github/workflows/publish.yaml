@@ -69,6 +69,11 @@ jobs:
         PYTHONUNBUFFERED: true
       run: ./rebuild.py && find apt -type f
 
+    - name: show status
+      run: |
+        echo apt=${{ steps.repo.outputs.apt }}
+        echo publish=${{ github.event.inputs.publish }}
+
     - name: configure rclone
       run: |
         mkdir -p ~/.config/rclone
@@ -91,23 +96,23 @@ jobs:
     - name: refresh b2
       if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish == 'true' }}
       run: |
-        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt -v
-        rclone cleanup b2-zotero-apt:zotero-apt -v
+        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt -v -u
+        rclone cleanup b2-zotero-apt:zotero-apt -v -u
 
         cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
         ./install.py https://apt.retorque.re/zotero-apt > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-zotero-apt:zotero-apt/$f -v
+          rclone copy $f b2-zotero-apt:zotero-apt/$f -v -u
         done
 
-        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive -v
-        rclone cleanup b2-apt-package-archive:apt-package-archive -v
+        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive -v -u
+        rclone cleanup b2-apt-package-archive:apt-package-archive -v -u
 
         # no need to replace the site because this matches the default
         cat README.md | pandoc -f markdown - -o index.html
         ./install.py https://zotero.retorque.re/apt-package-archive > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-apt-package-archive:apt-package-archive/$f -v
+          rclone copy $f b2-apt-package-archive:apt-package-archive/$f -v -u
         done
 
     - name: refresh sourceforge
