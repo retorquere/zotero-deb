@@ -2,16 +2,16 @@
 
 **PSA**
 
-I'm in the process of transferring the hosting of these packages to the Zotero organisation. Until that is done, the following options are available:
+I was in the process of transferring the hosting of these packages to the Zotero organisation. That may or may not yet happen, but right now, the following options are available. If you are getting errors, **please re-run install.sh or see the instructions below to re-install manually**. I have had to restructure the repos. I apologize, but it was a necessary simplification. Simply re-running the install is all that is required.
 
-* download from B2:
+* Primary repo, very much the preferred option:
   * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
-* download from this repo
+* this github project
   * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`
-  * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround.
-* download from sourceforge
+  * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround. You will sometimes get errors that will say "mirror sync in progress?". If you do, wait and retry.
+* sourceforge. please pick another option even if you are using it now. sourceforge is bizarrely unreliable and I'm sorry I ever got this into the mix. But if you must
   * (re) install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
-  * **caveat**: sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down. If you get errors, try again in a few hours.
+  * **caveat**: sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down. If you get errors, try again in a few hours. Or better yet, pick the first option.
 
 ----
 

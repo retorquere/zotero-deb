@@ -151,7 +151,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, github, backblaze]
+        hosting:
+        - backblaze
+        - github
+        - sourceforge
     steps:
     - name: install apt fixes
       if: matrix.hosting == 'github'
