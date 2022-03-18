@@ -96,23 +96,23 @@ jobs:
     - name: refresh b2
       if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish == 'true' }}
       run: |
-        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt -v -u
-        rclone cleanup b2-zotero-apt:zotero-apt -v -u
+        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt -v
+        rclone cleanup b2-zotero-apt:zotero-apt -v
 
         cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
         ./install.py https://apt.retorque.re/zotero-apt > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-zotero-apt:zotero-apt/$f -v -u
+          rclone copy $f b2-zotero-apt:zotero-apt/$f -v
         done
 
-        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive -v -u
-        rclone cleanup b2-apt-package-archive:apt-package-archive -v -u
+        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive -v
+        rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
         # no need to replace the site because this matches the default
         cat README.md | pandoc -f markdown - -o index.html
         ./install.py https://zotero.retorque.re/apt-package-archive > install.sh
         for f in install.sh index.html; do
-          rclone copy $f b2-apt-package-archive:apt-package-archive/$f -v -u
+          rclone copy $f b2-apt-package-archive:apt-package-archive/$f -v
         done
 
     - name: refresh sourceforge
