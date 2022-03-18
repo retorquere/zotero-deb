@@ -2,7 +2,7 @@
 
 **PSA**
 
-I'm in the process of transferring the hosting of these packages to the Zoero organisation. Until that is done, the following options are available:
+I'm in the process of transferring the hosting of these packages to the Zotero organisation. Until that is done, the following options are available:
 
 * download from B2:
   * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
