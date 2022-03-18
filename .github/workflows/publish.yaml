@@ -126,8 +126,12 @@ jobs:
         max_attempts: 10
         command: |
           rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+
           cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://downloads.sourceforge.net/project/zotero-deb") }; print }' > sourceforge.md
           scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
+
+          ./install.py https://downloads.sourceforge.net/project/zotero-deb > install.sh
+          scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
 
     - name: refresh github
       if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
