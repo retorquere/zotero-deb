@@ -158,25 +158,15 @@ jobs:
       run: |
         case "${{ matrix.hosting }}" in
           sourceforge)
-            export BASEURL=https://downloads.sourceforge.net/project
-            export CODENAME=zotero-deb
+            curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
             ;;
           b2)
-            export BASEURL=https://zotero.retorque.re/file
-            export CODENAME=apt-package-archive
+            curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
             ;;
           github)
-            export BASEURL=https://github.com/retorquere/zotero-deb/releases/download
-            export CODENAME=apt-get
+            curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
             ;;
         esac
-        export KEYRING=/usr/share/keyrings/zotero-archive-keyring.gpg
-        curl -qL $BASEURL/zotero-archive-keyring.gpg | sudo tee $KEYRING
-        sudo chmod 644 $KEYRING
-
-        cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-        deb [signed-by=$KEYRING by-hash=force] $BASEURL $CODENAME/
-        EOF
 
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
