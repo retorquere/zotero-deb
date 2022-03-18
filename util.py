@@ -36,7 +36,7 @@ def bumped(client, version):
 ## load config
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
-  Config.apt = os.path.abspath(Config.apt)
+  Config.apt = os.path.abspath(os.environ['DEBS'])
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)
   Config.jurism.bumped = lambda version: bumped('jurism', version)

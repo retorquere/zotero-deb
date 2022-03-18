@@ -17,6 +17,8 @@ on:
 
 jobs:
   refresh:
+    env:
+      DEBS: apt
     runs-on: ubuntu-latest
     steps:
     - name: Cancel Previous Runs
@@ -71,7 +73,7 @@ jobs:
 
     - name: show status
       run: |
-        echo apt=${{ steps.repo.outputs.apt }}
+        echo apt=${{ steps.repo.outputs.debs }}
         echo publish=${{ github.event.inputs.publish }}
 
     - name: configure rclone
@@ -94,9 +96,9 @@ jobs:
         EOF
 
     - name: refresh b2
-      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       run: |
-        rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt -v
+        rclone sync $DEBS b2-zotero-apt:zotero-apt -v
         rclone cleanup b2-zotero-apt:zotero-apt -v
 
         cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
@@ -105,7 +107,7 @@ jobs:
           rclone copy $f b2-zotero-apt:zotero-apt/$f -v
         done
 
-        rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive -v
+        rclone sync $DEBS b2-apt-package-archive:apt-package-archive -v
         rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
         # no need to replace the site because this matches the default
@@ -118,23 +120,23 @@ jobs:
     - name: refresh sourceforge
       # because SF sync is garbage all around
       uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       with:
         timeout_minutes: 10
         max_attempts: 10
         command: |
-          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
           cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://downloads.sourceforge.net/project/zotero-deb") }; print }' > sourceforge.md
           scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
 
     - name: refresh github
-      if: ${{ steps.repo.outputs.apt }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        cd ${{ steps.repo.outputs.apt }} && gh release view apt-get --json assets | ../ghr apt-get | bash
+        cd $DEBS && gh release view apt-get --json assets | ../ghr apt-get | bash
 
   test:
     runs-on: ubuntu-latest

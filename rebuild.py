@@ -91,4 +91,4 @@ for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(C
 
 if modified:
   apt.mkrepo()
-  print(f'::set-output name=apt::{Config.apt}')
+  print(f'::set-output name=debs::true')

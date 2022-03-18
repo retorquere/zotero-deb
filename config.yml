@@ -18,4 +18,3 @@ jurism:
   bump:
     5.0.93m18: 3
 staging: staging
-apt: apt
