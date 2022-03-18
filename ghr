@@ -16,7 +16,6 @@ local = set([str(asset) for asset in Path(".").rglob("*") if os.path.isfile(asse
 for asset in remote - local:
   print(f'gh release delete-asset {release} {shlex.quote(asset)} -y')
 
-remotedebs = set([r for r in remote if r.endswith('.deb')])
-# republish locals
-for add in sorted([shlex.quote(f'{asset}#{asset}') for asset in local - remotedebs]):
+# republish locals. Clobber everything, because I'm getting size mismatches?
+for add in sorted([shlex.quote(f'{asset}#{asset}') for asset in local]):
   print(f'gh release upload {release} {add} --clobber')

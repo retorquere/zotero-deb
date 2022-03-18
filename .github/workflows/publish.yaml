@@ -95,7 +95,7 @@ jobs:
         download_url = https://zotero.retorque.re/file/apt-package-archive
         EOF
 
-    - name: refresh b2
+    - name: refresh backblaze
       if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       run: |
         rclone sync $DEBS b2-zotero-apt:zotero-apt -v
@@ -151,7 +151,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        hosting: [sourceforge, github, b2]
+        hosting: [sourceforge, github, backblaze]
     steps:
     - name: install apt fixes
       if: matrix.hosting == 'github'
@@ -162,12 +162,13 @@ jobs:
         sudo apt-get -qy install apt
 
     - name: test install ${{ matrix.hosting }}
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
       run: |
         case "${{ matrix.hosting }}" in
           sourceforge)
             curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
             ;;
-          b2)
+          backblaze)
             curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
             ;;
           github)
