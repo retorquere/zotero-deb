@@ -169,7 +169,7 @@ jobs:
             ;;
         esac
         export KEYRING=/usr/share/keyrings/zotero-archive-keyring.gpg
-        curl -LO $BASEURL/zotero-archive-keyring.gpg | sudo tee $KEYRING
+        curl -qL $BASEURL/zotero-archive-keyring.gpg | sudo tee $KEYRING
         sudo chmod 644 $KEYRING
 
         cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
