@@ -2,7 +2,26 @@
 
 import sys
 
-print(f"""
+url = sys.argv[1]
+
+baseurl = 'https://zotero.retorque.re/file/apt-package-archive'
+from util import run
+
+with open('README.md') as f:
+  lines = f.readlines()
+  readme = ''
+  replace = False
+  for line in lines:
+    replace = replace or line.startswith('----')
+    if replace:
+      line = line.replace(baseurl, url)
+    readme += line
+with open('index.md', 'w') as f:
+  f.write(readme)
+run('pandoc index.md -o index.html')
+
+with open('install.sh', 'w') as f:
+  f.write(f"""
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 
 case `uname -m` in
@@ -33,7 +52,7 @@ sudo chmod 644 $KEYRING
 sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] {sys.argv[1]} ./
+deb [signed-by=$KEYRING by-hash=force] {url} ./
 EOF
 
 sudo apt-get clean

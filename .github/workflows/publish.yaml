@@ -101,8 +101,7 @@ jobs:
         rclone sync $DEBS b2-zotero-apt:zotero-apt -v
         rclone cleanup b2-zotero-apt:zotero-apt -v
 
-        cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
-        ./install.py https://apt.retorque.re/file/zotero-apt > install.sh
+        ./setup.py https://apt.retorque.re/file/zotero-apt
         for f in install.sh index.html; do
           rclone copy $f b2-zotero-apt:zotero-apt -v
         done
@@ -111,8 +110,7 @@ jobs:
         rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
         # no need to replace the site because this matches the default
-        cat README.md | pandoc -f markdown - -o index.html
-        ./install.py https://zotero.retorque.re/file/apt-package-archive > install.sh
+        ./setup.py https://zotero.retorque.re/file/apt-package-archive
         for f in install.sh index.html; do
           rclone copy $f b2-apt-package-archive:apt-package-archive -v
         done
@@ -127,10 +125,8 @@ jobs:
         command: |
           rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
 
-          cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://downloads.sourceforge.net/project/zotero-deb") }; print }' > sourceforge.md
-          scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
-
-          ./install.py https://downloads.sourceforge.net/project/zotero-deb > install.sh
+          ./setup.py https://downloads.sourceforge.net/project/zotero-deb
+          scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
           scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
 
     - name: refresh github
