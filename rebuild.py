@@ -66,7 +66,7 @@ modified = False
 allowed = set([deb for deb, url in debs])
 found = set(glob.glob(os.path.join(Config.apt, '*.deb')))
 for deb in found - allowed:
-  print('delete', deb)
+  print('rebuild: delete', deb)
   modified = True
   os.remove(deb)
 
@@ -74,12 +74,11 @@ Config.staged = []
 for deb, url in debs:
   if os.path.exists(deb):
     continue
-  print('## building', deb)
+  print('rebuild: packaging', deb)
   modified = True
   staged = os.path.join(Config.staging, Path(deb).stem)
   # remove trailing slash from staged directories since it messes with basename
   Config.staged.append(re.sub(r'/$', '', staged))
-  print('staging', staged)
   if not os.path.exists(staged):
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
