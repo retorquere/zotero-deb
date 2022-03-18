@@ -147,11 +147,6 @@ jobs:
         sudo apt-get -qy install apt
 
     - name: test install ${{ matrix.hosting }}
-      env:
-        PYTHONUNBUFFERED: true
-        SFPROJECT: zotero-deb
-        GHRELEASE: apt-get
-        B2BUCKET: apt-package-archive
       run: |
         case "${{ matrix.hosting }}" in
           sourceforge)
@@ -168,7 +163,7 @@ jobs:
             ;;
         esac
         export KEYRING=/usr/share/keyrings/zotero-archive-keyring.gpg
-        curl -L $BASEURL/$CODENAME/zotero-archive-keyring.gpg -o $KEYRING
+        curl -LO $BASEURL/zotero-archive-keyring.gpg | sudo tee $KEYRING
         sudo chmod 644 $KEYRING
 
         cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
