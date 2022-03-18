@@ -141,6 +141,9 @@ jobs:
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
         cd $DEBS && gh release view apt-get --json assets | ../ghr apt-get | bash
+        gh releaset 
+        ./install.py https://github.com/retorquere/zotero-deb/releases/download/apt-get > install.sh
+        gh release upload apt-get install.sh --clobber
 
   test:
     runs-on: ubuntu-latest
