@@ -129,19 +129,19 @@ jobs:
           scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
           scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
 
-    - name: refresh mwt
-      # because SF sync is garbage all around
-      uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
-      with:
-        timeout_minutes: 10
-        max_attempts: 10
-        command: |
-          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
-
-          ./setup.py https://mirror-rs.mwt.me
-          scp index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/index.html
-          scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
+#    - name: refresh mwt
+#      # because SF sync is garbage all around
+#      uses: nick-fields/retry@v2
+#      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+#      with:
+#        timeout_minutes: 10
+#        max_attempts: 10
+#        command: |
+#          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
+#
+#          ./setup.py https://mirror-rs.mwt.me
+#          scp index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/index.html
+#          scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
 
     - name: refresh github
       if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
@@ -163,7 +163,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        - mwt
+        #- mwt
         - github
         - sourceforge
     steps:
