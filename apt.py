@@ -136,7 +136,7 @@ def mkrepo():
 
     run('rm -rf by-hash')
     run('bzip2 -kf Packages')
-    run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=$CODENAME/ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
+    run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=./ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
     run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
     run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
 
