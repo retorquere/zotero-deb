@@ -86,7 +86,7 @@ jobs:
         rclone sync ${{ steps.repo.outputs.apt }} b2-zotero-apt:zotero-apt
         rclone cleanup b2-zotero-apt:zotero-apt
 
-        cat index.md | sed 's;%baseurl%;https://apt.retorque.re/zotero-apt;' | pandoc -f markdown - -o index.html
+        cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://apt.retorque.re/zotero-apt") }; print }' | pandoc -f markdown - -o index.html
         ./install.py https://apt.retorque.re/zotero-apt > install.sh
         for f in install.sh index.html; do
           rclone copy $f b2-zotero-apt:zotero-apt/$f
@@ -95,7 +95,7 @@ jobs:
         rclone sync ${{ steps.repo.outputs.apt }} b2-apt-package-archive:apt-package-archive
         rclone cleanup b2-apt-package-archive:apt-package-archive
 
-        cat index.md | sed 's;%baseurl%;https://zotero.retorque.re/apt-package-archive;' | pandoc -f markdown - -o index.html
+        cat README.md | pandoc -f markdown - -o index.html
         ./install.py https://zotero.retorque.re/apt-package-archive > install.sh
         for f in install.sh index.html; do
           rclone copy $f b2-apt-package-archive:apt-package-archive/$f
@@ -108,7 +108,11 @@ jobs:
       with:
         timeout_minutes: 10
         max_attempts: 10
-        command: rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/ && scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
+        command: |
+          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete ${{ steps.repo.outputs.apt }}/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+          cat index.md | sed 's;%baseurl%;https://downloads.sourceforge.net/project/zotero-deb;'
+          cat README.md | awk '{ if ($0 ~ /^---/) { replace = 1 }; if (replace) { sub("https://zotero.retorque.re/file/apt-package-archive", "https://downloads.sourceforge.net/project/zotero-deb") }; print }' > sourceforge.md
+          scp sourceforge.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
 
     - name: refresh github
       if: ${{ steps.repo.outputs.apt }}

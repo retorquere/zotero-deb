@@ -5,7 +5,7 @@
 I'm in the process of transferring the hosting of these packages to the Zoero organisation. Until that is done, the following options are available:
 
 * download from B2:
-  * (re)install using `curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash`
+  * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
 * download from this repo
   * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`
   * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround.
@@ -34,7 +34,7 @@ They manage both desktop file registration and MimeType registration.
 To install Zotero, use the following commands:
 
 ```
-wget -qO- https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
 sudo apt update
 sudo apt install zotero
 ```
@@ -44,7 +44,7 @@ sudo apt install zotero
 To install Juris-M, use the following commands:
 
 ```
-wget -qO- https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
 sudo apt update
 sudo apt install jurism
 ```
@@ -53,7 +53,7 @@ sudo apt install jurism
 
 You can use `curl` instead of `wget` by typing
 ```
-curl -sL https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
 ```
 
 ## Updating Zotero / Juris-M
@@ -80,7 +80,7 @@ This repo also has the nightly beta's, installable as the `zotero-beta` and `jur
 The accepted key format in Debian-based systems seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
 
 ```
-wget -qO- https://apt.retorque.re/file/zotero-apt/install.sh | sudo bash
+wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
 ```
 
 ## Instructions for installation on Crostini-capable Chromebooks
@@ -90,8 +90,67 @@ Instructions for installation on Crostini-capable Chromebooks can be found on th
 ## Uninstall
 
 ```
-wget -qO- https://apt.retorque.re/file/zotero-apt/uninstall.sh | sudo bash
+wget -qO- https://zotero.retorque.re/file/apt-package-archive/uninstall.sh | sudo bash
 sudo apt-get purge zotero
+```
+
+## What goes on under the hood in `install.sh`
+
+The install.sh is convenient, but there's a risk to running random scripts from the internet as root. What the script does, and what you could manually do yourself, is:
+
+Check whether you are installing on a supported architecture:
+
+```
+case `uname -m` in
+  "i386" | "i686" | "x86_64")
+    ;;
+  *)
+    echo "Zotero is only available for architectures i686 and x86_64"
+    exit
+    ;;
+esac
+```
+
+Set up some basic information about the repo and your environment:
+
+```
+KEYNAME=zotero-archive-keyring.gpg
+GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
+KEYRING=/usr/share/keyrings/$KEYNAME
+```
+
+checks whether you have `curl` or `wget` and use that to download the public key for signature verification
+
+```
+if [ -x "$(command -v curl)" ]; then
+  sudo curl -L $GPGKEY -o $KEYRING
+elif [ -x "$(command -v wget)" ]; then
+  sudo wget -O $KEYRING $GPGKEY
+else
+  echo "Error: need wget or curl installed." >&2
+  exit 1
+fi
+sudo chmod 644 $KEYRING
+```
+
+remove old key with too broad reach if present
+
+```
+sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
+```
+
+install repo pointer
+
+```
+cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
+deb [signed-by=$KEYRING by-hash=force] https://zotero.retorque.re/file/apt-package-archive ./
+EOF
+```
+
+clean up remnants from previous use of another mirror, if any
+
+```
+sudo apt-get clean
 ```
 
 # Developers
@@ -99,4 +158,5 @@ sudo apt-get purge zotero
 To rebuild this repo you need:
 
 * a deb-based system (I use Ubuntu)
-* Python 3.9
+* Python 3.10
+
