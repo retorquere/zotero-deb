@@ -16,3 +16,6 @@ zotero
 *.key
 *.swp
 *.tar.bz2
+index.md
+index.html
+install.sh

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
-import sys
+import sys, os
 from util import run
+from pathlib import Path
 
 baseurl = 'https://zotero.retorque.re/file/apt-package-archive'
 url = sys.argv[1]
@@ -15,6 +16,15 @@ with open('README.md') as f:
     if replace:
       line = line.replace(baseurl, url)
     readme += line
+
+repo = Path(os.environ['REPO'])
+readme += '\n---\n\n'
+for asset in sorted(repo.rglob('*'), key=lambda f: str(f)):
+  if asset.is_file():
+    asset = str(asset.relative_to(repo))
+    assetname = asset.replace('_', '\\_')
+    readme += f'* [{assetname}]({url}/{asset})\n'
+
 with open('index.md', 'w') as f:
   f.write(readme)
 run('pandoc index.md -s --css pandoc.css -o index.html')
