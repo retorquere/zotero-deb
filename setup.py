@@ -18,7 +18,7 @@ with open('README.md') as f:
     readme += line
 with open('index.md', 'w') as f:
   f.write(readme)
-run('pandoc index.md --css pandoc.css -o index.html')
+run('pandoc index.md -s --css pandoc.css -o index.html')
 
 with open('install.sh', 'w') as f:
   f.write(f"""
