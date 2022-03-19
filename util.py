@@ -38,7 +38,7 @@ def bumped(client, version):
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
   Config.mode = sys.argv[1]
-  assert Config.mode in ['apt'], MODE
+  assert Config.mode in ['apt'], Config.mode
   Config.repo = os.path.abspath(os.environ['REPO'])
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)
