@@ -1,5 +1,5 @@
 import subprocess
-import os
+import os, sys
 from colorama import Fore, Style
 import json
 from munch import Munch
@@ -8,6 +8,7 @@ import configparser
 
 from ruamel.yaml import YAML
 yaml=YAML(typ='safe')
+
 
 ## change directory and back
 class chdir():
@@ -36,7 +37,9 @@ def bumped(client, version):
 ## load config
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
-  Config.apt = os.path.abspath(os.environ['DEBS'])
+  Config.mode = sys.argv[1]
+  assert Config.mode in ['apt'], MODE
+  Config.repo = os.path.abspath(os.environ['REPO'])
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)
   Config.jurism.bumped = lambda version: bumped('jurism', version)

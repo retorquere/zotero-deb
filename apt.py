@@ -15,6 +15,9 @@ import hashlib
 
 from util import Config, run, Open, IniFile, chdir
 
+def packagename(client, version, arch):
+  return f'{client}_{version}_{arch}.deb')
+
 def package(staged):
   assert os.path.isdir(staged)
 

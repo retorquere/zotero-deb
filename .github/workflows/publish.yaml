@@ -22,7 +22,7 @@ on:
 jobs:
   refresh:
     env:
-      DEBS: apt
+      REPO: apt
     runs-on: ubuntu-latest
     steps:
     - name: Cancel Previous Runs
@@ -73,12 +73,12 @@ jobs:
       id: repo
       env:
         PYTHONUNBUFFERED: true
-      run: ./rebuild.py && find apt -type f
+      run: ./rebuild.py apt && find apt -type f
 
     - name: show status
       run: |
-        echo apt=${{ steps.repo.outputs.debs }}
-        echo publish=${{ github.event.inputs.publish }}
+        echo force-publish=${{ github.event.inputs.publish }}
+        echo build-publish=${{ steps.repo.outputs.publish }}
 
     - name: configure rclone
       run: |
@@ -100,15 +100,15 @@ jobs:
         EOF
 
     - name: refresh backblaze
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       run: |
-        rclone sync $DEBS b2-zotero-apt:zotero-apt -v
+        rclone sync $REPO b2-zotero-apt:zotero-apt -v
         rclone cleanup b2-zotero-apt:zotero-apt -v
 
-        rclone sync $DEBS b2-apt-package-archive:apt-package-archive -v
+        rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
         rclone cleanup b2-apt-package-archive:apt-package-archive -v
     - name: refresh backblaze webpage
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
       env:
         PYTHONUNBUFFERED: true
       run: |
@@ -126,14 +126,14 @@ jobs:
     - name: refresh sourceforge
       # because SF sync is garbage all around
       uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       with:
         timeout_minutes: 10
         max_attempts: 10
         command: |
-          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
     - name: refresh sourceforge webpage
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
       env:
         PYTHONUNBUFFERED: true
       run: |
@@ -144,27 +144,27 @@ jobs:
 #    - name: refresh mwt
 #      # because SF sync is garbage all around
 #      uses: nick-fields/retry@v2
-#      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
 #      with:
 #        timeout_minutes: 10
 #        max_attempts: 10
 #        command: |
-#          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
+#          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
 #
 #          ./setup.py https://mirror-rs.mwt.me
 #          scp index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/index.html
 #          scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
 
     - name: refresh github
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        (cd $DEBS && gh release view apt-get --json assets | ../ghr apt-get | bash)
+        (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
     - name: refresh sourceforge webpage
-      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
