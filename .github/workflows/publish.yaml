@@ -73,7 +73,7 @@ jobs:
       id: repo
       env:
         PYTHONUNBUFFERED: true
-      run: ./rebuild.py apt && find apt -type f
+      run: ./rebuild.py --mode apt && find apt -type f
 
     - name: show status
       run: |

@@ -9,6 +9,12 @@ import configparser
 from ruamel.yaml import YAML
 yaml=YAML(typ='safe')
 
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--mode')
+args, unknownargs = parser.parse_known_args()
+sys.argv = sys.argv[:1]
+sys.argv += unknownargs
 
 ## change directory and back
 class chdir():
@@ -37,8 +43,8 @@ def bumped(client, version):
 ## load config
 with open('config.yml') as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
-  Config.mode = sys.argv[1]
-  assert Config.mode in ['apt'], Config.mode
+  Config.mode = args.mode
+  assert Config.mode in [ None, 'apt'], Config.mode
   Config.repo = os.path.abspath(os.environ['REPO'])
 
   Config.zotero.bumped = lambda version: bumped('zotero', version)

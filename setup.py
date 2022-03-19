@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
 import sys
-
-url = sys.argv[1]
+from util import run
 
 baseurl = 'https://zotero.retorque.re/file/apt-package-archive'
-from util import run
+url = sys.argv[1]
 
 with open('README.md') as f:
   lines = f.readlines()
