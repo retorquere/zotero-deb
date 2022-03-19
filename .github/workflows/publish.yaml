@@ -14,6 +14,10 @@ on:
         description: forced publish
         required: false
         default: ''
+      readme:
+        description: forced publish of readme
+        required: false
+        default: ''
 
 jobs:
   refresh:
@@ -101,13 +105,17 @@ jobs:
         rclone sync $DEBS b2-zotero-apt:zotero-apt -v
         rclone cleanup b2-zotero-apt:zotero-apt -v
 
+        rclone sync $DEBS b2-apt-package-archive:apt-package-archive -v
+        rclone cleanup b2-apt-package-archive:apt-package-archive -v
+    - name: refresh backblaze webpage
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      env:
+        PYTHONUNBUFFERED: true
+      run: |
         ./setup.py https://apt.retorque.re/file/zotero-apt
         for f in install.sh index.html; do
           rclone copy $f b2-zotero-apt:zotero-apt -v
         done
-
-        rclone sync $DEBS b2-apt-package-archive:apt-package-archive -v
-        rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
         # no need to replace the site because this matches the default
         ./setup.py https://zotero.retorque.re/file/apt-package-archive
@@ -124,7 +132,11 @@ jobs:
         max_attempts: 10
         command: |
           rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $DEBS/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
-
+    - name: refresh sourceforge webpage
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      env:
+        PYTHONUNBUFFERED: true
+      run: |
           ./setup.py https://downloads.sourceforge.net/project/zotero-deb
           scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
           scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
@@ -151,7 +163,13 @@ jobs:
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
         (cd $DEBS && gh release view apt-get --json assets | ../ghr apt-get | bash)
-
+    - name: refresh sourceforge webpage
+      if: ${{ steps.repo.outputs.debs == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      env:
+        PYTHONUNBUFFERED: true
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_ACCESS_TOKEN: ${{ github.token }}
+      run: |
         ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get
         gh release upload apt-get install.sh --clobber
 
