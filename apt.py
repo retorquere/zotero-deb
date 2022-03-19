@@ -58,7 +58,7 @@ def package(staged):
     # for the desktop entry
     deb.description = Config[deb.client].description
     # path to the generated deb file
-    deb.deb = os.path.join(Config.apt, f'{deb.package}_{deb.version}_{deb.arch}.deb')
+    deb.deb = os.path.join(Config.repo, f'{deb.package}_{deb.version}_{deb.arch}.deb')
 
     # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
@@ -131,7 +131,7 @@ def package(staged):
     run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
 
 def mkrepo():
-  with chdir(Config.apt):
+  with chdir(Config.repo):
     # collects the Package metadata
     # https://bugs.debian.org/cgi-bin/bugreport.cgi?bug=299035
     awkcheck = 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}'
