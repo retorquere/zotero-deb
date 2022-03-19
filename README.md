@@ -4,8 +4,12 @@
 
 I was in the process of transferring the hosting of these packages to the Zotero organisation. That may or may not yet happen, but right now, the following options are available. If you are getting errors, **please re-run install.sh or see the instructions below to re-install manually**. I have had to restructure the repos. I apologize, but it was a necessary simplification. Simply re-running the install is all that is required.
 
-* Primary repo, very much the preferred option:
-  * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
+**Primary source**, very much the preferred option:
+
+* (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
+
+** Legacy sources, please change to the primary source
+
 * this github project
   * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`
   * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround. You will sometimes get errors that will say "mirror sync in progress?". If you do, wait and retry.
