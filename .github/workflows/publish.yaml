@@ -102,13 +102,12 @@ jobs:
         type = ftp
         host = eu1.ioperf.eu
         user = ${{ secrets.IOPERF_USERNAME }}
-        pass = $(rclone obscure ${{ secrets.IOPERF_PASSWORD }})
         tls = true
         explicit_tls = true
         encoding = Slash,Asterisk,Ctl,Dot
-
         EOF
-        pass = ${{ secrets.IOPERF_PASSWORD }}
+
+        rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
 
     - name: refresh backblaze
       if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'backblaze' }}
