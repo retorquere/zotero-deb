@@ -133,18 +133,18 @@ jobs:
           rclone copy $f b2-apt-package-archive:apt-package-archive -v
         done
 
-    - name: refresh ioperf
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
-      run: "rclone sync $REPO ioperf: -v"
-    - name: refresh ioperf webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
-      env:
-        PYTHONUNBUFFERED: true
-      run: |
-        ./setup.py https://zotero-deb.mirror.ioperf.eu
-        for f in install.sh index.html; do
-          rclone copy $f ioperf: -v
-        done
+#    - name: refresh ioperf
+#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
+#      run: "rclone sync $REPO ioperf: -v"
+#    - name: refresh ioperf webpage
+#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
+#      env:
+#        PYTHONUNBUFFERED: true
+#      run: |
+#        ./setup.py https://zotero-deb.mirror.ioperf.eu
+#        for f in install.sh index.html; do
+#          rclone copy $f ioperf: -v
+#        done
 
     - name: refresh sourceforge
       # because SF sync is garbage all around
@@ -204,8 +204,8 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        - ioperf
-        #- mwt
+        # - ioperf
+        # - mwt
         - github
         - sourceforge
     steps:
