@@ -97,10 +97,20 @@ jobs:
         key = ${{ secrets.B2_APPLICATION_KEY }}
         hard_delete = true
         download_url = https://zotero.retorque.re/file/apt-package-archive
+
+        [ioperf]
+        type = ftp
+        host = eu1.ioperf.eu
+        user = ${{ secrets.IOPERF_USERNAME }}
+        pass = ${{ secrets.IOPERF_PASSWORD }}
+        tls = true
+        explicit_tls = true
+        encoding = Slash,Asterisk,Ctl,Dot
+
         EOF
 
     - name: refresh backblaze
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'backblaze' }}
       run: |
         rclone sync $REPO b2-zotero-apt:zotero-apt -v
         rclone cleanup b2-zotero-apt:zotero-apt -v
@@ -108,7 +118,7 @@ jobs:
         rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
         rclone cleanup b2-apt-package-archive:apt-package-archive -v
     - name: refresh backblaze webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'backblaze' }}
       env:
         PYTHONUNBUFFERED: true
       run: |
@@ -123,17 +133,30 @@ jobs:
           rclone copy $f b2-apt-package-archive:apt-package-archive -v
         done
 
+    - name: refresh ioperf
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
+      run: "rclone sync $REPO ioperf: -v"
+    - name: refresh ioperf webpage
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
+      env:
+        PYTHONUNBUFFERED: true
+      run: |
+        ./setup.py https://zotero-deb.mirror.ioperf.eu
+        for f in install.sh index.html; do
+          rclone copy $f ioperf: -v
+        done
+
     - name: refresh sourceforge
       # because SF sync is garbage all around
       uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'sourceforge' }}
       with:
         timeout_minutes: 10
         max_attempts: 10
         command: |
           rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
     - name: refresh sourceforge webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'sourceforge' }}
       env:
         PYTHONUNBUFFERED: true
       run: |
@@ -156,15 +179,15 @@ jobs:
 #          scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
 
     - name: refresh github
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'github' }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
         (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
-    - name: refresh sourceforge webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }}
+    - name: refresh github webpage
+      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'github' }}
       env:
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
@@ -181,6 +204,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
+        - ioperf
         #- mwt
         - github
         - sourceforge
@@ -199,6 +223,9 @@ jobs:
         case "${{ matrix.hosting }}" in
           backblaze)
             curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+            ;;
+          ioperf)
+            curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
             ;;
           mwt)
             curl -sL https://mirror-rs.mwt.me/apt-package-archive/install.sh | bash
