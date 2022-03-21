@@ -160,7 +160,7 @@ jobs:
 
     - name: publish
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }} || ${{ github.event.inputs.readme == 'true' }}
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' }} || ${{ matrix.hosting == 'ioperf' }}
       env:
         REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}_${{ github.event.inputs.publish == matrix.hosting }}_
         PYTHONUNBUFFERED: true
@@ -245,7 +245,7 @@ jobs:
         sudo apt-get -qy install apt
 
     - name: test install ${{ matrix.hosting }}
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' }} || ${{ matrix.hosting == 'ioperf' }}
       run: |
         case "${{ matrix.hosting }}" in
           backblaze)
