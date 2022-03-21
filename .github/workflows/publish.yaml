@@ -20,10 +20,12 @@ on:
         default: ''
 
 jobs:
-  refresh:
+  rebuild:
     env:
       REPO: apt
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.repo.outputs.publish }}
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
@@ -61,24 +63,33 @@ jobs:
 
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
-      run: rm -rf apt
-
-    - name: Install SSH Key
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.SF_SSH_KEY }}
-        known_hosts: 'sourceforge'
+      run: rm -rf $REPO
 
     - name: rebuild repo
       id: repo
       env:
         PYTHONUNBUFFERED: true
-      run: ./rebuild.py --mode apt && find apt -type f
+      run: ./rebuild.py --mode apt && find $REPO -type f
 
-    - name: show status
-      run: |
-        echo force-publish=${{ github.event.inputs.publish }}
-        echo build-publish=${{ steps.repo.outputs.publish }}
+  publish:
+    runs-on: ubuntu-latest
+    needs: rebuild
+    strategy:
+      matrix:
+        hosting:
+        - backblaze
+        # - ioperf
+        # - mwt
+        - github
+        - sourceforge
+    env:
+      REPO: apt
+    steps:
+    - name: Install SSH Key
+      uses: shimataro/ssh-key-action@v2
+      with:
+        key: ${{ secrets.SF_SSH_KEY }}
+        known_hosts: 'sourceforge'
 
     - name: configure rclone
       run: |
@@ -109,92 +120,71 @@ jobs:
 
         rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
 
-    - name: refresh backblaze
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'backblaze' }}
-      run: |
-        rclone sync $REPO b2-zotero-apt:zotero-apt -v
-        rclone cleanup b2-zotero-apt:zotero-apt -v
-
-        rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
-        rclone cleanup b2-apt-package-archive:apt-package-archive -v
-    - name: refresh backblaze webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'backblaze' }}
+    - name: publish
+      if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }} || ${{ github.event.inputs.readme == 'true' }}
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
       env:
-        PYTHONUNBUFFERED: true
-      run: |
-        ./setup.py https://apt.retorque.re/file/zotero-apt
-        for f in install.sh index.html; do
-          rclone copy $f b2-zotero-apt:zotero-apt -v
-        done
-
-        # no need to replace the site because this matches the default
-        ./setup.py https://zotero.retorque.re/file/apt-package-archive
-        for f in install.sh index.html; do
-          rclone copy $f b2-apt-package-archive:apt-package-archive -v
-        done
-
-#    - name: refresh ioperf
-#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
-#      run: "rclone sync $REPO ioperf: -v"
-#    - name: refresh ioperf webpage
-#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'ioperf' }}
-#      env:
-#        PYTHONUNBUFFERED: true
-#      run: |
-#        ./setup.py https://zotero-deb.mirror.ioperf.eu
-#        for f in install.sh index.html; do
-#          rclone copy $f ioperf: -v
-#        done
-
-    - name: refresh sourceforge
-      # because SF sync is garbage all around
-      uses: nick-fields/retry@v2
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'sourceforge' }}
-      with:
-        timeout_minutes: 10
-        max_attempts: 10
-        command: |
-          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
-    - name: refresh sourceforge webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'sourceforge' }}
-      env:
-        PYTHONUNBUFFERED: true
-      run: |
-          ./setup.py https://downloads.sourceforge.net/project/zotero-deb
-          scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
-          scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
-
-#    - name: refresh mwt
-#      # because SF sync is garbage all around
-#      uses: nick-fields/retry@v2
-#      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
-#      with:
-#        timeout_minutes: 10
-#        max_attempts: 10
-#        command: |
-#          rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
-#
-#          ./setup.py https://mirror-rs.mwt.me
-#          scp index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/index.html
-#          scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
-
-    - name: refresh github
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'github' }}
-      env:
+        REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}_${{ github.event.inputs.publish == matrix.hosting }}_
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
-    - name: refresh github webpage
-      if: ${{ steps.repo.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.readme == 'true' }} || ${{ github.event.inputs.publish == 'github' }}
-      env:
-        PYTHONUNBUFFERED: true
-        GITHUB_TOKEN: ${{ github.token }}
-        GITHUB_ACCESS_TOKEN: ${{ github.token }}
-      run: |
-        ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get
-        gh release upload apt-get install.sh --clobber
+        case "${{ matrix.hosting }}" in
+          backblaze)
+          ioperf)
+            if [ $REFRESH =~ _true_ ]; then
+              rclone sync $REPO b2-zotero-apt:zotero-apt -v
+              rclone cleanup b2-zotero-apt:zotero-apt -v
+
+              rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
+              rclone cleanup b2-apt-package-archive:apt-package-archive -v
+            fi
+
+            ./setup.py https://apt.retorque.re/file/zotero-apt
+            rclone copy install.sh b2-zotero-apt:zotero-apt -v
+            rclone copy index.html b2-zotero-apt:zotero-apt -v
+
+            # no need to replace the site because this matches the default
+            ./setup.py https://zotero.retorque.re/file/apt-package-archive
+            rclone copy install.sh b2-apt-package-archive:apt-package-archive -v
+            rclone copy index.html b2-apt-package-archive:apt-package-archive -v
+            ;;
+
+          ioperf)
+            if [ $REFRESH =~ _true_ ]; then
+              rclone sync $REPO ioperf: -v
+            fi
+            ./setup.py https://zotero-deb.mirror.ioperf.eu
+            rclone copy install.sh ioperf: -v
+            rclone copy index.html ioperf: -v
+            ;;
+
+          mwt)
+            if [ $REFRESH =~ _true_ ]; then
+              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
+            fi
+            ./setup.py https://mirror-rs.mwt.me
+            scp index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/index.html
+            scp install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive//install.sh
+            ;;
+
+          sourceforge)
+            if [ $REFRESH =~ _true_ ]; then
+              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
+            fi
+            ./setup.py https://downloads.sourceforge.net/project/zotero-deb
+            scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
+            scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
+            ;;
+
+          github)
+            if [ $REFRESH =~ _true_ ]; then
+              (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
+            fi
+            ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get
+            gh release upload apt-get install.sh --clobber
+            ;;
+        esac
 
   test:
     runs-on: ubuntu-latest
@@ -240,4 +230,8 @@ jobs:
 
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
-        file /usr/lib/zotero/zotero /usr/lib/zotero/zotero-bin /usr/local/bin/zotero /usr/lib/zotero-beta/zotero /usr/lib/zotero-beta/zotero-bin /usr/local/bin/zotero-beta /usr/lib/jurism/jurism /usr/lib/jurism/jurism-bin /usr/local/bin/jurism
+        for c in zotero zotero-beta jurism; do
+          file /usr/lib/$c/${c/-beta/}
+          file /usr/lib/$c/${c/-beta/}-bin
+          file /usr/local/bin/$c
+        done
