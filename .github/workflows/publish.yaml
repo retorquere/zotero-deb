@@ -260,7 +260,7 @@ jobs:
               curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
               ;;
             mwt)
-              curl -sL https://mirror-rs.mwt.me/apt-package-archive/install.sh | bash
+              curl -sL https://retorquere-test.mwt.me/apt-package-archive/install.sh | bash
               ;;
             github)
               curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
