@@ -160,7 +160,7 @@ jobs:
 
         rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
 
-    - name: publish
+    - name: publish ${{ matrix.hosting }}
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }} || ${{ github.event.inputs.readme == 'true' }}
       continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
       env:
