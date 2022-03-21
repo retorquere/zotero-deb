@@ -191,11 +191,11 @@ jobs:
 
           ioperf)
             if [[ $REFRESH =~ _true_ ]]; then
-              rclone sync $REPO ioperf: -v
+              rclone sync $REPO ioperf:zotero-deb.mirror.ioperf.eu -v
             fi
             ./setup.py https://zotero-deb.mirror.ioperf.eu
-            rclone copy install.sh ioperf: -v
-            rclone copy index.html ioperf: -v
+            rclone copy install.sh ioperf:zotero-deb.mirror.ioperf.eu -v
+            rclone copy index.html ioperf:zotero-deb.mirror.ioperf.eu -v
             ;;
 
           mwt)
