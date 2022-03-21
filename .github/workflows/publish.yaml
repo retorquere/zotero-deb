@@ -151,10 +151,9 @@ jobs:
         type = ftp
         host = 202.61.244.114
         user = ${{ secrets.IOPERF_USERNAME }}
-        tls = false
         explicit_tls = true
-        encoding = Slash,Asterisk,Ctl,Dot
         no_check_certificate = true
+        encoding = Slash,Asterisk,Ctl,Dot
         EOF
 
         rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
