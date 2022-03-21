@@ -246,30 +246,34 @@ jobs:
         sudo apt-get -qy install apt
 
     - name: test install ${{ matrix.hosting }}
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'ioperf' }}
-      run: |
-        case "${{ matrix.hosting }}" in
-          backblaze)
-            curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
-            ;;
-          ioperf)
-            curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
-            ;;
-          mwt)
-            curl -sL https://mirror-rs.mwt.me/apt-package-archive/install.sh | bash
-            ;;
-          github)
-            curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
-            ;;
-          sourceforge)
-            curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
-            ;;
-        esac
-
-        sudo apt-get -q update
-        sudo apt-get -qy install zotero jurism zotero-beta
-        for c in zotero zotero-beta jurism; do
-          file /usr/lib/$c/${c/-beta/}
-          file /usr/lib/$c/${c/-beta/}-bin
-          file /usr/local/bin/$c
-        done
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 10
+        max_attempts: 10
+        command: |
+          case "${{ matrix.hosting }}" in
+            backblaze)
+              curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+              ;;
+            ioperf)
+              curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
+              ;;
+            mwt)
+              curl -sL https://mirror-rs.mwt.me/apt-package-archive/install.sh | bash
+              ;;
+            github)
+              curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+              ;;
+            sourceforge)
+              curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+              ;;
+          esac
+  
+          sudo apt-get -q update
+          sudo apt-get -qy install zotero jurism zotero-beta
+          for c in zotero zotero-beta jurism; do
+            file /usr/lib/$c/${c/-beta/}
+            file /usr/lib/$c/${c/-beta/}-bin
+            file /usr/local/bin/$c
+          done
