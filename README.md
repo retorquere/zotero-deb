@@ -8,7 +8,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
 
-**Legacy sources, please change to the primary source**
+**Legacy sources, please change to the primary source, I intend to phase these out when I can**
 
 * this github project
   * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`

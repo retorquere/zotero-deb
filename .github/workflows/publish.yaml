@@ -210,8 +210,8 @@ jobs:
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
             fi
             ./setup.py https://downloads.sourceforge.net/project/zotero-deb
-            scp index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
-            scp install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/install.sh
+            rsync -e "ssh -o StrictHostKeyChecking=no" -vz  index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
+            rsync -e "ssh -o StrictHostKeyChecking=no" -vz  install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
             ;;
 
           github)
