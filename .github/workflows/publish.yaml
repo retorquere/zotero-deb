@@ -170,7 +170,7 @@ jobs:
         echo $REFRESH
         case "${{ matrix.hosting }}" in
           backblaze)
-            if [ $REFRESH =~ _true_ ]; then
+            if [[ $REFRESH =~ _true_ ]]; then
               rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
               rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
@@ -188,7 +188,7 @@ jobs:
             ;;
 
           ioperf)
-            if [ $REFRESH =~ _true_ ]; then
+            if [[ $REFRESH =~ _true_ ]]; then
               rclone sync $REPO ioperf: -v
             fi
             ./setup.py https://zotero-deb.mirror.ioperf.eu
@@ -197,7 +197,7 @@ jobs:
             ;;
 
           mwt)
-            if [ $REFRESH =~ _true_ ]; then
+            if [[ $REFRESH =~ _true_ ]]; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
             fi
             ./setup.py https://mirror-rs.mwt.me
@@ -206,7 +206,7 @@ jobs:
             ;;
 
           sourceforge)
-            if [ $REFRESH =~ _true_ ]; then
+            if [[ $REFRESH =~ _true_ ]]; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
             fi
             ./setup.py https://downloads.sourceforge.net/project/zotero-deb
@@ -215,7 +215,7 @@ jobs:
             ;;
 
           github)
-            if [ $REFRESH =~ _true_ ]; then
+            if [[ $REFRESH =~ _true_ ]]; then
               (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
             fi
             ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get
