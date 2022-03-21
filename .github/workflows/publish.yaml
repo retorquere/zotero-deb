@@ -85,11 +85,21 @@ jobs:
     env:
       REPO: apt
     steps:
+    - name: Cache repo
+      uses: actions/cache@v2
+      env:
+        cache-name: v3
+      with:
+        path: |
+          ./apt
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+
     - name: Install SF SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+
     - name: Install MWT SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
