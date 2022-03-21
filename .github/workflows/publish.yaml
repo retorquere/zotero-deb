@@ -83,7 +83,7 @@ jobs:
         hosting:
         - backblaze
         - ioperf
-        # - mwt
+        - mwt
         - github
         - sourceforge
     env:
@@ -232,7 +232,7 @@ jobs:
         hosting:
         - backblaze
         - ioperf
-        # - mwt
+        - mwt
         - github
         - sourceforge
     steps:
