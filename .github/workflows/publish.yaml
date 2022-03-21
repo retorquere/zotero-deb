@@ -201,7 +201,7 @@ jobs:
             if [[ $REFRESH =~ _true_ ]]; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
             fi
-            ./setup.py https://mirror-rs.mwt.me
+            ./setup.py https://mirror.mwt.me/zotero/deb
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive/
             ;;
@@ -260,7 +260,7 @@ jobs:
               curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
               ;;
             mwt)
-              curl -sL https://retorquere-test.mwt.me/apt-package-archive/install.sh | bash
+              curl -sL https://mirror.mwt.me/zotero/deb/install.sh | bash
               ;;
             github)
               curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
