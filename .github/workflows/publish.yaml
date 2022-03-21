@@ -151,7 +151,7 @@ jobs:
         type = ftp
         host = 202.61.244.114
         user = ${{ secrets.IOPERF_USERNAME }}
-        tls = true
+        tls = false
         explicit_tls = true
         encoding = Slash,Asterisk,Ctl,Dot
         EOF
