@@ -154,6 +154,7 @@ jobs:
         tls = false
         explicit_tls = true
         encoding = Slash,Asterisk,Ctl,Dot
+        no_check_certificate = true
         EOF
 
         rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
