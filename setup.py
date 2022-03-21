@@ -3,19 +3,19 @@
 import sys, os
 from util import run
 from pathlib import Path
+from requests import Session
 
 baseurl = 'https://zotero.retorque.re/file/apt-package-archive'
 url = sys.argv[1]
+sep = '----'
+meta = '''---
+title: Zotero/Jurism binaries for Debian-based linux systems
+...
+'''
 
 with open('README.md') as f:
-  lines = f.readlines()
-  readme = ''
-  replace = False
-  for line in lines:
-    replace = replace or line.startswith('----')
-    if replace:
-      line = line.replace(baseurl, url)
-    readme += line
+  header, body = f.read().split(sep, 1)
+  readme = meta + header + sep + body.replace(baseurl, url)
 
 repo = Path(os.environ['REPO'])
 readme += '\n---\n\n'
@@ -66,3 +66,16 @@ EOF
 
 sudo apt-get clean
 """)
+
+## set UA for web requests
+request = Session()
+request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
+packages = url
+if packages[-1] != '/':
+  packages += '/'
+packages += 'Packages'
+response = request.get(packages)
+if response.status_code < 400:
+  sys.exit(1) # confusing, but returning an "error" here will cause the exit code to be falsish and *not* force a rebuild
+else:
+  print(packages, 'missing, force republish')

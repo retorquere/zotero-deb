@@ -172,55 +172,49 @@ jobs:
         echo $REFRESH
         case "${{ matrix.hosting }}" in
           backblaze)
-            if [[ $REFRESH =~ _true_ ]]; then
+            if ./setup.py https://zotero.retorque.re/file/apt-package-archive || [[ $REFRESH =~ _true_ ]]; then
               rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
               rclone cleanup b2-apt-package-archive:apt-package-archive -v
-
-              rclone sync $REPO b2-zotero-apt:zotero-apt -v
-              rclone cleanup b2-zotero-apt:zotero-apt -v
             fi
-
-            ./setup.py https://zotero.retorque.re/file/apt-package-archive
             rclone copy install.sh b2-apt-package-archive:apt-package-archive -v
             rclone copy index.html b2-apt-package-archive:apt-package-archive -v
 
-            ./setup.py https://apt.retorque.re/file/zotero-apt
+            if ./setup.py https://apt.retorque.re/file/zotero-apt || [[ $REFRESH =~ _true_ ]]; then
+              rclone sync $REPO b2-zotero-apt:zotero-apt -v
+              rclone cleanup b2-zotero-apt:zotero-apt -v
+            fi
             rclone copy install.sh b2-zotero-apt:zotero-apt -v
             rclone copy index.html b2-zotero-apt:zotero-apt -v
             ;;
 
           ioperf)
-            if [[ $REFRESH =~ _true_ ]]; then
+            if ./setup.py https://zotero-deb.mirror.ioperf.eu || [[ $REFRESH =~ _true_ ]]; then
               rclone sync $REPO ioperf:zotero-deb.mirror.ioperf.eu -v
             fi
-            ./setup.py https://zotero-deb.mirror.ioperf.eu
             rclone copy install.sh ioperf:zotero-deb.mirror.ioperf.eu -v
             rclone copy index.html ioperf:zotero-deb.mirror.ioperf.eu -v
             ;;
 
           mwt)
-            if [[ $REFRESH =~ _true_ ]]; then
+            if ./setup.py https://mirror-rs.mwt.me || [[ $REFRESH =~ _true_ ]]; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
             fi
-            ./setup.py https://mirror-rs.mwt.me
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive/
             ;;
 
           sourceforge)
-            if [[ $REFRESH =~ _true_ ]]; then
+            if ./setup.py https://downloads.sourceforge.net/project/zotero-deb || [[ $REFRESH =~ _true_ ]]; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
             fi
-            ./setup.py https://downloads.sourceforge.net/project/zotero-deb
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz  index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
             rsync -e "ssh -o StrictHostKeyChecking=no" -vz  install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
             ;;
 
           github)
-            if [[ $REFRESH =~ _true_ ]]; then
+            if ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get || [[ $REFRESH =~ _true_ ]]; then
               (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
             fi
-            ./setup.py https://github.com/retorquere/zotero-deb/releases/download/apt-get
             gh release upload apt-get install.sh --clobber
             ;;
         esac
