@@ -99,12 +99,14 @@ jobs:
       with:
         key: ${{ secrets.SF_SSH_KEY }}
         known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+        if_key_exists: replace
 
     - name: Install MWT SSH Key
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.MWT_SSH_KEY }}
         known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+        if_key_exists: replace
 
     - name: configure rclone
       run: |
