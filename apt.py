@@ -3,20 +3,17 @@
 import os, sys
 from types import SimpleNamespace
 import tempfile
-#import configparser
+import glob
 import shutil, shlex
 import hashlib
-#import subprocess
-#import argparse
-#import re
-#import contextlib
-#from pathlib import Path
-#from colorama import Fore, Style
 
 from util import Config, run, Open, IniFile, chdir
 
 def packagename(client, version, arch):
   return f'{client}_{version}_{arch}.deb'
+
+def prebuilt():
+  return glob.glob(os.path.join(Config.repo, '*.deb'))
 
 def package(staged):
   assert os.path.isdir(staged)

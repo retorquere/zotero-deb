@@ -19,7 +19,9 @@ import shlex
 import html
 
 from util import run, Config
-import apt
+
+if Config.mode == 'apt':
+  import apt as repository
 
 ## set UA for web requests
 request = Session()
@@ -59,17 +61,12 @@ packages += [
   for arch in [ 'i686', 'x86_64' ]
 ]
 
-match Config.mode:
-  case 'apt':
-    packagename = apt.packagename
-    found = set(glob.glob(os.path.join(Config.repo, '*.deb')))
-    
-packages = [ (os.path.join(Config.repo, packagename(client, version, arch)), url) for client, version, arch, url in packages ]
-# fetch what we can so we don't have to rebuild
+prebuilt = set(repository.prebuilt())
+packages = [ (os.path.join(Config.repo, repository.packagename(client, version, arch)), url) for client, version, arch, url in packages ]
 
 modified = False
 allowed = set([pkg for pkg, url in packages])
-for pkg in found - allowed:
+for pkg in prebuilt - allowed:
   print('rebuild: delete', pkg)
   modified = True
   os.remove(pkg)
@@ -86,9 +83,8 @@ for pkg, url in packages:
   if not os.path.exists(staged):
     os.makedirs(staged)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
-  match Config.mode:
-    case 'apt':
-      apt.package(staged)
+
+  repository.package(staged)
 
 for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.staging, '*'))]:
   if unstage not in Config.staged:
@@ -96,7 +92,5 @@ for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(C
     shutil.rmtree(unstage)
 
 if modified:
-  match Config.mode:
-    case 'apt':
-      apt.mkrepo()
-      print(f'::set-output name=publish::true')
+  repository.mkrepo()
+  print(f'::set-output name=publish::true')
