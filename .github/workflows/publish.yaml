@@ -82,7 +82,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        # - ioperf
+        - ioperf
         # - mwt
         - github
         - sourceforge
@@ -149,7 +149,7 @@ jobs:
 
         [ioperf]
         type = ftp
-        host = eu1.ioperf.eu
+        host = 202.61.244.114
         user = ${{ secrets.IOPERF_USERNAME }}
         tls = true
         explicit_tls = true
@@ -171,21 +171,20 @@ jobs:
         case "${{ matrix.hosting }}" in
           backblaze)
             if [ $REFRESH =~ _true_ ]; then
-              rclone sync $REPO b2-zotero-apt:zotero-apt -v
-              rclone cleanup b2-zotero-apt:zotero-apt -v
-
               rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
               rclone cleanup b2-apt-package-archive:apt-package-archive -v
+
+              rclone sync $REPO b2-zotero-apt:zotero-apt -v
+              rclone cleanup b2-zotero-apt:zotero-apt -v
             fi
+
+            ./setup.py https://zotero.retorque.re/file/apt-package-archive
+            rclone copy install.sh b2-apt-package-archive:apt-package-archive -v
+            rclone copy index.html b2-apt-package-archive:apt-package-archive -v
 
             ./setup.py https://apt.retorque.re/file/zotero-apt
             rclone copy install.sh b2-zotero-apt:zotero-apt -v
             rclone copy index.html b2-zotero-apt:zotero-apt -v
-
-            # no need to replace the site because this matches the default
-            ./setup.py https://zotero.retorque.re/file/apt-package-archive
-            rclone copy install.sh b2-apt-package-archive:apt-package-archive -v
-            rclone copy index.html b2-apt-package-archive:apt-package-archive -v
             ;;
 
           ioperf)
@@ -232,7 +231,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        # - ioperf
+        - ioperf
         # - mwt
         - github
         - sourceforge
