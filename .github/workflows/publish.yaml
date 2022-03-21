@@ -97,7 +97,9 @@ jobs:
     - name: install utilities
       run: |
         sudo apt-get -qy install moreutils rclone pandoc
+
     - name: Install SF SSH Key
+      if: ${{ matrix.hosting == 'sourceforge' }}
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.SF_SSH_KEY }}
@@ -105,6 +107,7 @@ jobs:
         if_key_exists: replace
 
     - name: Install MWT SSH Key
+      if: ${{ matrix.hosting == 'mwt' }}
       uses: shimataro/ssh-key-action@v2
       with:
         key: ${{ secrets.MWT_SSH_KEY }}
@@ -112,6 +115,7 @@ jobs:
         if_key_exists: replace
 
     - name: configure rclone
+      if: ${{ matrix.hosting == 'ioperf' }} || ${{ matrix.hosting == 'backblaze' }}
       run: |
         mkdir -p ~/.config/rclone
         cat <<EOF > ~/.config/rclone/rclone.conf
@@ -151,7 +155,6 @@ jobs:
       run: |
         case "${{ matrix.hosting }}" in
           backblaze)
-          ioperf)
             if [ $REFRESH =~ _true_ ]; then
               rclone sync $REPO b2-zotero-apt:zotero-apt -v
               rclone cleanup b2-zotero-apt:zotero-apt -v
