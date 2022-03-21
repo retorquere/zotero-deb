@@ -51,8 +51,7 @@ jobs:
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
         sudo apt-get -q update
-        sudo apt-get -qy install dpkg-sig fakeroot moreutils pandoc
-        curl https://rclone.org/install.sh | sudo bash
+        sudo apt-get -qy install dpkg-sig fakeroot moreutils
 
     - name: Cache repo
       uses: actions/cache@v2
@@ -111,7 +110,8 @@ jobs:
 
     - name: install utilities
       run: |
-        sudo apt-get -qy install moreutils rclone pandoc
+        sudo apt-get -qy install moreutils pandoc
+        curl https://rclone.org/install.sh | sudo bash
 
     - name: Install SF SSH Key
       if: ${{ matrix.hosting == 'sourceforge' }}
