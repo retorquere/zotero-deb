@@ -70,7 +70,7 @@ jobs:
       if: ${{ github.event.inputs.build == 'true' }}
       run: rm -rf $REPO
 
-    - name: rebuild repo
+    - name: rebuild ${{ matrix.packagesystem }} repo
       id: repo
       env:
         PYTHONUNBUFFERED: true
@@ -166,7 +166,7 @@ jobs:
 
         rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
 
-    - name: publish ${{ matrix.hosting }}
+    - name: publish ${{ matrix.packagesystem }} on ${{ matrix.hosting }}
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }} || ${{ github.event.inputs.readme == 'true' }}
       continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
       env:
