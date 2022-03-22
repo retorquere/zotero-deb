@@ -246,8 +246,8 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install apt
 
-    - name: test install ${{ matrix.hosting }}
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
+    - name: test install from ${{ matrix.hosting }}
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
       uses: nick-fields/retry@v2
       with:
         timeout_minutes: 15
