@@ -248,11 +248,11 @@ jobs:
 
     - name: test install ${{ matrix.hosting }}
       continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
-      #uses: nick-fields/retry@v2
-      uses: Wandalen/wretry.action@v1
+      uses: nick-fields/retry@v2
       with:
-        attempt_delay: 60000
-        attempt_limit: 3
+        timeout_minutes: 15
+        retry_wait_seconds: 60
+        max_attempts: 3
         command: |
           case "${{ matrix.hosting }}" in
             backblaze)
