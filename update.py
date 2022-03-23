@@ -41,7 +41,7 @@ for asset in sorted(repo.rglob('*'), key=lambda f: str(f)):
   if asset.is_file():
     asset = str(asset.relative_to(repo))
     assetname = asset.replace('_', '\\_')
-    readme += f'* [{assetname}]({URL}/{asset})\n'
+    readme += f'* [{assetname}]({asset})\n'
 
 with open('index.md', 'w') as f:
   f.write(readme)
