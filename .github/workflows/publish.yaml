@@ -248,7 +248,7 @@ jobs:
 
     - name: test install from ${{ matrix.hosting }}
       continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
-      command: |
+      run: |
         sleep 60
         case "${{ matrix.hosting }}" in
           backblaze)
