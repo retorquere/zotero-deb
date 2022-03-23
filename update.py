@@ -5,17 +5,34 @@ from util import run
 from pathlib import Path
 from requests import Session
 
-baseurl = 'https://zotero.retorque.re/file/apt-package-archive'
-url = sys.argv[1]
-sep = '----'
-meta = '''---
+BASEURL = 'https://zotero.retorque.re/file/apt-package-archive'
+URL = sys.argv[1]
+UPDATE = sys.argv[2]
+SEP = '----'
+META = '''---
 title: Zotero/Jurism binaries for Debian-based linux systems
 ...
 '''
 
+## set UA for web requests
+update = '_true_' in UPDATE
+if not update:
+  request = Session()
+  request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
+  packages = URL
+  if packages[-1] != '/':
+    packages += '/'
+  packages += 'Packages'
+  response = request.get(packages)
+  update = response.status_code >= 400:
+  if update:
+    print(packages, 'missing, force republish')
+if not update:
+  sys.exit(1) # confusing, but returning an "error" here will cause the exit code to be falsish and *not* force a rebuild
+
 with open('README.md') as f:
-  header, body = f.read().split(sep, 1)
-  readme = meta + header + sep + body.replace(baseurl, url)
+  header, body = f.read().split(SEP, 1)
+  readme = META + header + SEP + body.replace(BASEURL, URL)
 
 repo = Path(os.environ['REPO'])
 readme += '\n---\n\n'
@@ -23,7 +40,7 @@ for asset in sorted(repo.rglob('*'), key=lambda f: str(f)):
   if asset.is_file():
     asset = str(asset.relative_to(repo))
     assetname = asset.replace('_', '\\_')
-    readme += f'* [{assetname}]({url}/{asset})\n'
+    readme += f'* [{assetname}]({URL}/{asset})\n'
 
 with open('index.md', 'w') as f:
   f.write(readme)
@@ -61,21 +78,8 @@ sudo chmod 644 $KEYRING
 sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] {url} ./
+deb [signed-by=$KEYRING by-hash=force] {URL} ./
 EOF
 
 sudo apt-get clean
 """)
-
-## set UA for web requests
-request = Session()
-request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
-packages = url
-if packages[-1] != '/':
-  packages += '/'
-packages += 'Packages'
-response = request.get(packages)
-if response.status_code < 400:
-  sys.exit(1) # confusing, but returning an "error" here will cause the exit code to be falsish and *not* force a rebuild
-else:
-  print(packages, 'missing, force republish')
