@@ -246,10 +246,9 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install apt
 
-    - name: test install from ${{ matrix.hosting }}
+    - name: install ${{ matrix.hosting }} repo
       continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
       run: |
-        sleep 60
         case "${{ matrix.hosting }}" in
           backblaze)
             curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
@@ -268,6 +267,10 @@ jobs:
             ;;
         esac
   
+    - name: install from ${{ matrix.hosting }} repo
+      continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
+      run: |
+        sleep 60
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         for c in zotero zotero-beta jurism; do
