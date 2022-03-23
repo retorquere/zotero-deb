@@ -249,23 +249,30 @@ jobs:
     - name: install ${{ matrix.hosting }} repo
       continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
       run: |
+        sleep 60
         case "${{ matrix.hosting }}" in
           backblaze)
-            curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+            export BASEURL=https://zotero.retorque.re/file/apt-package-archive
             ;;
           ioperf)
-            curl -sL https://zotero-deb.mirror.ioperf.eu/install.sh | sudo bash
+            export BASEURL=https://zotero-deb.mirror.ioperf.eu
             ;;
           mwt)
-            curl -sL https://mirror-rs.mwt.me/apt-package-archive/install.sh | bash
+            export BASEURL=https://mirror-rs.mwt.me/apt-package-archive
             ;;
           github)
-            curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash
+            export BASEURL=https://github.com/retorquere/zotero-deb/releases/download/apt-get
             ;;
           sourceforge)
-            curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash
+            export BASEURL=https://downloads.sourceforge.net/project/zotero-deb
             ;;
         esac
+        echo BASEURL=$BASEURL
+        curl -sL $BASEURL/install.sh | tee install.txt | sudo bash
+        echo ==== install.sh ===
+        cat install.txt
+        echo ==== zotero.list ===
+        cat /etc/apt/sources.list.d/zotero.list
   
     - name: install from ${{ matrix.hosting }} repo
       continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
