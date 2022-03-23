@@ -24,7 +24,7 @@ if not update:
     packages += '/'
   packages += 'Packages'
   response = request.get(packages)
-  update = response.status_code >= 400:
+  update = response.status_code >= 400
   if update:
     print(packages, 'missing, force republish')
 if not update:
