@@ -203,11 +203,11 @@ jobs:
             ;;
 
           mwt)
-            if ./update.py https://mirror-rs.mwt.me/apt-package-archive $REFRESH; then
-              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@mirror-rs.mwt.me:/apt-package-archive/
+            if ./update.py https://zotero.mwt.me/apt-package-archive $REFRESH; then
+              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@zotero.mwt.me:/apt-package-archive/
 
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@mirror-rs.mwt.me:/apt-package-archive/
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive/
+              rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@zotero.mwt.me:/apt-package-archive/
+              rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@zotero.mwt.me:/apt-package-archive/
             fi
             ;;
 
@@ -262,7 +262,7 @@ jobs:
             export BASEURL=https://zotero-deb.mirror.ioperf.eu
             ;;
           mwt)
-            export BASEURL=https://mirror-rs.mwt.me/apt-package-archive
+            export BASEURL=https://zotero.mwt.me/apt-package-archive
             ;;
           github)
             export BASEURL=https://github.com/retorquere/zotero-deb/releases/download/apt-get
