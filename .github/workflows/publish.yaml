@@ -84,7 +84,6 @@ jobs:
         - backblaze
         - ioperf
         - mwt
-        - github
         packagesystem:
         - apt
     env:
@@ -200,14 +199,6 @@ jobs:
               rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@mirror-rs.mwt.me:/apt-package-archive/
             fi
             ;;
-
-          github)
-            if ./update.py https://github.com/retorquere/zotero-deb/releases/download/apt-get; then
-              (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
-
-              gh release upload apt-get install.sh --clobber
-            fi
-            ;;
         esac
 
   test:
@@ -220,18 +211,8 @@ jobs:
         - backblaze
         - ioperf
         - mwt
-        - github
     steps:
-    - name: install apt fixes
-      if: matrix.hosting == 'github'
-      run: |
-        # https://github.com/retorquere/zotero-deb/issues/49
-        sudo add-apt-repository ppa:tj/bugfixes
-        sudo apt-get -q update
-        sudo apt-get -qy install apt
-
     - name: install ${{ matrix.hosting }} repo
-      continue-on-error: ${{ matrix.hosting == 'github' }}
       run: |
         sleep 60
         case "${{ matrix.hosting }}" in
@@ -244,9 +225,6 @@ jobs:
           mwt)
             export BASEURL=https://mirror-rs.mwt.me/apt-package-archive
             ;;
-          github)
-            export BASEURL=https://github.com/retorquere/zotero-deb/releases/download/apt-get
-            ;;
         esac
         echo BASEURL=$BASEURL
         curl -sL $BASEURL/install.sh | tee install.txt | sudo bash
@@ -256,7 +234,6 @@ jobs:
         cat /etc/apt/sources.list.d/zotero.list
   
     - name: install from ${{ matrix.hosting }} repo
-      continue-on-error: ${{ matrix.hosting == 'github' }}
       run: |
         sleep 60
         sudo apt-get -q update
