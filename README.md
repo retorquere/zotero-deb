@@ -13,9 +13,6 @@ I was in the process of transferring the hosting of these packages to the Zotero
 * this github project
   * (re)install using `curl -sL https://github.com/retorquere/zotero-deb/releases/download/apt-get/install.sh | sudo bash`
   * **caveat**: github has made recent changes to how they're hosting release files, which triggered a long-standing bug in `apt`. If you hit this problem, see [this thread](https://github.com/linux-surface/linux-surface/issues/625) for a workaround. You will sometimes get errors that will say "mirror sync in progress?". If you do, wait and retry. Or, just switch to the primary source.
-* sourceforge. please pick another option even if you are using it now. sourceforge is bizarrely unreliable and I'm sorry I ever got this into the mix. But if you must
-  * (re) install using `curl -sL https://downloads.sourceforge.net/project/zotero-deb/install.sh | sudo bash`
-  * **caveat**: sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down. If you get errors, try again in a few hours. Or better yet, pick the first option.
 
 ----
 

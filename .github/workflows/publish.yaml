@@ -85,7 +85,6 @@ jobs:
         - ioperf
         - mwt
         - github
-        - sourceforge
         packagesystem:
         - apt
     env:
@@ -114,14 +113,6 @@ jobs:
       run: |
         sudo apt-get -qy install moreutils pandoc
         curl https://rclone.org/install.sh | sudo bash
-
-    - name: Install SF SSH Key
-      if: ${{ matrix.hosting == 'sourceforge' }}
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.SF_SSH_KEY }}
-        known_hosts: 'sourceforge'
-        if_key_exists: replace
 
     - name: Install MWT SSH Key
       if: ${{ matrix.hosting == 'mwt' }}
@@ -164,7 +155,6 @@ jobs:
 
     - name: publish ${{ matrix.packagesystem }} on ${{ matrix.hosting }}
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }}
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' }}
       env:
         REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}_${{ github.event.inputs.publish == matrix.hosting }}_
         PYTHONUNBUFFERED: true
@@ -211,15 +201,6 @@ jobs:
             fi
             ;;
 
-          sourceforge)
-            if ./update.py https://downloads.sourceforge.net/project/zotero-deb $REFRESH; then
-              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
-
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz  index.md retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/README.md
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz  install.sh retorquere@frs.sourceforge.net:/home/frs/project/zotero-deb/
-            fi
-            ;;
-
           github)
             if ./update.py https://github.com/retorquere/zotero-deb/releases/download/apt-get; then
               (cd $REPO && gh release view apt-get --json assets | ../ghr apt-get | bash)
@@ -240,7 +221,6 @@ jobs:
         - ioperf
         - mwt
         - github
-        - sourceforge
     steps:
     - name: install apt fixes
       if: matrix.hosting == 'github'
@@ -251,7 +231,7 @@ jobs:
         sudo apt-get -qy install apt
 
     - name: install ${{ matrix.hosting }} repo
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
+      continue-on-error: ${{ matrix.hosting == 'github' }}
       run: |
         sleep 60
         case "${{ matrix.hosting }}" in
@@ -267,9 +247,6 @@ jobs:
           github)
             export BASEURL=https://github.com/retorquere/zotero-deb/releases/download/apt-get
             ;;
-          sourceforge)
-            export BASEURL=https://downloads.sourceforge.net/project/zotero-deb
-            ;;
         esac
         echo BASEURL=$BASEURL
         curl -sL $BASEURL/install.sh | tee install.txt | sudo bash
@@ -279,7 +256,7 @@ jobs:
         cat /etc/apt/sources.list.d/zotero.list
   
     - name: install from ${{ matrix.hosting }} repo
-      continue-on-error: ${{ matrix.hosting == 'sourceforge' || matrix.hosting == 'github' }}
+      continue-on-error: ${{ matrix.hosting == 'github' }}
       run: |
         sleep 60
         sudo apt-get -q update
