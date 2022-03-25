@@ -184,9 +184,10 @@ jobs:
             if ./update.py https://zotero-deb.mirror.ioperf.eu $REFRESH; then
               rclone sync $REPO ioperf:zotero-deb.mirror.ioperf.eu -v --exclude install.sh --exclude index.html
 
+              cp install.sh install.txt
               echo === install.sh ===
               cat install.sh
-              rclone copy install.sh ioperf:zotero-deb.mirror.ioperf.eu -v
+              rclone copy install.txt ioperf:zotero-deb.mirror.ioperf.eu -v
               rclone copy index.html ioperf:zotero-deb.mirror.ioperf.eu -v
             fi
             ;;
@@ -217,19 +218,20 @@ jobs:
         sleep 60
         case "${{ matrix.hosting }}" in
           backblaze)
-            export BASEURL=https://zotero.retorque.re/file/apt-package-archive
+            export INSTALLSH=https://zotero.retorque.re/file/apt-package-archive/install.sh
             ;;
           ioperf)
-            export BASEURL=https://zotero-deb.mirror.ioperf.eu
+            # this really needs to be fixed
+            export INSTALLSH=https://zotero-deb.mirror.ioperf.eu/install.txt
             ;;
           mwt)
-            export BASEURL=https://zotero.mwt.me/apt-package-archive
+            export INSTALLSH=https://zotero.mwt.me/apt-package-archive/install.sh
             ;;
         esac
-        echo BASEURL=$BASEURL
-        curl -sL $BASEURL/install.sh | tee install.txt | sudo bash
+        echo INSTALLSH=$INSTALLSH
+        curl -sL $INSTALLSH | tee install.sh | sudo bash
         echo ==== install.sh ===
-        cat install.txt
+        cat install.sh
         echo ==== zotero.list ===
         cat /etc/apt/sources.list.d/zotero.list
   
