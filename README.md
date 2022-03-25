@@ -8,7 +8,14 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 * (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
 
-**Legacy sources: please change to the primary source**
+**Deprecated sources, please change to the primary source.**
+
+If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them.
+
+* this github project
+  * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
+* sourceforge
+  * sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down.
 
 ----
 
