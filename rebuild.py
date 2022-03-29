@@ -44,6 +44,7 @@ packages += [
     for arch in [ 'i686', 'x86_64' ]
   ]
 ]
+print([v[:2] for v in packages])
 
 print('Finding Juris-M versions...')
 # jurism
@@ -60,6 +61,7 @@ packages += [
   }.values())
   for arch in [ 'i686', 'x86_64' ]
 ]
+print([v[:2] for v in packages])
 
 prebuilt = set(repository.prebuilt())
 packages = [ (os.path.join(Config.repo, repository.packagename(client, version, arch)), url) for client, version, arch, url in packages ]
