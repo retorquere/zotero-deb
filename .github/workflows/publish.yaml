@@ -253,6 +253,9 @@ jobs:
     outputs:
       status: success
     needs: test
+    steps:
+      - name: prevent repo repair
+        run: echo do not force repair
 
   repair:
     if: "always() && needs.gather.outputs.status != 'success'"
