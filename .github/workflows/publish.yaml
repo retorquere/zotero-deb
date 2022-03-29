@@ -238,6 +238,7 @@ jobs:
     - name: install from ${{ matrix.hosting }} repo
       run: |
         sleep 60
+        sudo apt-get clean
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
         dpkg -l | grep zotero
