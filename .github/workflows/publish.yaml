@@ -160,6 +160,7 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
+        find $REPO -type f
         echo $REFRESH
         case "${{ matrix.hosting }}" in
           backblaze)
@@ -240,6 +241,8 @@ jobs:
         sleep 60
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
+        dpkg -l | grep zotero
+        dpkg -l | grep jurism
         for c in zotero zotero-beta jurism; do
           file /usr/lib/$c/${c/-beta/}
           file /usr/lib/$c/${c/-beta/}-bin
