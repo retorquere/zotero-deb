@@ -82,7 +82,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        - ioperf
+        # - ioperf
         - mwt
         packagesystem:
         - apt
@@ -185,10 +185,9 @@ jobs:
             if ./update.py https://zotero-deb.mirror.ioperf.eu $REFRESH; then
               rclone sync $REPO ioperf:zotero-deb.mirror.ioperf.eu -v --exclude install.sh --exclude index.html
 
-              cp install.sh install.txt
               echo === install.sh ===
               cat install.sh
-              rclone copy install.txt ioperf:zotero-deb.mirror.ioperf.eu -v
+              rclone copy install.sh ioperf:zotero-deb.mirror.ioperf.eu -v
               rclone copy index.html ioperf:zotero-deb.mirror.ioperf.eu -v
             fi
             ;;
@@ -211,7 +210,7 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        - ioperf
+        # - ioperf
         - mwt
     steps:
     - name: install ${{ matrix.hosting }} repo
@@ -248,3 +247,28 @@ jobs:
           file /usr/lib/$c/${c/-beta/}-bin
           file /usr/local/bin/$c
         done
+
+  gather:
+    runs-on: ubuntu-latest
+    outputs:
+      status: success
+    needs: test
+
+  repair:
+    if: "always() && needs.gather.outputs.status != 'success'"
+    runs-on: ubuntu-latest
+    env:
+      REPO: apt
+    needs: gather
+    steps:
+    - name: Cache repo
+      uses: actions/cache@v2
+      env:
+        cache-name: v3
+      with:
+        path: |
+          ./apt
+        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+
+    - name: clear cache
+      run: rm -rf $REPO
