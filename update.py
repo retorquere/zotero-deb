@@ -24,7 +24,7 @@ if not update:
     baseurl += '/'
   for asset in ['Packages', 'install.sh']:
     asset = baseurl + asset
-    response = request.get(packages)
+    response = request.get(asset)
     if response.status_code >= 400:
       print(asset, 'missing, force republish')
       update = True
