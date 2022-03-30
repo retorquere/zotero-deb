@@ -83,7 +83,7 @@ jobs:
         hosting:
         - backblaze
         # - ioperf
-        - mwt
+        # - mwt
         packagesystem:
         - apt
     env:
@@ -126,12 +126,6 @@ jobs:
       run: |
         mkdir -p ~/.config/rclone
         cat <<EOF > ~/.config/rclone/rclone.conf
-        [b2-zotero-apt]
-        type = b2
-        account = ${{ secrets.B2_APPLICATION_KEY_ID }}
-        key = ${{ secrets.B2_APPLICATION_KEY }}
-        hard_delete = true
-        download_url = https://apt.retorque.re/file/zotero-apt
 
         [b2-apt-package-archive]
         type = b2
@@ -211,7 +205,7 @@ jobs:
         hosting:
         - backblaze
         # - ioperf
-        - mwt
+        # - mwt
     steps:
     - name: install ${{ matrix.hosting }} repo
       run: |
@@ -221,8 +215,7 @@ jobs:
             export INSTALLSH=https://zotero.retorque.re/file/apt-package-archive/install.sh
             ;;
           ioperf)
-            # this really needs to be fixed
-            export INSTALLSH=https://zotero-deb.mirror.ioperf.eu/install.txt
+            export INSTALLSH=https://zotero-deb.mirror.ioperf.eu/install.sh
             ;;
           mwt)
             export INSTALLSH=https://zotero.mwt.me/apt-package-archive/install.sh
