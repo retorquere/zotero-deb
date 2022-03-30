@@ -165,14 +165,6 @@ jobs:
               rclone copy install.sh b2-apt-package-archive:apt-package-archive -v
               rclone copy index.html b2-apt-package-archive:apt-package-archive -v
             fi
-
-            if ./update.py https://apt.retorque.re/file/zotero-apt $REFRESH; then
-              rclone sync $REPO b2-zotero-apt:zotero-apt -v --exclude install.sh --exclude index.html
-              rclone cleanup b2-zotero-apt:zotero-apt -v
-
-              rclone copy install.sh b2-zotero-apt:zotero-apt -v
-              rclone copy index.html b2-zotero-apt:zotero-apt -v
-            fi
             ;;
 
           ioperf)
