@@ -160,7 +160,7 @@ jobs:
           backblaze)
             if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
               rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude install.sh --exclude index.html
-              rclone cleanup b2-apt-package-archive:apt-package-archive -vv
+              # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
 
               rclone copy install.sh b2-apt-package-archive:apt-package-archive -vv
               rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
