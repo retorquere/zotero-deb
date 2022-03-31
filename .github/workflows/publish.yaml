@@ -82,7 +82,6 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        # - ioperf
         # - mwt
         packagesystem:
         - apt
@@ -122,7 +121,7 @@ jobs:
         if_key_exists: replace
 
     - name: configure rclone
-      if: ${{ matrix.hosting == 'ioperf' }} || ${{ matrix.hosting == 'backblaze' }}
+      if: ${{ matrix.hosting == 'backblaze' }}
       run: |
         mkdir -p ~/.config/rclone
         cat <<EOF > ~/.config/rclone/rclone.conf
@@ -133,18 +132,6 @@ jobs:
         key = ${{ secrets.B2_APPLICATION_KEY }}
         hard_delete = true
         download_url = https://zotero.retorque.re/file/apt-package-archive
-
-        [ioperf]
-        type = ftp
-        host = 202.61.244.114
-        user = ${{ secrets.IOPERF_USERNAME }}
-        explicit_tls = true
-        no_check_certificate = true
-        encoding = Slash,Asterisk,Ctl,Dot
-        set_modtime = false
-        EOF
-
-        rclone config password ioperf pass "${{ secrets.IOPERF_PASSWORD }}"
 
     - name: publish ${{ matrix.packagesystem }} on ${{ matrix.hosting }}
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }}
@@ -159,31 +146,16 @@ jobs:
         case "${{ matrix.hosting }}" in
           backblaze)
             if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
-              rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude install.sh --exclude index.html
-              # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
-
-              rclone copy install.sh b2-apt-package-archive:apt-package-archive -vv
+              rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude --exclude index.html
               rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
-            fi
-            ;;
-
-          ioperf)
-            if ./update.py https://zotero-deb.mirror.ioperf.eu $REFRESH; then
-              rclone sync $REPO ioperf:zotero-deb.mirror.ioperf.eu -v --exclude install.sh --exclude index.html
-
-              echo === install.sh ===
-              cat install.sh
-              rclone copy install.sh ioperf:zotero-deb.mirror.ioperf.eu -v
-              rclone copy index.html ioperf:zotero-deb.mirror.ioperf.eu -v
+              # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
             fi
             ;;
 
           mwt)
             if ./update.py https://zotero.mwt.me/apt-package-archive $REFRESH; then
               rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@zotero.mwt.me:/apt-package-archive/
-
               rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@zotero.mwt.me:/apt-package-archive/
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz install.sh retorquere@zotero.mwt.me:/apt-package-archive/
             fi
             ;;
         esac
@@ -196,7 +168,6 @@ jobs:
       matrix:
         hosting:
         - backblaze
-        # - ioperf
         # - mwt
     steps:
     - name: install ${{ matrix.hosting }} repo
@@ -204,10 +175,7 @@ jobs:
         sleep 60
         case "${{ matrix.hosting }}" in
           backblaze)
-            export INSTALLSH=https://zotero.retorque.re/file/apt-package-archive/install.sh
-            ;;
-          ioperf)
-            export INSTALLSH=https://zotero-deb.mirror.ioperf.eu/install.sh
+            export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master//install.sh
             ;;
           mwt)
             export INSTALLSH=https://zotero.mwt.me/apt-package-archive/install.sh

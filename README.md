@@ -6,7 +6,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 **Primary source:**
 
-* (re)install using `curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash`
+* (re)install using `curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash`
 
 **Deprecated sources, please change to the primary source.**
 
@@ -38,7 +38,7 @@ They manage both desktop file registration and MimeType registration.
 To install Zotero, use the following commands:
 
 ```
-wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
 sudo apt update
 sudo apt install zotero
 ```
@@ -48,7 +48,7 @@ sudo apt install zotero
 To install Juris-M, use the following commands:
 
 ```
-wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
 sudo apt update
 sudo apt install jurism
 ```
@@ -57,7 +57,7 @@ sudo apt install jurism
 
 You can use `curl` instead of `wget` by typing
 ```
-curl -sL https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
 ```
 
 ## Updating Zotero / Juris-M
@@ -84,7 +84,7 @@ This repo also has the nightly beta's, installable as the `zotero-beta` and `jur
 The accepted key format in Debian-based systems seems to have changed a while ago, which means the existing signing verification key you have may no longer be available during install. Re-running the install script will remedy that:
 
 ```
-wget -qO- https://zotero.retorque.re/file/apt-package-archive/install.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
 ```
 
 ## Instructions for installation on Crostini-capable Chromebooks
@@ -94,7 +94,7 @@ Instructions for installation on Crostini-capable Chromebooks can be found on th
 ## Uninstall
 
 ```
-wget -qO- https://zotero.retorque.re/file/apt-package-archive/uninstall.sh | sudo bash
+wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/uninstall.sh | sudo bash
 sudo apt-get purge zotero
 ```
 
