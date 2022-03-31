@@ -146,7 +146,7 @@ jobs:
         case "${{ matrix.hosting }}" in
           backblaze)
             if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
-              rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude --exclude index.html
+              rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude index.html
               rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
               # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
             fi
