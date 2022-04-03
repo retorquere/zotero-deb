@@ -137,8 +137,8 @@ def mkrepo():
     run('rm -rf by-hash')
     run('bzip2 -kf Packages')
     run('apt-ftparchive -o APT::FTPArchive::AlwaysStat="true" -o APT::FTPArchive::Release::Codename=./ -o APT::FTPArchive::Release::Acquire-By-Hash="yes" release . > Release')
-    run('gpg --yes -abs -u dpkg -o Release.gpg --digest-algo sha256 Release')
-    run('gpg --yes -abs -u dpkg --clearsign -o InRelease --digest-algo sha256 Release')
+    run(f'gpg --yes -abs --local-user {Config.maintainer.gpgkey} -o Release.gpg --digest-algo sha256 Release')
+    run(f'gpg --yes -abs --local-user {Config.maintainer.gpgkey} --clearsign -o InRelease --digest-algo sha256 Release')
 
     for hsh in ['MD5Sum', 'SHA1', 'SHA256', 'SHA512']:
       run(f'mkdir -p by-hash/{hsh}')

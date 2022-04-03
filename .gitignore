@@ -10,6 +10,8 @@ release
 repo
 send.sh
 staging
+test_apt
+test/resource/gpg
 zotero
 *.deb
 *.jar
