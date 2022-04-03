@@ -12,6 +12,7 @@ yaml=YAML(typ='safe')
 import argparse
 parser = argparse.ArgumentParser()
 parser.add_argument('--mode')
+parser.add_argument('--config')
 args, unknownargs = parser.parse_known_args()
 sys.argv = sys.argv[:1]
 sys.argv += unknownargs
@@ -41,7 +42,9 @@ def bumped(client, version):
     return version
 
 ## load config
-with open('config.yml') as f:
+config_file = args.config or 'config.yml'
+
+with open(config_file) as f:
   Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
   Config.mode = args.mode
   assert Config.mode in [ None, 'apt'], Config.mode
