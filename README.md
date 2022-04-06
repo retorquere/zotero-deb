@@ -16,7 +16,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them.
 
-* this github project
+* [this release](https://github.com/retorquere/zotero-deb/releases/tag/apt-get) on this github project
   * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
 * sourceforge
   * sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down.
