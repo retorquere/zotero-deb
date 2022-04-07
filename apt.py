@@ -3,9 +3,9 @@
 import os, sys
 from types import SimpleNamespace
 import tempfile
-import glob
 import shutil, shlex
 import hashlib
+from pathlib import Path
 
 from util import Config, run, Open, IniFile, chdir
 
@@ -13,16 +13,16 @@ def packagename(client, version, arch):
   return f'{client}_{version}_{arch}.deb'
 
 def prebuilt():
-  return glob.glob(os.path.join(Config.repo, '*.deb'))
+  return Config.repo.glob('*.deb')
 
 def package(staged):
-  assert os.path.isdir(staged)
+  assert staged.is_dir()
 
   # gather metadata for the deb file
   deb = SimpleNamespace()
 
   # get version and package name
-  with IniFile(os.path.join(staged, 'application.ini')) as ini:
+  with IniFile(staged / 'application.ini') as ini:
     deb.vendor = ini['App']['Vendor'] # vendor instead of app name because jurism uses the same appname
     deb.package = deb.client = deb.vendor.lower()
     deb.version = ini['App']['Version']
@@ -33,11 +33,12 @@ def package(staged):
     deb.version = Config[deb.client].bumped(deb.version)
 
   # detect arch from staged dir
-  deb.arch = staged.split('_')[-1]
+  deb.arch = staged.name.split('_')[-1]
 
-  with tempfile.TemporaryDirectory() as builddir:
-    print('created temporary directory', builddir)
-    deb.build = builddir
+  with tempfile.TemporaryDirectory() as build_dir:
+    print('created temporary directory', build_dir)
+
+    build_dir = Path(build_dir)
 
     # get package dependencies
     deb.dependencies = Config[deb.client].dependencies[:]
@@ -55,21 +56,28 @@ def package(staged):
     # for the desktop entry
     deb.description = Config[deb.client].description
     # path to the generated deb file
-    deb.deb = os.path.join(Config.repo, f'{deb.package}_{deb.version}_{deb.arch}.deb')
+    deb_file = Config.repo / f'{deb.package}_{deb.version}_{deb.arch}.deb'
 
     # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
-    os.makedirs(os.path.join(deb.build, 'usr/lib'), exist_ok=True)
-    shutil.copytree(staged, os.path.join(deb.build, 'usr/lib', deb.package), ignore=shutil.ignore_patterns(deb.client + '.desktop', 'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'))
+    package_dir = build_dir / 'usr/lib' / deb.package
+    shutil.copytree(
+      staged,
+      package_dir,
+      ignore=shutil.ignore_patterns(
+        deb.client + '.desktop',
+       'active-update.xml', 'precomplete', 'removed-files', 'updates', 'updates.xml'
+       )
+    )
 
-    # disable auto-update
-    with Open(os.path.join(deb.build, 'usr/lib/', deb.package, 'defaults/pref/local-settings.js'), 'a') as ls, Open(os.path.join(deb.build, 'usr/lib/', deb.package, 'mozilla.cfg'), 'a') as cfg:
-      # enable mozilla.cfg
+    # enable mozilla.cfg
+    with Open(package_dir / 'defaults/pref/local-settings.js', 'a') as ls: 
       if ls.tell() != 0: print('', file=ls) # if the file exists, add an empty line
       print('pref("general.config.obscure_value", 0); // only needed if you do not want to obscure the content with ROT-13', file=ls)
       print('pref("general.config.filename", "mozilla.cfg");', file=ls)
 
-      # disable auto-update
+    # disable auto-update
+    with Open(package_dir / 'mozilla.cfg', 'a') as cfg:
       if cfg.tell() == 0:
         print('//', file=cfg) # this file needs to start with '//' -- if it's empty, add it, if not, it should already be there
       else:
@@ -79,7 +87,7 @@ def package(staged):
       print('lockPref("app.update.auto", false);', file=cfg)
 
     # create desktop file from existing .desktop file, but add mime handlers that Zotero can respond to
-    with IniFile(os.path.join(staged, deb.client + '.desktop')) as ini:
+    with IniFile(staged / f'{deb.client}.desktop') as ini:
       deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
       ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} --url %u')
       ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.package}/chrome/icons/default/default256.png')
@@ -98,15 +106,16 @@ def package(staged):
         'application/vnd.citationstyles.style+xml'
       ]))
       ini.set('Desktop Entry', 'Description', deb.description.format_map(vars(deb)))
-      with Open(os.path.join(deb.build, 'usr/share/applications', f'{deb.package}.desktop'), 'w') as f:
+      with Open(build_dir / 'usr/share/applications' / f'{deb.package}.desktop', 'w') as f:
         ini.write(f, space_around_delimiters=False)
 
     # add mime info
-    with open('mime.xml') as mime, Open(os.path.join(deb.build, 'usr/share/mime/packages', f'{deb.package}.xml'), 'w') as f:
-      f.write(mime.read())
+    build_mime = build_dir / 'usr/share/mime/packages'
+    build_mime.mkdir(parents=True)
+    shutil.copy('mime.xml', build_mime/f'{deb.package}.xml')
 
     # write build control file
-    with Open(os.path.join(deb.build, 'DEBIAN/control'), 'w') as f:
+    with Open(build_dir / 'DEBIAN/control', 'w') as f:
       print(f'Package: {deb.package}', file=f)
       print(f'Architecture: {deb.arch}', file=f)
       print(f'Depends: {deb.dependencies}', file=f)
@@ -117,15 +126,14 @@ def package(staged):
       print(f'Description: {deb.description}', file=f)
 
     # create symlink to binary
-    os.makedirs(os.path.join(deb.build, 'usr/local/bin'))
-    os.symlink(f'/usr/lib/{deb.package}/{deb.client}', os.path.join(deb.build, 'usr/local/bin', deb.package))
+    build_bin = build_dir / 'usr/local/bin'
+    build_bin.mkdir(parents=True) 
+    (build_bin / deb.package).symlink_to(f'/usr/lib/{deb.package}/{deb.client}')
 
     # build deb
-    if os.path.exists(deb.deb):
-      os.remove(deb.deb)
-    os.makedirs(os.path.dirname(deb.deb), exist_ok=True)
-    run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(deb.build)} {shlex.quote(deb.deb)}')
-    run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(deb.deb)}')
+    deb_file.unlink(missing_ok=True)
+    run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(str(build_dir))} {shlex.quote(str(deb_file))}')
+    run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(str(deb_file))}')
 
 def mkrepo():
   with chdir(Config.repo):

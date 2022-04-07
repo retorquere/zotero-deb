@@ -2,9 +2,10 @@ import subprocess
 import os, sys
 from colorama import Fore, Style
 import json
-from munch import Munch
+import munch
 import contextlib
 import configparser
+from pathlib import Path
 
 from ruamel.yaml import YAML
 yaml=YAML(typ='safe')
@@ -20,7 +21,7 @@ sys.argv += unknownargs
 ## change directory and back
 class chdir():
   def __init__(self, path):
-    self.cwd = os.getcwd()
+    self.cwd = Path.cwd()
     self.path = path
   def __enter__(self):
     print('changing to', self.path)
@@ -42,27 +43,28 @@ def bumped(client, version):
     return version
 
 ## load config
-config_file = args.config or 'config.yml'
+config_file = Path(args.config or 'config.yml')
 
-with open(config_file) as f:
-  Config = json.loads(json.dumps(yaml.load(f)), object_hook=Munch.fromDict)
-  Config.mode = args.mode
-  assert Config.mode in [ None, 'apt'], Config.mode
-  Config.repo = os.path.abspath(os.environ['REPO'])
+Config = munch.munchify(yaml.load(config_file))
+Config.mode = args.mode
+assert Config.mode in [ None, 'apt'], Config.mode
+Config.repo = Path(os.environ['REPO']).resolve()
+Config.staging = Path(Config.staging)
 
-  Config.zotero.bumped = lambda version: bumped('zotero', version)
-  Config.jurism.bumped = lambda version: bumped('jurism', version)
+Config.zotero.bumped = lambda version: bumped('zotero', version)
+Config.jurism.bumped = lambda version: bumped('jurism', version)
 
-  Config.archmap = {
-    'i686': 'i386',
-    'x86_64': 'amd64',
-  }
+Config.archmap = {
+  'i686': 'i386',
+  'x86_64': 'amd64',
+}
 
   # context manager to open file for reading or writing, and in the case of write, create paths as required
 class Open():
   def __init__(self, path, mode='r', fmode=None):
     self.path = path
-    if 'w' in mode or 'a' in mode: os.makedirs(os.path.dirname(self.path), exist_ok=True)
+    if 'w' in mode or 'a' in mode:
+      self.path.parent.mkdir(parents=True, exist_ok=True)
     self.mode = fmode
     self.f = open(self.path, mode)
 
@@ -72,7 +74,7 @@ class Open():
   def __exit__(self, exc_type, exc_value, exc_traceback):
     self.f.close()
     if self.mode is not None:
-      os.chmod(self.path, self.mode)
+      self.path.chmod(self.mode)
 
 # open inifile with default settings
 @contextlib.contextmanager

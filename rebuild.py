@@ -27,7 +27,7 @@ if Config.mode == 'apt':
 request = Session()
 request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
 
-os.makedirs(Config.repo, exist_ok=True)
+Config.repo.mkdir(parents=True, exist_ok=True)
 
 packages = []
 
@@ -63,31 +63,30 @@ packages += [
 print([v[:3] for v in packages])
 
 prebuilt = set(repository.prebuilt())
-packages = [ (os.path.join(Config.repo, repository.packagename(client, version, arch)), url) for client, version, arch, url in packages ]
+packages = [ (Config.repo / repository.packagename(client, version, arch), url) for client, version, arch, url in packages ]
 
 modified = False
 allowed = set([pkg for pkg, url in packages])
 for pkg in prebuilt - allowed:
   print('rebuild: delete', pkg)
   modified = True
-  os.remove(pkg)
+  pkg.unlink()
 
 Config.staged = []
 for pkg, url in packages:
-  if os.path.exists(pkg):
+  if pkg.exists():
     continue
   print('rebuild: packaging', pkg)
   modified = True
-  staged = os.path.join(Config.staging, Path(pkg).stem)
-  # remove trailing slash from staged directories since it messes with basename
-  Config.staged.append(re.sub(r'/$', '', staged))
-  if not os.path.exists(staged):
-    os.makedirs(staged)
-    run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(staged)} --strip-components=1')
+  staged = Config.staging / Path(pkg).stem
+  Config.staged.append(staged)
+  if not staged.exists():
+    staged.mkdir(parents=True)
+    run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
 
   repository.package(staged)
 
-for unstage in [re.sub(r'/$', '', staged) for staged in glob.glob(os.path.join(Config.staging, '*'))]:
+for unstage in Config.staging.iterdir():
   if unstage not in Config.staged:
     print('unstaged', unstage)
     shutil.rmtree(unstage)
