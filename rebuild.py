@@ -86,10 +86,11 @@ for pkg, url in packages:
 
   repository.package(staged)
 
-for unstage in Config.staging.iterdir():
-  if unstage not in Config.staged:
-    print('unstaged', unstage)
-    shutil.rmtree(unstage)
+if Config.staging.exists():
+  for unstage in Config.staging.iterdir():
+    if unstage not in Config.staged:
+      print('unstaged', unstage)
+      shutil.rmtree(unstage)
 
 if modified:
   repository.mkrepo()
