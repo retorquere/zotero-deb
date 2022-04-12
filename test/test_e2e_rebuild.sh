@@ -17,12 +17,19 @@ export GNUPGHOME
 export REPO
 
 # Cleanup previous tests
+echo Clear GPG directory
 rm -rf "$GNUPGHOME"
+
+echo Clear Repo directory
 rm -rf $REPO
-[[ -n $CLEAN_STAGING ]] && rm -rf staging
+
+if [[ -n $CLEAN_STAGING ]]; then
+  echo Clear staging directory
+  rm -rf staging
+fi
 
 # Build temporary gpg key
-mkdir "$GNUPGHOME"
+mkdir --mode=700 "$GNUPGHOME"
 gpg \
   --yes \
   --batch \
@@ -30,9 +37,25 @@ gpg \
   --quick-gen-key $GPGKEY
 
 # Perform a rebuild
+echo Test: Perform clean rebuild
 python rebuild.py \
   --config $CONFIG \
   --mode $MODE
 
 # Test package signatures
+echo Test: Verify package signatures
 dpkg-sig --verify $REPO/*.deb
+
+# Test cached rebuild
+echo Test: Perform cached rebuild
+python rebuild.py \
+  --config $CONFIG \
+  --mode $MODE
+
+echo Test: Ensure cached rebuild cleans staging dir
+if rmdir staging; then
+  echo Success
+else
+  echo Failure: staging contains files
+  exit 1
+fi
