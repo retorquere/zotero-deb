@@ -11,6 +11,7 @@ esac
 
 export GNUPGHOME="/dev/null"
 
+REPO=${1:-'https://zotero.retorque.re/file/apt-package-archive'}
 KEYNAME=zotero-archive-keyring.gpg
 GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
 KEYRING=/usr/share/keyrings/$KEYNAME
@@ -28,7 +29,7 @@ sudo chmod 644 $KEYRING
 sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] https://zotero.retorque.re/file/apt-package-archive ./
+deb [signed-by=$KEYRING by-hash=force] $REPO ./
 EOF
 
 sudo apt-get clean
