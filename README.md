@@ -8,9 +8,10 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 * (re)install using `curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash`
 
-**Mirrors:**:
+**Mirrors:**
 
 * https://zotero-deb.mirror.ioperf.eu/
+* https://mirror.mwt.me/zotero/deb
 
 **Deprecated sources, please change to the primary source.**
 
