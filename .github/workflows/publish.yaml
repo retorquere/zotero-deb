@@ -56,7 +56,7 @@ jobs:
         cache-name: v3
       with:
         path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}
 
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
@@ -95,7 +95,7 @@ jobs:
         cache-name: v3
       with:
         path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}
 
     - name: install utilities
       run: |
@@ -177,7 +177,7 @@ jobs:
         cache-name: v3
       with:
         path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
+        key: repo-${{ env.cache-name }}-${{ github.ref }}
 
     - name: clear cache
       run: rm -rf $REPO
