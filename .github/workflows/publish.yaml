@@ -165,7 +165,7 @@ jobs:
         done
 
   repair:
-    if: "always() && (needs.rebuild.outputs.status != 'success' || needs.publish.outputs.status != 'success' || needs.test.outputs.status != 'success')"
+    if: failure()
     runs-on: ubuntu-latest
     env:
       REPO: apt
