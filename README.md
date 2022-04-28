@@ -2,7 +2,7 @@
 
 **PSA**
 
-I was in the process of transferring the hosting of these packages to the Zotero organisation. That may or may not yet happen soon, but right now, if you're reading this, you'll likely have to update the pointer to the repo. If you are getting errors, **please re-run install.sh or see the instructions below to re-install manually**. I have had to restructure the repos. I apologize, but it was a necessary simplification. Simply re-running the install is all that is required.
+I was in the process of transferring the hosting of these packages to the Zotero organisation. That may or may not yet happen soon, but right now, if you're reading this, you'll likely have to update the pointer to the repo. If you are getting errors, **please re-run install.sh or see the instructions below to re-install the repo manually**. I have had to restructure the repos. I apologize, but it was a necessary simplification. Simply re-running the install is all that is required, no need to do anything at all with your current install of Zotero.
 
 **Primary source:**
 
