@@ -17,15 +17,12 @@ on:
 
 jobs:
   rebuild:
-    strategy:
-      matrix:
-        packagesystem:
-        - apt
     env:
-      REPO: ${{ matrix.packagesystem }}
+      REPO: apt
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.repo.outputs.publish }}
+      status: success
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.6.0
@@ -58,15 +55,14 @@ jobs:
       env:
         cache-name: v3
       with:
-        path: |
-          ./apt
+        path: apt
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
 
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
       run: rm -rf $REPO
 
-    - name: rebuild ${{ matrix.packagesystem }} repo
+    - name: rebuild apt repo
       id: repo
       env:
         PYTHONUNBUFFERED: true
@@ -77,16 +73,11 @@ jobs:
 
   publish:
     runs-on: ubuntu-latest
+    outputs:
+      status: success
     needs: rebuild
-    strategy:
-      matrix:
-        hosting:
-        - backblaze
-        # - mwt
-        packagesystem:
-        - apt
     env:
-      REPO: ${{ matrix.packagesystem }}
+      REPO: apt
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python
@@ -103,8 +94,7 @@ jobs:
       env:
         cache-name: v3
       with:
-        path: |
-          ./${{ matrix.packagesystem }}
+        path: apt
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
 
     - name: install utilities
@@ -112,16 +102,7 @@ jobs:
         sudo apt-get -qy install moreutils pandoc
         curl https://rclone.org/install.sh | sudo bash
 
-    - name: Install MWT SSH Key
-      if: ${{ matrix.hosting == 'mwt' }}
-      uses: shimataro/ssh-key-action@v2
-      with:
-        key: ${{ secrets.MWT_SSH_KEY }}
-        known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-        if_key_exists: replace
-
     - name: configure rclone
-      if: ${{ matrix.hosting == 'backblaze' }}
       run: |
         mkdir -p ~/.config/rclone
         cat <<EOF > ~/.config/rclone/rclone.conf
@@ -132,55 +113,37 @@ jobs:
         key = ${{ secrets.B2_APPLICATION_KEY }}
         hard_delete = true
         download_url = https://zotero.retorque.re/file/apt-package-archive
+        EOF
 
-    - name: publish ${{ matrix.packagesystem }} on ${{ matrix.hosting }}
-      if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }} || ${{ github.event.inputs.publish == matrix.hosting }}
+    - name: publish apt
+      if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       env:
-        REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}_${{ github.event.inputs.publish == matrix.hosting }}_
+        REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}
         PYTHONUNBUFFERED: true
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
         find $REPO -type f
         echo $REFRESH
-        case "${{ matrix.hosting }}" in
-          backblaze)
-            if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
-              rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude index.html
-              rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
-              # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
-            fi
-            ;;
 
-          mwt)
-            if ./update.py https://zotero.mwt.me/apt-package-archive $REFRESH; then
-              rsync -e "ssh -o StrictHostKeyChecking=no" -avhz --delete $REPO/ retorquere@zotero.mwt.me:/apt-package-archive/
-              rsync -e "ssh -o StrictHostKeyChecking=no" -vz index.html retorquere@zotero.mwt.me:/apt-package-archive/
-            fi
-            ;;
-        esac
+        if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
+          rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude index.html
+          rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
+          # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
+        fi
 
   test:
     runs-on: ubuntu-latest
+    outputs:
+      status: success
     needs: publish
-    strategy:
-      fail-fast: false
-      matrix:
-        hosting:
-        - backblaze
-        # - mwt
     steps:
-    - name: install ${{ matrix.hosting }} repo
+    - name: allow clouflare CDN time to settle
+      run: sleep 60
+
+    - name: install apt repo
       run: |
-        sleep 60
-        case "${{ matrix.hosting }}" in
-          backblaze)
-            export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master//install.sh
-            ;;
-          mwt)
-            export INSTALLSH=https://zotero.mwt.me/apt-package-archive/install.sh
-            ;;
-        esac
+        export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master//install.sh
         echo INSTALLSH=$INSTALLSH
         curl -sL $INSTALLSH | tee install.sh | sudo bash
         echo ==== install.sh ===
@@ -188,9 +151,8 @@ jobs:
         echo ==== zotero.list ===
         cat /etc/apt/sources.list.d/zotero.list
   
-    - name: install from ${{ matrix.hosting }} repo
+    - name: install from backblaze repo
       run: |
-        sleep 60
         sudo apt-get clean
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
@@ -202,29 +164,19 @@ jobs:
           file /usr/local/bin/$c
         done
 
-  gather:
-    runs-on: ubuntu-latest
-    outputs:
-      status: success
-    needs: test
-    steps:
-      - name: prevent repo repair
-        run: echo do not force repair
-
   repair:
-    if: "always() && needs.gather.outputs.status != 'success'"
+    if: "always() && (needs.rebuild.outputs.status != 'success' || needs.publish.outputs.status != 'success' || needs.test.outputs.status != 'success')"
     runs-on: ubuntu-latest
     env:
       REPO: apt
-    needs: gather
+    needs: [rebuild, publish, test]
     steps:
     - name: Cache repo
       uses: actions/cache@v2
       env:
         cache-name: v3
       with:
-        path: |
-          ./apt
+        path: apt
         key: repo-${{ env.cache-name }}-${{ github.ref }}-${{ hashFiles('rebuild.py', 'apt.py') }}
 
     - name: clear cache
