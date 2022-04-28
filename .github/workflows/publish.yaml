@@ -17,40 +17,37 @@ on:
 
 jobs:
   rebuild:
-    env:
-      REPO: apt
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.repo.outputs.publish }}
-      status: success
     steps:
-    - name: Cancel Previous Runs
+    - name: cancel previous runs
       uses: styfle/cancel-workflow-action@0.6.0
       with:
         access_token: ${{ github.token }}
 
     - uses: actions/checkout@v2
-    - name: Set up Python
+    - name: set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
-    - name: Install dependencies
+    - name: install python packages
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Import GPG key
+    - name: import GPG key
       uses: retorquere/ghaction-import-gpg@master
       with:
         gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
 
-    - name: install build requirements
+    - name: install dpkg build requirements
       run: |
         sudo add-apt-repository ppa:mozillateam/ppa -y
         sudo apt-get -q update
         sudo apt-get -qy install dpkg-sig fakeroot moreutils
 
-    - name: Cache repo
+    - name: load/stash repo cache
       uses: actions/cache@v2
       env:
         cache-name: v3
@@ -60,36 +57,29 @@ jobs:
 
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
-      run: rm -rf $REPO
+      run: rm -rf apt
 
     - name: rebuild apt repo
       id: repo
       env:
         PYTHONUNBUFFERED: true
-      run: ./rebuild.py --mode apt && find $REPO -type f
-
-    - name: show status
-      run: echo publish=${{ steps.repo.outputs.publish }}
+      run: ./rebuild.py --mode apt && find apt -type f
 
   publish:
     runs-on: ubuntu-latest
-    outputs:
-      status: success
     needs: rebuild
-    env:
-      REPO: apt
     steps:
     - uses: actions/checkout@v2
-    - name: Set up Python
+    - name: set up Python
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
-    - name: Install dependencies
+    - name: install python packages
       run: |
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Restore cached repo
+    - name: restore repo cache
       uses: actions/cache@v2
       env:
         cache-name: v3
@@ -115,7 +105,7 @@ jobs:
         download_url = https://zotero.retorque.re/file/apt-package-archive
         EOF
 
-    - name: publish apt
+    - name: publish to backblaze
       if: ${{ needs.rebuild.outputs.publish == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       env:
         REFRESH: _${{ needs.rebuild.outputs.publish == 'true' }}_${{ github.event.inputs.publish == 'true' }}
@@ -123,19 +113,17 @@ jobs:
         GITHUB_TOKEN: ${{ github.token }}
         GITHUB_ACCESS_TOKEN: ${{ github.token }}
       run: |
-        find $REPO -type f
+        find apt -type f
         echo $REFRESH
 
         if ./update.py https://zotero.retorque.re/file/apt-package-archive $REFRESH; then
-          rclone sync $REPO b2-apt-package-archive:apt-package-archive -vv --exclude index.html
+          rclone sync apt b2-apt-package-archive:apt-package-archive -vv --exclude index.html
           rclone copy index.html b2-apt-package-archive:apt-package-archive -vv
           # rclone cleanup b2-apt-package-archive:apt-package-archive -vv
         fi
 
   test:
     runs-on: ubuntu-latest
-    outputs:
-      status: success
     needs: publish
     steps:
     - name: allow clouflare CDN time to settle
@@ -151,7 +139,7 @@ jobs:
         echo ==== zotero.list ===
         cat /etc/apt/sources.list.d/zotero.list
   
-    - name: install from backblaze repo
+    - name: install zotero and jurism
       run: |
         sudo apt-get clean
         sudo apt-get -q update
@@ -165,13 +153,11 @@ jobs:
         done
 
   repair:
-    if: "always() && (needs.rebuild.outputs.status != 'success' || needs.publish.outputs.status != 'success' || needs.test.outputs.status != 'success')"
+    if: failure()
     runs-on: ubuntu-latest
-    env:
-      REPO: apt
     needs: [rebuild, publish, test]
     steps:
-    - name: Cache repo
+    - name: load repo cache
       uses: actions/cache@v2
       env:
         cache-name: v3
@@ -180,4 +166,4 @@ jobs:
         key: repo-${{ env.cache-name }}-${{ github.ref }}
 
     - name: clear cache
-      run: rm -rf $REPO
+      run: rm -rf apt
