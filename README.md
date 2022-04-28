@@ -22,7 +22,7 @@ If you still use these, you will get errors -- apologies for this, but they had 
   * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
 * sourceforge
   * sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down.
-
+* https://apt.retorque.re/file/zotero-apt
 ----
 
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them.
