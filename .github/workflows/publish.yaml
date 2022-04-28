@@ -55,8 +55,8 @@ jobs:
       env:
         cache-name: v3
       with:
-        path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}
+        path: ${{ env.REPO }}
+        key: repo-${{ env.cache-name }}-${{ github.sha }}
 
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
@@ -94,8 +94,8 @@ jobs:
       env:
         cache-name: v3
       with:
-        path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}
+        path: ${{ env.REPO }}
+        key: repo-${{ env.cache-name }}-${{ github.sha }}
 
     - name: install utilities
       run: |
@@ -176,8 +176,8 @@ jobs:
       env:
         cache-name: v3
       with:
-        path: apt
-        key: repo-${{ env.cache-name }}-${{ github.ref }}
+        path: ${{ env.REPO }}
+        key: repo-${{ env.cache-name }}-${{ github.sha }}
 
     - name: clear cache
       run: rm -rf $REPO
