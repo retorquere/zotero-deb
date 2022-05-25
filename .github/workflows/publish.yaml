@@ -81,9 +81,9 @@ jobs:
     - name: force rebuild
       if: ${{ github.event.inputs.build == 'true' }}
       run: rm -rf $REPO
-    - name: force rebuild
-      if: ${{ github.event.inputs.build != 'true' }}
-      run: mkdir -p $REPO && rclone sync b2-apt-package-archive:apt-package-archive $REPO -vv --exclude index.html
+#    - name: restore repo
+#      if: ${{ github.event.inputs.build != 'true' }}
+#      run: mkdir -p $REPO && rclone sync b2-apt-package-archive:apt-package-archive $REPO -vv --exclude index.html
 
     - name: rebuild apt repo
       id: repo
