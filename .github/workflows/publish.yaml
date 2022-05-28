@@ -85,8 +85,8 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         timeout_minutes: 5
-        max_attempts: 4
-        command: rclone sync b2-apt-package-archive:apt-package-archive $REPO --exclude index.html
+        max_attempts: 1
+        command: rclone sync b2-apt-package-archive:apt-package-archive $REPO
       continue-on-error: true
 
     - name: rebuild apt repo
@@ -109,7 +109,7 @@ jobs:
       uses: nick-fields/retry@v2
       with:
         timeout_minutes: 5
-        max_attempts: 4
+        max_attempts: 1
         command: rclone sync $REPO b2-apt-package-archive:apt-package-archive
 
   test:
