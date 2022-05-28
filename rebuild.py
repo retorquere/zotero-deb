@@ -12,10 +12,6 @@ import glob
 import shutil
 from pathlib import Path
 import shlex
-#import configparser
-#import contextlib
-#import types
-#from github3 import login as ghlogin
 import html
 
 from util import run, Config
