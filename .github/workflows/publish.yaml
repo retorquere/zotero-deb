@@ -75,14 +75,20 @@ jobs:
         path: ${{ env.REPO }}
         key: repo-${{ env.cache-name }}-${{ github.sha }}-${{ hashFiles('zotero-releases.json', 'jurism-releases.json') }}
 
+    - name: check online apt repo
+      id: before
+      env:
+        PYTHONUNBUFFERED: true
+      run: ./update.py --url https://zotero.retorque.re/file/apt-package-archive --update "${{ github.event.inputs.build }}"
+
     - name: force rebuild
-      if: ${{ github.event.inputs.build == 'true' }}
+      if: ${{ steps.before.outputs.update == 'true' }}
       run: rm -rf $REPO
-    - name: create repo dir
-      run: mkdir -p $REPO
     - name: restore repo
-      if: ${{ github.event.inputs.build != 'true' }}
-      run: rclone sync b2-apt-package-archive:apt-package-archive $REPO -v
+      if: ${{ steps.before.outputs.update != 'true' }}
+      run: |
+        mkdir -p $REPO
+        rclone sync b2-apt-package-archive:apt-package-archive $REPO -v
 
     - name: rebuild apt repo
       id: rebuild
@@ -91,19 +97,19 @@ jobs:
       run: ./rebuild.py --mode apt && find $REPO -type f
 
     - name: check online apt repo
-      id: publish
+      id: rebuilt
       env:
         PYTHONUNBUFFERED: true
-      run: ./publish.py --url https://zotero.retorque.re/file/apt-package-archive --publish "${{ steps.rebuilt.outputs.rebuilt }}" --publish "${{ github.event.inputs.publish }}"
+      run: ./update.py --url https://zotero.retorque.re/file/apt-package-archive --update "${{ steps.rebuild.outputs.update }}"
 
     - name: show status
-      run: echo publish=${{ steps.publish.outputs.publish }}
+      run: echo publish=${{ steps.rebuilt.outputs.update }}
 
     - name: publish repo
-      if: ${{ steps.publish.outputs.publish == 'true' }}
+      if: ${{ steps.rebuilt.outputs.update == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       run: rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
     - name: clean up repo
-      if: ${{ steps.publish.outputs.publish == 'true' }}
+      if: ${{ steps.rebuilt.outputs.update == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
       run: rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
   test:

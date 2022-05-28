@@ -7,8 +7,8 @@ from requests import Session
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
-parser.add_argument('-u', '--url', required=True)
-parser.add_argument('-p', '--publish', action='append', default=[])
+parser.add_argument('--url', required=True)
+parser.add_argument('--updatupdatupdate', action='append', default=[])
 args = parser.parse_args()
 
 META = '''---
@@ -17,7 +17,7 @@ title: Zotero/Jurism binaries for Debian-based linux systems
 '''
 
 ## set UA for web requests
-if 'true' not in args.publish:
+if 'true' not in args.update:
   request = Session()
   request.headers.update({ 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/35.0.1916.47 Safari/537.36' })
   baseurl = args.url
@@ -28,8 +28,8 @@ if 'true' not in args.publish:
     response = request.get(asset)
     if response.status_code >= 400:
       print(asset, 'missing, force republish')
-      args.publish.append('true')
-if 'true' in args.publish:
+      args.update.append('true')
+if 'true' in args.update:
   with open('README.md') as f:
     readme = META + f.read()
 
@@ -45,4 +45,4 @@ if 'true' in args.publish:
     f.write(readme)
   run('pandoc index.md -s --css pandoc.css -o index.html')
 
-print(f'::set-output name=publish::{"true" if "true" in args.publish else "false"}')
+print(f'::set-output name=update::{"true" if "true" in args.update else "false"}')
