@@ -94,4 +94,4 @@ if Config.staging.exists():
 
 if modified:
   repository.mkrepo()
-  print(f'::set-output name=publish::true')
+  print(f'::set-output name=rebuilt::true')
