@@ -64,7 +64,7 @@ jobs:
         account = ${{ secrets.B2_APPLICATION_KEY_ID }}
         key = ${{ secrets.B2_APPLICATION_KEY }}
         hard_delete = true
-        download_url = https://zotero.retorque.re/file/apt-package-archive/
+        download_url = https://zotero.retorque.re
         EOF
 
     - name: Cache repo
