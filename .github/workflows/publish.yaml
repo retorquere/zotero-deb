@@ -111,6 +111,13 @@ jobs:
         timeout_minutes: 5
         max_attempts: 1
         command: rclone sync $REPO b2-apt-package-archive:apt-package-archive
+    - name: clean up repo
+      if: ${{ steps.publish.outputs.publish == 'true' }}
+      uses: nick-fields/retry@v2
+      with:
+        timeout_minutes: 5
+        max_attempts: 1
+        command: rclone cleanup b2-apt-package-archive:apt-package-archive -vv
 
   test:
     runs-on: ubuntu-latest
