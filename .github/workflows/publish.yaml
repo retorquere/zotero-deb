@@ -68,7 +68,7 @@ jobs:
         EOF
 
     - name: Cache repo
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: v3
       with:
@@ -157,7 +157,7 @@ jobs:
         curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
 
     - name: Cache repo
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         cache-name: v3
       with:
