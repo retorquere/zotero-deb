@@ -8,7 +8,7 @@ from requests import Session
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument('--url', required=True)
-parser.add_argument('--updatupdatupdate', action='append', default=[])
+parser.add_argument('--update', action='append', default=[])
 args = parser.parse_args()
 
 META = '''---
