@@ -151,13 +151,18 @@ jobs:
       REPO: apt
     needs: [rebuild, test]
     steps:
+    - name: fetch client versions
+      run: |
+        curl -L 'https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json' -o zotero-releases.json
+        curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
+
     - name: Cache repo
       uses: actions/cache@v2
       env:
         cache-name: v3
       with:
         path: ${{ env.REPO }}
-        key: repo-${{ env.cache-name }}-${{ github.sha }}
+        key: repo-${{ env.cache-name }}-${{ github.sha }}-${{ hashFiles('zotero-releases.json', 'jurism-releases.json') }}
 
     - name: clear cache
       run: rm -rf $REPO
