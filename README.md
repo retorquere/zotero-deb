@@ -16,13 +16,14 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 ## Deprecated sources, please change to the primary source.
 
-If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them.
+If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them. Please re-install using [#PSA](the instructions above). The following are no longer supported:
 
-* [this release](https://github.com/retorquere/zotero-deb/releases/tag/apt-get) on this github project
+* [the downloads on this repo](https://github.com/retorquere/zotero-deb/releases/tag/apt-get)
   * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
 * sourceforge
   * sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down.
-* https://apt.retorque.re/file/zotero-apt
+* deprecated URL on backblaze
+  * https://apt.retorque.re/file/zotero-apt
 ----
 
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them.
