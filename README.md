@@ -1,10 +1,10 @@
 <a href="https://www.zotero.org/"><img src="https://www.zotero.org/static/images/promote/zotero-logo-256x62.png" alt="Zotero"></a><a href="https://juris-m.github.io/"><img src="https://juris-m.github.io/blog/image/juris-m-logo.svg" alt="Juris-M" height="62" align="right"></a>
 
-**PSA**
+# PSA
 
 I was in the process of transferring the hosting of these packages to the Zotero organisation. That may or may not yet happen soon, but right now, if you're reading this, you'll likely have to update the pointer to the repo. If you are getting errors, **please re-run install.sh or see the instructions below to re-install the repo manually**. I have had to restructure the repos. I apologize, but it was a necessary simplification. Simply re-running the install is all that is required, no need to do anything at all with your current install of Zotero.
 
-**Primary source:**
+# Primary source:
 
 * packages: https://zotero.retorque.re/file/apt-package-archive/index.html
 * (re)install using `curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash`
@@ -14,7 +14,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 * https://zotero-deb.mirror.ioperf.eu/
 * https://mirror.mwt.me/zotero/deb
 
-**Deprecated sources, please change to the primary source.**
+## Deprecated sources, please change to the primary source.
 
 If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them.
 
