@@ -6,7 +6,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 # Primary source:
 
-* packages: https://zotero.retorque.re/file/apt-package-archive/index.html
+<!-- * packages: https://zotero.retorque.re/file/apt-package-archive/index.html -->
 * (re)install using `curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash`
 
 **Mirrors:**
