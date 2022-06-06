@@ -16,7 +16,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 
 ## Deprecated sources, please change to the primary source.
 
-If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them. Please re-install using [#PSA](the instructions above). The following are no longer supported:
+If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them. Please re-install using [the instructions above](#PSA). The following are no longer supported:
 
 * [the downloads on this repo](https://github.com/retorquere/zotero-deb/releases/tag/apt-get)
   * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
