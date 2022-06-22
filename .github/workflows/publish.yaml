@@ -50,9 +50,11 @@ jobs:
         curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
 
     - name: install utilities
-      run: |
-        sudo apt-get -qy install moreutils pandoc
+      run: sudo apt-get -qy install moreutils pandoc
         curl https://rclone.org/install.sh | sudo bash
+    - name: install rclone
+      # run: curl https://rclone.org/install.sh | sudo bash
+      run: wget $(curl -s https://api.github.com/repos/rclone/rclone/releases/latest 2 | jq -r '.assets | .[] | select(.browser_download_url | contains("-linux-amd64.deb")) | .browser_download_url') -O ./rclone.deb && sudo apt-get install -y ./rclone.deb
 
     - name: configure rclone
       run: |
