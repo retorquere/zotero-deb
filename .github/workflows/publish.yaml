@@ -134,6 +134,7 @@ jobs:
   
     - name: install from backblaze repo
       run: |
+        nslookup zotero.retorque.re
         sudo apt-get clean
         sudo apt-get -q update
         sudo apt-get -qy install zotero jurism zotero-beta
