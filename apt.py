@@ -52,6 +52,7 @@ def package(staged):
       if 'gcc' in dep: continue #43
       deb.dependencies.append(dep)
     deb.dependencies = ', '.join(sorted(list(set(deb.dependencies))))
+    print('dependencies:', deb.dependencies)
 
     # for the desktop entry
     deb.description = Config[deb.client].description
