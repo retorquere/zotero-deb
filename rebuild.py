@@ -3,16 +3,20 @@
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv(), override=True)
 
-from requests import Session
-import os, sys
-import argparse
-from urllib.parse import quote_plus as urlencode, unquote
-import re
-import glob
-import shutil
 from pathlib import Path
-import shlex
+from requests import Session
+from urllib.parse import quote_plus as urlencode, unquote
+from wand.color import Color
+from wand.drawing import Drawing
+from wand.image import Image
+import argparse
+import glob
 import html
+import os, sys
+import re
+import shlex
+import shutil
+
 
 from util import run, Config
 
@@ -79,6 +83,15 @@ for pkg, url in packages:
   if not staged.exists():
     staged.mkdir(parents=True)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
+    if '-beta' in str(staged): # add beta symbol to icon
+      for icon_path in glob.glob(str(staged / 'chrome/icons/default/default*.png')):
+        with Drawing() as text, Image(filename=icon_path) as icon:
+          text.font = 'Symbol'
+          text.fill_color = Color('rgba(3, 3, 3, 0.6)')
+          text.font_size = icon.height
+          text.text(int(icon.width * 0.2), int(icon.height * 0.8), 'b')
+          text(icon)
+          icon.save(filename=icon_path)
 
   repository.package(staged)
 

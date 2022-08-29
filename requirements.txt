@@ -5,5 +5,6 @@ python-dotenv
 requests
 ruamel.yaml
 python-magic
+wand
 munch
 lsb_release_ex
