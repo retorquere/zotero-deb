@@ -127,7 +127,7 @@ def package(staged):
       print(f'Description: {deb.description}', file=f)
 
     # create symlink to binary
-    build_bin = build_dir / 'usr/local/bin'
+    build_bin = build_dir / 'usr/bin'
     build_bin.mkdir(parents=True) 
     (build_bin / deb.package).symlink_to(f'/usr/lib/{deb.package}/{deb.client}')
 
