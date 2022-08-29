@@ -6,9 +6,8 @@ zotero:
   dependencies:
     - gnupg
   bump:
-    5.0.96.2: 3
-    5.0.96.3: 3
-    5.0.97.57+07df7d0de: 3
+    6.0.13: 1
+    6.0.14.1+79246196a: 1
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
@@ -16,5 +15,5 @@ jurism:
     - default-jre
     - libreoffice-java-common
   bump:
-    5.0.93m18: 3
+    5.0.93m18: 4
 staging: staging
