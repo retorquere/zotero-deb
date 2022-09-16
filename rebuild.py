@@ -85,6 +85,7 @@ for pkg, url in packages:
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
     if '-beta' in str(staged): # add beta symbol to icon
       for icon_path in glob.glob(str(staged / 'chrome/icons/default/default*.png')):
+        print('adding beta sign to', icon_path)
         with Drawing() as text, Image(filename=icon_path) as icon:
           text.font = 'Symbol'
           text.fill_color = Color('rgba(3, 3, 3, 0.6)')
