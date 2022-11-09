@@ -39,7 +39,7 @@ jobs:
     - name: Import GPG key
       uses: retorquere/ghaction-import-gpg@master
       with:
-        gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+        gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
 
     - name: install build requirements
       run: |
