@@ -43,6 +43,12 @@ packages += [
     (arch, request.get(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=beta').url)
     for arch in [ 'i686', 'x86_64' ]
   ]
+] + [
+  ('zotero-dev', Config.zotero.bumped(unquote(re.match(r'https://download.zotero.org/client/dev/([^/]+)', url)[1]).replace('-dev', '')), Config.archmap[arch], url)
+  for arch, url in [
+    (arch, request.get(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=dev').url)
+    for arch in [ 'i686', 'x86_64' ]
+  ]
 ]
 
 print('Finding Juris-M versions...')
@@ -83,14 +89,15 @@ for pkg, url in packages:
   if not staged.exists():
     staged.mkdir(parents=True)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
-    if '-beta' in str(staged): # add beta symbol to icon
-      for icon_path in glob.glob(str(staged / 'chrome/icons/default/default*.png')):
-        print('adding beta sign to', icon_path)
+    if '-beta' in str(staged) or '-dev' in str(staged): # add symbol to icon
+      symbol = 'b' if '-beta' in str(staged) else 'c'
+      for icon_path in glob.glob(str(staged / 'chrome/icons/default/*.*')):
+        print(f'adding {symbol}eta sign to', icon_path)
         with Drawing() as text, Image(filename=icon_path) as icon:
           text.font = 'Symbol'
           text.fill_color = Color('rgba(3, 3, 3, 0.6)')
           text.font_size = icon.height
-          text.text(int(icon.width * 0.2), int(icon.height * 0.8), 'b')
+          text.text(int(icon.width * 0.2), int(icon.height * 0.8), symbol)
           text(icon)
           icon.save(filename=icon_path)
 

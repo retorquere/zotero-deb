@@ -139,12 +139,13 @@ jobs:
         curl -s https://zotero.retorque.re/file/apt-package-archive/Packages.bz2 | md5sum
         sudo apt-get clean
         sudo apt-get -q update
-        sudo apt-get -qy install zotero jurism zotero-beta
+        sudo apt-get -qy install zotero zotero-beta zotero-dev
         dpkg -l | grep zotero
         dpkg -l | grep jurism
-        for c in zotero zotero-beta jurism; do
-          file /usr/lib/$c/${c/-beta/}
-          file /usr/lib/$c/${c/-beta/}-bin
+
+        for c in zotero zotero-beta zotero-dev; do
+          file /usr/lib/$c/${c/-*/}
+          file /usr/lib/$c/${c/-*/}-bin
           file /usr/local/bin/$c
         done
 

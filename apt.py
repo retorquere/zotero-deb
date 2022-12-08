@@ -22,7 +22,10 @@ def package(staged):
   deb = SimpleNamespace()
 
   # get version and package name
-  with IniFile(staged / 'application.ini') as ini:
+  for app_ini_candidate in [staged / 'application', staged / 'app' / 'application.ini']:
+    if app_ini_candidate.exists():
+      app_ini = app_ini_candidate
+  with IniFile(app_ini) as ini:
     deb.vendor = ini['App']['Vendor'] # vendor instead of app name because jurism uses the same appname
     deb.package = deb.client = deb.vendor.lower()
     deb.version = ini['App']['Version']
@@ -30,6 +33,10 @@ def package(staged):
       deb.package += '-beta'
       # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
       deb.version = deb.version.replace('-beta', '')
+    elif '-dev' in deb.version:
+      deb.package += '-dev'
+      # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
+      deb.version = deb.version.replace('-dev', '')
     deb.version = Config[deb.client].bumped(deb.version)
 
   # detect arch from staged dir

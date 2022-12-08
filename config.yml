@@ -8,6 +8,7 @@ zotero:
   bump:
     6.0.13: 1
     6.0.14.1+79246196a: 1
+    6.0.14.4+32b64b3cf: 4
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
