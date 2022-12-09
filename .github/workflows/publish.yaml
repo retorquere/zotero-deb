@@ -115,6 +115,10 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        client: ['zotero', 'zotero-beta', 'zotero-dev']
     outputs:
       status: success
     needs: rebuild
@@ -139,11 +143,11 @@ jobs:
         curl -s https://zotero.retorque.re/file/apt-package-archive/Packages.bz2 | md5sum
         sudo apt-get clean
         sudo apt-get -q update
-        sudo apt-get -qy install zotero zotero-beta zotero-dev
+        sudo apt-get -qy install ${{ matrix.client }}
         dpkg -l | grep zotero
         dpkg -l | grep jurism
 
-        for c in zotero zotero-beta zotero-dev; do
+        for c in ${{ matrix.client }}; do
           file /usr/lib/$c/${c/-*/}
           file /usr/lib/$c/${c/-*/}-bin
           file /usr/local/bin/$c
