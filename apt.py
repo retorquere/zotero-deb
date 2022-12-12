@@ -24,7 +24,7 @@ def package(staged):
   # get version and package name
   print('packaging', staged)
   app_ini = None
-  for app_ini_candidate in [staged / 'application', staged / 'app' / 'application.ini']:
+  for app_ini_candidate in [staged / 'application.ini', staged / 'app' / 'application.ini']:
     if app_ini_candidate.exists():
       app_ini = app_ini_candidate
   if app_ini is None:
