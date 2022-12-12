@@ -22,9 +22,13 @@ def package(staged):
   deb = SimpleNamespace()
 
   # get version and package name
+  print('packaging', staged)
+  app_ini = None
   for app_ini_candidate in [staged / 'application', staged / 'app' / 'application.ini']:
     if app_ini_candidate.exists():
       app_ini = app_ini_candidate
+  if app_ini is None:
+    raise ValueError('no application.ini in', staged)
   with IniFile(app_ini) as ini:
     deb.vendor = ini['App']['Vendor'] # vendor instead of app name because jurism uses the same appname
     deb.package = deb.client = deb.vendor.lower()
