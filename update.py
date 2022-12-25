@@ -45,4 +45,5 @@ if 'true' in args.update:
     f.write(readme)
   run('pandoc index.md -s --css pandoc.css -o index.html')
 
-print(f'::set-output name=update::{"true" if "true" in args.update else "false"}')
+with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+  print(f'update={"true" if "true" in args.update else "false"}', file=f)

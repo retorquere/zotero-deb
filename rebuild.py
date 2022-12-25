@@ -111,4 +111,5 @@ if Config.staging.exists():
 
 if modified:
   repository.mkrepo()
-  print(f'::set-output name=rebuilt::true')
+  with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+    print('rebuilt=true', file=f)
