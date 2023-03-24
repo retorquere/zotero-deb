@@ -54,12 +54,12 @@ packages += [
 print('Finding Juris-M versions...')
 def jm_versions(releases):
   return ({
-    version.rsplit('m', 1)[0] : version
+    version.rsplit('m', 1)[0] : version.replace('-beta', '')
     for version in sorted([
       version
       for version in request.get(f'https://github.com/Juris-M/assets/releases/download/{releases}').text.split('\n')
       if version != ''
-    ], key=lambda k: tuple([int(v) for v in re.split('[m.]', k)]))
+    ], key=lambda k: tuple([int(v) for v in re.split('[m.]', k.replace('-beta', '')]))
   }.values())
 packages += [
   ('jurism', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
