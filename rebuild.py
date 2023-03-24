@@ -65,11 +65,11 @@ packages += [
   ('jurism', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
   for version in jm_versions('client%2Freleases%2Fincrementals-linux/incrementals-release-linux')
   for arch in [ 'i686', 'x86_64' ]
-] + [
-  ('jurism-beta', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Fbeta%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
-  for version in jm_versions('client%2Fbetas%2Fincrementals-linux/incrementals-beta-linux')
-  for arch in [ 'i686', 'x86_64' ]
-]
+] #+ [
+#  ('jurism-beta', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Fbeta%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
+#  for version in jm_versions('client%2Fbetas%2Fincrementals-linux/incrementals-beta-linux')
+#  for arch in [ 'i686', 'x86_64' ]
+#]
 print([v[:3] for v in packages])
 
 prebuilt = set(repository.prebuilt())
