@@ -16,7 +16,7 @@ import os, sys
 import re
 import shlex
 import shutil
-
+from packaging.version import parse as parse_version
 
 from util import run, Config
 
@@ -59,7 +59,7 @@ def jm_versions(releases):
       version
       for version in request.get(f'https://github.com/Juris-M/assets/releases/download/{releases}').text.split('\n')
       if version != ''
-    ], key=lambda k: tuple([int(v) for v in re.split('[m.]', k.replace('-beta', ''))]))
+    ], key=lambda k: parse_version(k.replace('-beta', '').replace('m', '.')))
   }.values())
 packages += [
   ('jurism', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
