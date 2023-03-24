@@ -58,7 +58,7 @@ def jm_versions(releases):
     for version in sorted([
       version
       for version in request.get(f'https://github.com/Juris-M/assets/releases/download/{releases}').text.split('\n')
-      if version != ''
+      if version != '' and not version.startswith('5')
     ], key=lambda k: parse_version(k.replace('-beta', '').replace('m', '.')))
   }.values())
 packages += [
