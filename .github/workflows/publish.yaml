@@ -19,8 +19,8 @@ jobs:
   rebuild:
     env:
       REPO: apt
-    #runs-on: ubuntu-latest
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
+    # runs-on: ubuntu-20.04
     steps:
     - name: Cancel Previous Runs
       uses: styfle/cancel-workflow-action@0.11.0
@@ -44,19 +44,13 @@ jobs:
 
     - name: install build requirements
       run: |
-        sudo add-apt-repository ppa:mozillateam/ppa -y
         sudo apt-get -q update
-        sudo apt-get -qy install dpkg-sig fakeroot moreutils
+        sudo apt-get -qy install dpkg-sig fakeroot moreutils pandoc
         curl -L 'https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json' -o zotero-releases.json
         curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
 
-    - name: install utilities
-      run: sudo apt-get -qy install moreutils pandoc
-    - name: show firefox-esr dependencies
-      run: apt-cache depends firefox-esr
     - name: install rclone
       run: curl https://rclone.org/install.sh | sudo bash
-      # run: wget $(curl -s https://api.github.com/repos/rclone/rclone/releases/latest | jq -r '.assets | .[] | select(.browser_download_url | contains("-linux-amd64.deb")) | .browser_download_url') -O ./rclone.deb && sudo apt-get install -y ./rclone.deb
 
     - name: configure rclone
       run: |
@@ -122,7 +116,7 @@ jobs:
       status: success
     needs: rebuild
     steps:
-    - name: allow clouflare CDN time to settle
+    - name: allow cloudflare CDN time to settle
       run: sleep 60
 
     - name: install apt repo

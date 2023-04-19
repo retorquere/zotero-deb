@@ -1,6 +1,37 @@
 maintainer:
   email: emiliano.heyns@iris-advies.com
   gpgkey: dpkg
+common:
+  dependencies: # apt-cache depends firefox-esr on ubuntu 20.04, except lsb-release and libgcc
+    - libasound2
+    - libatk1.0-0
+    - libc6
+    - libcairo-gobject2
+    - libcairo2
+    - libdbus-1-3
+    - libdbus-glib-1-2
+    - libfontconfig1
+    - libfreetype6
+    - libgdk-pixbuf2.0-0
+    - libglib2.0-0
+    - libgtk-3-0
+    - libharfbuzz0b
+    - libpango-1.0-0
+    - libpangocairo-1.0-0
+    - libstdc++6
+    - libx11-6
+    - libx11-xcb1
+    - libxcb-shm0
+    - libxcb1
+    - libxcomposite1
+    - libxcursor1
+    - libxdamage1
+    - libxext6
+    - libxfixes3
+    - libxi6
+    - libxrandr2
+    - libxrender1
+    - libxtst6
 zotero:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
