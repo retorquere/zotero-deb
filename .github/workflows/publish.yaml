@@ -136,10 +136,10 @@ jobs:
         curl -s https://zotero.retorque.re/file/apt-package-archive/Packages.bz2 | md5sum
         sudo apt-get clean
         sudo apt-get -q update
-        sudo apt-get -qy install zotero zotero-beta zotero-dev || true
+        sudo apt-get -qy install zotero zotero-beta || true
         dpkg -l | grep zotero
 
-        for c in zotero zotero-beta zotero-dev; do
+        for c in zotero zotero-beta; do
           ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
         done
 
