@@ -41,7 +41,7 @@ def package(staged):
       deb.package += '-dev'
       # https://bugs.launchpad.net/ubuntu/+source/dpkg/+bug/1701756/comments/3. + and ~ get escaped in URLs in B2 and GH respectively, ':' is seen as an epoch, . is going to cause problems, - is reserved for bumps
       deb.version = deb.version.replace('-dev', '')
-    deb.version = Config[deb.client].bumped(deb.version)
+    deb.version = Config[deb.package].bumped(deb.version)
 
   # detect arch from staged dir
   deb.arch = staged.name.split('_')[-1]
@@ -66,11 +66,11 @@ def package(staged):
     print('dependencies:', deb.dependencies)
 
     # for the desktop entry
-    deb.description = Config[deb.client].description
+    deb.description = Config[deb.package].description
     # path to the generated deb file
     deb_file = Config.repo / f'{deb.package}_{deb.version}_{deb.arch}.deb'
 
-    # copy zotero to the build directory, excluding the desktpo file (which we'll recreate later) and the files that are only for the zotero-internal updater,
+    # copy zotero to the build directory, excluding the desktop file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
     package_dir = build_dir / 'usr/lib' / deb.package
     shutil.copytree(
