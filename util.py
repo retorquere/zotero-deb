@@ -37,7 +37,7 @@ def run(cmd):
 
 def bumped(client, version):
   global Config
-  if bump := Config[client].bump.get(version):
+  if bump := Config[client].get('bump', {}).get(version):
     return f'{version}-{bump}'
   else:
     return version
@@ -52,6 +52,7 @@ Config.repo = Path(os.environ['REPO']).resolve()
 Config.staging = Path(Config.staging)
 
 Config.zotero.bumped = lambda version: bumped('zotero', version)
+Config['zotero-beta'].bumped = lambda version: bumped('zotero-beta', version)
 Config.jurism.bumped = lambda version: bumped('jurism', version)
 
 Config.archmap = {
