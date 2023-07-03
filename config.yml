@@ -39,8 +39,9 @@ zotero-beta:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
     - libegl1|libwayland-egl1
+    - libegl-mesa0
   bump:
-    7.0.0.16+1766f8bb5: 1
+    7.0.0.16+1766f8bb5: 2
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
