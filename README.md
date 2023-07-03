@@ -26,7 +26,7 @@ If you still use these, you will get errors -- apologies for this, but they had 
   * https://apt.retorque.re/file/zotero-apt
 ----
 
-This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them. It also offers the latest nightly zotero-beta and zotero-dev.
+This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them. It also offers the latest nightly zotero-beta.
 
 This repository updates to new releases of Zotero and Juris-M within 2 hours, usually faster.
 

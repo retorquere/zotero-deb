@@ -87,7 +87,7 @@ for pkg, url in packages:
   if not staged.exists():
     staged.mkdir(parents=True)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
-    if '-beta' in str(staged) or '-dev' in str(staged): # add symbol to icon
+    if '-beta' in str(staged): # add symbol to icon
       symbol = 'b' if '-beta' in str(staged) else 'c'
       for icon_path in glob.glob(str(staged / 'chrome/icons/default/*.*')):
         print(f'adding {symbol}eta sign to', icon_path)
