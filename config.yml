@@ -41,6 +41,8 @@ zotero-beta:
   dependencies:
     - gnupg
     - libegl1|libwayland-egl1
+  bump:
+    7.0.0.16+1766f8bb5: 1
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
