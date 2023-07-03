@@ -38,15 +38,9 @@ packages += [
   for release in request.get('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json').json()
   for arch in [ 'i686', 'x86_64' ]
 ] + [
-  ('zotero-beta', Config.zotero.bumped(unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '')), Config.archmap[arch], url)
+  ('zotero-beta', Config['zotero-beta'].bumped(unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '')), Config.archmap[arch], url)
   for arch, url in [
     (arch, request.get(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=beta').url)
-    for arch in [ 'i686', 'x86_64' ]
-  ]
-] + [
-  ('zotero-dev', Config.zotero.bumped(unquote(re.match(r'https://download.zotero.org/client/dev/([^/]+)', url)[1]).replace('-dev', '')), Config.archmap[arch], url)
-  for arch, url in [
-    (arch, request.get(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=dev').url)
     for arch in [ 'i686', 'x86_64' ]
   ]
 ]
