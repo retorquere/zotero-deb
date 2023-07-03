@@ -48,7 +48,9 @@ def package(staged):
     build_dir = Path(build_dir)
 
     # get package dependencies
-    deb.dependencies = Config[deb.package].dependencies[:] + Config.common.dependencies[:]
+    deb.dependencies = Config.common.dependencies[:]
+    if 'dependencies' in Config[deb.package]:
+      deb.dependencies += Config[deb.package].dependencies[:]
 
     # inherit the firefox-esr dependencies except lsb-release and libgcc
     for dep in os.popen('apt-cache depends firefox-esr').read().split('\n'):
