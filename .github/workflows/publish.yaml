@@ -121,7 +121,7 @@ jobs:
 
     - name: install apt repo
       run: |
-        export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master//install.sh
+        export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh
         echo INSTALLSH=$INSTALLSH
         curl -sL $INSTALLSH | tee install.sh | sudo bash
         echo ==== install.sh ===
@@ -131,12 +131,9 @@ jobs:
   
     - name: install from backblaze repo
       run: |
-        nslookup zotero.retorque.re
-        curl -s https://zotero.retorque.re/file/apt-package-archive/Release | grep -m 1 Packages.bz2
-        curl -s https://zotero.retorque.re/file/apt-package-archive/Packages.bz2 | md5sum
-        sudo apt-get clean
-        sudo apt-get -q update
-        sudo apt-get -qy install zotero zotero-beta || true
+        sudo apt -y clean
+        sudo apt -y update
+        sudo apt -y install zotero zotero-beta || true
         dpkg -l | grep zotero
 
         for c in zotero zotero-beta; do
