@@ -31,6 +31,26 @@ Config.repo.mkdir(parents=True, exist_ok=True)
 
 packages = []
 
+def drawbeta(icon):
+  with Drawing() as text:
+    text.font = 'Symbol'
+    text.fill_color = Color('rgba(3, 3, 3, 0.6)')
+    text.font_size = icon.height
+    text.text(int(icon.width * 0.2), int(icon.height * 0.8), 'b')
+    text(icon)
+  return icon
+
+def betafy(icon):
+  if icon.endswith('.png'):
+    with Image(filename=icon) as orig:
+      drawbeta(orig)
+      orig.save(filename=icon)
+  elif icon.endswith('.ico'):
+    with Image(filename=icon) as orig, Image() as beta:
+      for frame in orig.sequence:
+        beta.sequence.append(drawbeta(Image(image=frame)))
+      beta.save(filename=icon)
+
 print('Finding Zotero versions...')
 # zotero
 packages += [
@@ -88,16 +108,8 @@ for pkg, url in packages:
     staged.mkdir(parents=True)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
     if '-beta' in str(staged): # add symbol to icon
-      symbol = 'b' if '-beta' in str(staged) else 'c'
       for icon_path in glob.glob(str(staged / 'chrome/icons/default/*.*')):
-        print(f'adding {symbol}eta sign to', icon_path)
-        with Drawing() as text, Image(filename=icon_path) as icon:
-          text.font = 'Symbol'
-          text.fill_color = Color('rgba(3, 3, 3, 0.6)')
-          text.font_size = icon.height
-          text.text(int(icon.width * 0.2), int(icon.height * 0.8), symbol)
-          text(icon)
-          icon.save(filename=icon_path)
+        betafy(icon_path)
 
   repository.package(staged)
 
