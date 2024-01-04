@@ -50,6 +50,9 @@ def betafy(icon):
       for frame in orig.sequence:
         beta.sequence.append(drawbeta(Image(image=frame)))
       beta.save(filename=icon)
+  else:
+    raise ValueError(f'Unknown icon format {icon}')
+  print('betafied', icon)
 
 print('Finding Zotero versions...')
 # zotero
