@@ -45,7 +45,7 @@ jobs:
     - name: install build requirements
       run: |
         sudo apt-get -q update
-        sudo apt-get -qy install dpkg-sig fakeroot moreutils pandoc
+        sudo apt-get -qy install devscripts fakeroot moreutils pandoc
         curl -L 'https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json' -o zotero-releases.json
         curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
 
