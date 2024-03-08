@@ -1,4 +1,5 @@
 maintainer:
+  name: Emiliano Heyns
   email: emiliano.heyns@iris-advies.com
   gpgkey: dpkg
 common:

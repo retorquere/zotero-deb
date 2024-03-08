@@ -4,7 +4,7 @@ import os, sys
 from types import SimpleNamespace
 import tempfile
 import shutil, shlex
-import hashlib, time
+import hashlib
 from pathlib import Path
 
 from util import Config, run, Open, IniFile, chdir
@@ -65,9 +65,8 @@ def package(staged):
 
     # for the desktop entry
     deb.description = Config[deb.package].description
-    deb.filename = f'{deb.package}_{deb.version}_{deb.arch}.deb'
     # path to the generated deb file
-    deb_file = Config.repo / deb.filename
+    deb_file = Config.repo / f'{deb.package}_{deb.version}_{deb.arch}.deb'
 
     # copy zotero to the build directory, excluding the desktop file (which we'll recreate later) and the files that are only for the zotero-internal updater,
     # as these packages will be updated by apt
@@ -101,13 +100,7 @@ def package(staged):
     with IniFile(staged / f'{deb.client}.desktop') as ini:
       deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
       ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} --url %u')
-
-      beta_icon = package_dir / 'icons' / 'icon128.png'
-      if beta_icon.is_file():
-        ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.package}/icons/icon128.png')
-      else:
-        ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.package}/chrome/icons/default/default256.png')
-
+      ini.set('Desktop Entry', 'Icon', f'/usr/lib/{deb.package}/chrome/icons/default/default256.png')
       ini.set('Desktop Entry', 'MimeType', ';'.join([
         'x-scheme-handler/zotero',
         'application/x-endnote-refer',
@@ -150,31 +143,7 @@ def package(staged):
     # build deb
     deb_file.unlink(missing_ok=True)
     run(f'fakeroot dpkg-deb --build -Zgzip {shlex.quote(str(build_dir))} {shlex.quote(str(deb_file))}')
-    #run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(str(deb_file))}')
-
-    changes = deb_file.with_suffix('.changes')
-    with open(deb_file, 'rb') as f:
-      md5sum = hashlib.md5(f.read()).hexdigest()
-    with Open(changes, 'w') as f:
-      size = os.path.getsize(deb_file)
-      f.write(f"Format: 1.8\n")
-      f.write(f"Date: {time.strftime('%a, %d %b %Y %H:%M:%S %z')}\n")
-      f.write(f"Source: {deb.package}\n")
-      f.write(f"Binary: {deb.package}\n")
-      f.write(f"Architecture: {deb.arch}\n")
-      f.write(f"Version: {deb.version}\n")
-      f.write(f"Distribution: unstable\n")
-      f.write(f"Urgency: medium\n")
-      f.write(f"Maintainer: {Config.maintainer.email}\n")
-      f.write(f"Changed-By: {Config.maintainer.name}\n")
-      f.write(f"Description: \n")
-      f.write(f" {deb.package} - {deb.description}\n")
-      f.write(f"Checksums-Md5: \n")
-      f.write(f" {md5sum} {size} {deb_file}\n")
-      f.write(f"Files: \n")
-      f.write(f" {md5sum} {size} {deb_file}\n")
-      
-    run(f'debsign -k{Config.maintainer.gpgkey} {changes}')
+    run(f'dpkg-sig -k {shlex.quote(Config.maintainer.gpgkey)} --sign builder {shlex.quote(str(deb_file))}')
 
 def mkrepo():
   with chdir(Config.repo):

@@ -54,13 +54,19 @@ def betafy(icon):
     raise ValueError(f'Unknown icon format {icon}')
   print('betafied', icon)
 
+def latest(packages):
+  packages = sorted(packages, key=lambda pkg: parse_version(pkg[1]))
+  return [packages[-1]]
+
 print('Finding Zotero versions...')
 # zotero
+for arch in [ 'i686', 'x86_64' ]:
+  packages += latest([
+    ('zotero', Config.zotero.bumped(release['version']), Config.archmap[arch], f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={release["version"]}')
+    for release in request.get('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json').json()
+  ])
+
 packages += [
-  ('zotero', Config.zotero.bumped(release['version']), Config.archmap[arch], f'https://www.zotero.org/download/client/dl?channel=release&platform=linux-{arch}&version={release["version"]}')
-  for release in request.get('https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json').json()
-  for arch in [ 'i686', 'x86_64' ]
-] + [
   ('zotero-beta', Config['zotero-beta'].bumped(unquote(re.match(r'https://download.zotero.org/client/beta/([^/]+)', url)[1]).replace('-beta', '')), Config.archmap[arch], url)
   for arch, url in [
     (arch, request.get(f'https://www.zotero.org/download/standalone/dl?platform=linux-{arch}&channel=beta').url)
@@ -68,21 +74,21 @@ packages += [
   ]
 ]
 
-print('Finding Juris-M versions...')
-def jm_versions(releases):
-  return ({
-    version.rsplit('m', 1)[0] : version.replace('-beta', '')
-    for version in sorted([
-      version
-      for version in request.get(f'https://github.com/Juris-M/assets/releases/download/{releases}').text.split('\n')
-      if version != '' and ('beta' not in releases or not version.startswith('5'))
-    ], key=lambda k: parse_version(k.replace('-beta', '').replace('m', '.')))
-  }.values())
-packages += [
-  ('jurism', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
-  for version in jm_versions('client%2Freleases%2Fincrementals-linux/incrementals-release-linux')
-  for arch in [ 'i686', 'x86_64' ]
-] #+ [
+#print('Finding Juris-M versions...')
+#def jm_versions(releases):
+#  return ({
+#    version.rsplit('m', 1)[0] : version.replace('-beta', '')
+#    for version in sorted([
+#      version
+#      for version in request.get(f'https://github.com/Juris-M/assets/releases/download/{releases}').text.split('\n')
+#      if version != '' and ('beta' not in releases or not version.startswith('5'))
+#    ], key=lambda k: parse_version(k.replace('-beta', '').replace('m', '.')))
+#  }.values())
+#packages += [
+#  ('jurism', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Frelease%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
+#  for version in jm_versions('client%2Freleases%2Fincrementals-linux/incrementals-release-linux')
+#  for arch in [ 'i686', 'x86_64' ]
+#] #+ [
 #  ('jurism-beta', Config.jurism.bumped(version), Config.archmap[arch], f'https://github.com/Juris-M/assets/releases/download/client%2Fbeta%2F{version}/Jurism-{version}_linux-{arch}.tar.bz2')
 #  for version in jm_versions('client%2Fbetas%2Fincrementals-linux/incrementals-beta-linux')
 #  for arch in [ 'i686', 'x86_64' ]
@@ -110,9 +116,9 @@ for pkg, url in packages:
   if not staged.exists():
     staged.mkdir(parents=True)
     run(f'curl -sL {shlex.quote(url)} | tar xjf - -C {shlex.quote(str(staged))} --strip-components=1')
-    if '-beta' in str(staged): # add symbol to icon
-      for icon_path in glob.glob(str(staged / 'chrome/icons/default/*.*')):
-        betafy(icon_path)
+    #if '-beta' in str(staged): # add symbol to icon
+    #  for icon_path in glob.glob(str(staged / 'chrome/icons/default/*.*')):
+    #    betafy(icon_path)
 
   repository.package(staged)
 

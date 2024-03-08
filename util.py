@@ -30,9 +30,9 @@ class chdir():
     os.chdir(self.cwd)
 
 ## run and exit on error
-def run(cmd):
+def run(cmd, env={}):
   print('$', Fore.GREEN + cmd, Style.RESET_ALL)
-  subprocess.run(cmd, shell=True, check=True)
+  subprocess.run(cmd, shell=True, check=True, env=os.environ.copy() | env)
   print('')
 
 def bumped(client, version):
