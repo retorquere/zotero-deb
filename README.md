@@ -7,9 +7,16 @@ I was in the process of transferring the hosting of these packages to the Zotero
 # Primary source:
 
 <!-- * packages: https://zotero.retorque.re/file/apt-package-archive/index.html -->
-* (re)install using `curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash`
+* https://zotero.retorque.re/file/apt-package-archive
+
+(re)install using
+```
+curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
+```
 
 **Mirrors:**
+
+See install.sh explanation below and adjust URL accordingly
 
 * ~https://zotero-deb.mirror.ioperf.eu/~ down at the moment
 * https://mirror.mwt.me/zotero/deb
