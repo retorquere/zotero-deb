@@ -12,7 +12,7 @@ I was in the process of transferring the hosting of these packages to the Zotero
 **Mirrors:**
 
 * https://zotero-deb.mirror.ioperf.eu/
-* https://mirror.mwt.me/zotero/deb
+* ~https://mirror.mwt.me/zotero/deb~ down at the moment
 
 ## Deprecated sources, please change to the primary source.
 
