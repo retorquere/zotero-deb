@@ -16,7 +16,7 @@ curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.
 
 **Mirrors:**
 
-See install.sh explanation below and adjust URL accordingly
+See `install.sh` explanation below and adjust URL accordingly
 
 * ~https://zotero-deb.mirror.ioperf.eu/~ down at the moment
 * https://mirror.mwt.me/zotero/deb
