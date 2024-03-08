@@ -101,6 +101,7 @@ def package(staged):
     with IniFile(staged / f'{deb.client}.desktop') as ini:
       deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
       ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} --url %u')
+      ini.set('Desktop Entry', 'Name', deb.package.capitalize())
 
       beta_icon = package_dir / 'icons' / 'icon128.png'
       if beta_icon.is_file():
