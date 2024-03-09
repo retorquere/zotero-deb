@@ -100,7 +100,7 @@ def package(staged):
     # create desktop file from existing .desktop file, but add mime handlers that Zotero can respond to
     with IniFile(staged / f'{deb.client}.desktop') as ini:
       deb.section = ini['Desktop Entry'].get('Categories', 'Science;Office;Education;Literature').rstrip(';')
-      ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} --url %u')
+      ini.set('Desktop Entry', 'Exec', f'/usr/lib/{deb.package}/{deb.client} {"--class zotero-beta" if deb.package == "zotero-beta" else ""} --url %u')
       ini.set('Desktop Entry', 'Name', deb.package.capitalize())
 
       beta_icon = package_dir / 'icons' / 'icon128.png'
