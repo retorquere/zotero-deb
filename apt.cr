@@ -23,6 +23,22 @@ Repo = Path["apt"].expand.to_s
 
 Keep = [] of String
 
+def fetch(asset : Path)
+  begin
+    HTTP::Client.get("https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}") do |response|
+      if response.success?
+        File.write(asset.to_s, response.body_io)
+        return true
+      else
+        return false
+      end
+    end
+  rescue ex
+    return false
+  end
+end
+
+updated = false
 ["amd64", "i386"].each do |arch|
   [false, true].each do |beta|
     zotero = Zotero.new(arch, beta)
@@ -35,6 +51,9 @@ Keep = [] of String
 
     if [deb, changes].all?{|asset| File.exists?(asset)}
       puts "*** retaining #{deb.basename} ***"
+      next
+    elsif fetch(deb) && fetch(changes)
+      puts "*** fetched #{deb.basename} from repo ***"
       next
     else
       puts "*** rebuilding #{deb.basename} ***"
@@ -87,6 +106,7 @@ Keep = [] of String
       f.puts " #{hash(deb, "MD5")} #{File.size(deb.to_s)} #{deb}"
     end
     run "debsign", ["-k#{zotero.config.maintainer.gpgkey}", changes.to_s]
+    updated = true
   end
 end
 
@@ -111,5 +131,11 @@ chdir Repo do
     ["Packages", "Packages.bz2"].each do |pkg|
       run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
     end
+  end
+end
+
+if updated && ENV.fetch("GITHUB_ACTIONS", "") == "true"
+  File.open(ENV["GITHUB_OUTPUT"], "a") do |f|
+    f.puts("update=true")
   end
 end

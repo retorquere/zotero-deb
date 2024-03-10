@@ -17,8 +17,6 @@ on:
 
 jobs:
   rebuild:
-    env:
-      REPO: apt
     runs-on: ubuntu-latest
     # runs-on: ubuntu-20.04
     steps:
@@ -27,15 +25,8 @@ jobs:
       with:
         access_token: ${{ github.token }}
 
-    - uses: actions/checkout@v4
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.10'
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+    - name: Install Crystal
+      uses: crystal-lang/install-crystal@v1
 
     - name: Import GPG key
       uses: retorquere/ghaction-import-gpg@master
@@ -68,47 +59,23 @@ jobs:
     - name: Cache repo
       uses: actions/cache@v4
       env:
-        cache-name: v4
+        cache-name: v5
       with:
-        path: ${{ env.REPO }}
-        key: repo-${{ env.cache-name }}-${{ github.sha }}-${{ hashFiles('zotero-releases.json', 'jurism-releases.json') }}
+        path: apt
+        key: repo-${{ env.cache-name }}-${{ hashFiles('apt.cr', 'staging.cr', 'zotero-releases.json', 'jurism-releases.json') }}
 
-    - name: check online apt repo
-      id: before
-      env:
-        PYTHONUNBUFFERED: true
-      run: ./update.py --url https://zotero.retorque.re/file/apt-package-archive --update "${{ github.event.inputs.build }}"
-
-    - name: force rebuild
-      if: ${{ steps.before.outputs.update == 'true' }}
-      run: rm -rf $REPO
-    - name: restore repo
-      if: ${{ steps.before.outputs.update != 'true' }}
-      run: |
-        mkdir -p $REPO
-        rclone sync b2-apt-package-archive:apt-package-archive $REPO -v
-
-    - name: rebuild apt repo
+    - name: rebuild
       id: rebuild
-      env:
-        PYTHONUNBUFFERED: true
-      run: ./rebuild.py --mode apt && find $REPO -type f
-
-    - name: check online apt repo
-      id: rebuilt
-      env:
-        PYTHONUNBUFFERED: true
-      run: ./update.py --url https://zotero.retorque.re/file/apt-package-archive --update "${{ steps.rebuild.outputs.update }}"
+      run: ./apt.cr
 
     - name: show status
-      run: echo publish=${{ steps.rebuilt.outputs.update }}
+      run: echo publish=${{ steps.rebuild.outputs.update }}
 
     - name: publish repo
-      if: ${{ steps.rebuilt.outputs.update == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
-      run: rclone sync $REPO b2-apt-package-archive:apt-package-archive -v
-    - name: clean up repo
-      if: ${{ steps.rebuilt.outputs.update == 'true' }} || ${{ github.event.inputs.publish == 'true' }}
-      run: rclone cleanup b2-apt-package-archive:apt-package-archive -v
+      if: ${{ steps.rebuild.outputs.update == 'true' }}
+      run: |
+        rclone sync apt b2-apt-package-archive:apt-package-archive -v
+        rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
   test:
     runs-on: ubuntu-latest
@@ -139,26 +106,3 @@ jobs:
         for c in zotero zotero-beta; do
           ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
         done
-
-  repair:
-    if: failure()
-    runs-on: ubuntu-latest
-    env:
-      REPO: apt
-    needs: [rebuild, test]
-    steps:
-    - name: fetch client versions
-      run: |
-        curl -L 'https://www.zotero.org/download/client/manifests/release/updates-linux-x86_64.json' -o zotero-releases.json
-        curl -L 'https://github.com/Juris-M/assets/releases/download/client%2Freleases%2Fincrementals-linux/incrementals-release-linux' -o jurism-releases.json
-
-    - name: Cache repo
-      uses: actions/cache@v4
-      env:
-        cache-name: v4
-      with:
-        path: ${{ env.REPO }}
-        key: repo-${{ env.cache-name }}-${{ github.sha }}-${{ hashFiles('zotero-releases.json', 'jurism-releases.json') }}
-
-    - name: clear cache
-      run: rm -rf $REPO
