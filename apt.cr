@@ -44,7 +44,7 @@ updated = false
     if [deb, changes].all?{|asset| File.exists?(asset)}
       puts "*** retaining #{deb.basename} ***"
       next
-    elsif fetch(deb) && fetch(staging)
+    elsif fetch(deb) && fetch(changes)
       puts "*** fetched #{deb.basename} from repo ***"
       next
     else
