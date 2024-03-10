@@ -34,7 +34,7 @@ updated = false
   [false, true].each do |beta|
     zotero = Zotero.new(arch, beta)
     version = zotero.config.client.version(zotero.version)
-    deb = Path[Repo, "#{zotero.config.package}_#{version}-#{arch}.deb"]
+    deb = Path[Repo, "#{zotero.config.package}_#{version}_#{arch}.deb"]
     changes = Path[deb.dirname, deb.stem + ".changes"]
 
     Keep << deb.basename
