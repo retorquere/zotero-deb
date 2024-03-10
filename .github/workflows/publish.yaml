@@ -62,8 +62,6 @@ jobs:
         download_url = https://zotero.retorque.re
         EOF
 
-    - name: preserve folder structure in cache
-      run: touch folder.cache
     - name: cache repo
       uses: actions/cache@v4
       env:
@@ -71,12 +69,12 @@ jobs:
       with:
         path: |
           apt
-          folder.cache
+          rebuild-apt
         key: repo-${{ env.cache-name }}-${{ hashFiles('apt.cr', 'staging.cr') }}
 
     - name: rebuild
       id: rebuild
-      run: ./apt.cr
+      run: make
 
     - name: show status
       run: echo publish=${{ steps.rebuild.outputs.update }}
