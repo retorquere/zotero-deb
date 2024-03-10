@@ -111,32 +111,34 @@ updated = false
   end
 end
 
-maintainer = Zotero.new("amd64", false).config.maintainer
-chdir Repo do
-  Dir.glob("*.*").sort.each do |asset|
-    next if !File.file?(asset) || Keep.includes?(asset)
-    File.delete(asset)
-  end
+if updated
+  maintainer = Zotero.new("amd64", false).config.maintainer
+  chdir Repo do
+    Dir.glob("*.*").sort.each do |asset|
+      next if !File.file?(asset) || Keep.includes?(asset)
+      File.delete(asset)
+    end
 
-  run "apt-ftparchive packages . | awk 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}' > Packages"
+    run "apt-ftparchive packages . | awk 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}' > Packages"
 
-  run "rm -rf by-hash"
-  run "bzip2 -kf Packages"
-  run "apt-ftparchive -o APT::FTPArchive::AlwaysStat=true -o APT::FTPArchive::Release::Codename=./ -o APT::FTPArchive::Release::Acquire-By-Hash=yes release . > Release"
+    run "rm -rf by-hash"
+    run "bzip2 -kf Packages"
+    run "apt-ftparchive -o APT::FTPArchive::AlwaysStat=true -o APT::FTPArchive::Release::Codename=./ -o APT::FTPArchive::Release::Acquire-By-Hash=yes release . > Release"
 
-  run "gpg --yes -abs --local-user #{maintainer.gpgkey} -o Release.gpg --digest-algo sha256 Release"
-  run "gpg --yes -abs --local-user #{maintainer.gpgkey} --clearsign -o InRelease --digest-algo sha256 Release"
+    run "gpg --yes -abs --local-user #{maintainer.gpgkey} -o Release.gpg --digest-algo sha256 Release"
+    run "gpg --yes -abs --local-user #{maintainer.gpgkey} --clearsign -o InRelease --digest-algo sha256 Release"
 
-  ["MD5Sum", "SHA1", "SHA256", "SHA512"].each do |hsh|
-    run "mkdir -p by-hash/#{hsh}"
-    ["Packages", "Packages.bz2"].each do |pkg|
-      run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
+    ["MD5Sum", "SHA1", "SHA256", "SHA512"].each do |hsh|
+      run "mkdir -p by-hash/#{hsh}"
+      ["Packages", "Packages.bz2"].each do |pkg|
+        run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
+      end
     end
   end
-end
 
-if updated && ENV.fetch("GITHUB_ACTIONS", "") == "true"
-  File.open(ENV["GITHUB_OUTPUT"], "a") do |f|
-    f.puts("update=true")
+  if ENV.fetch("GITHUB_ACTIONS", "") == "true"
+    File.open(ENV["GITHUB_OUTPUT"], "a") do |f|
+      f.puts("update=true")
+    end
   end
 end

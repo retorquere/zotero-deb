@@ -17,9 +17,9 @@ def chdir(path : String | Path, &block)
 end
 
 def download(url : String, filename : String) : String
-  cmd = "curl #{Process.quote([ "-sLf", "-o", filename, url ])} || true"
-  print cmd.split("||")[0].strip
-  system cmd
+  cmd = "curl #{Process.quote([ "-sLf", "-o", filename, url ])}"
+  print cmd
+  system "#{cmd} || true"
   puts File.file?(filename) ? " : succeeded" : " : failed"
   return filename
 end
@@ -29,15 +29,6 @@ def run(cmd : String, args : Array(String) = [] of String)
   puts cmd
   return if system cmd
   Process.exit(1)
-end
-
-def _shlex_quote(str : String | Path) : String
-  str = "#{str}"
-  if str.match(/['\s]/)
-    "'" + str.gsub("'", "'\\\\''") + "'"
-  else
-    return str
-  end
 end
 
 class Config
@@ -216,5 +207,3 @@ class Zotero
     return @config.staging
   end
 end
-
-#puts Zotero.new("amd64", true).stage
