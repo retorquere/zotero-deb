@@ -36,6 +36,9 @@ common:
     - gnupg
 zotero:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
+  dependencies: []
+  bump:
+    1.0: 1
 zotero-beta:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
@@ -50,4 +53,4 @@ jurism:
     - libreoffice-java-common
   bump:
     5.0.93m18: 4
-staging: staging
+staging: staged

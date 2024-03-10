@@ -8,6 +8,14 @@ require "yaml"
 require "ini"
 require "process"
 
+def chdir(path : String | Path, &block)
+  back = Dir.current
+  Dir.cd(path.to_s) do
+    yield
+  end
+  Dir.cd(back)
+end
+
 def run(cmd : String, args : Array(String) = [] of String)
   puts cmd = "#{cmd} #{Process.quote(args)}".strip
   return if system cmd

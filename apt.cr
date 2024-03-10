@@ -3,6 +3,7 @@
 require "./staging"
 require "time"
 require "path"
+require "uri"
 
 require "openssl"
 
@@ -18,16 +19,29 @@ def hash(filename : String | Path, algo : String) : String
   return digest.final.hexstring
 end
 
-["amd64"].each do |arch|
-  [true].each do |beta|
-    zotero = Zotero.new("amd64", true)
-    staged = zotero.stage
+Repo = Path["apt"].expand.to_s
 
+Keep = [] of String
+
+["amd64", "i386"].each do |arch|
+  [false, true].each do |beta|
+    zotero = Zotero.new(arch, beta)
     version = zotero.config.client.version(zotero.version)
+    deb = Path[Repo, "#{zotero.config.package}_#{version}-#{arch}.deb"]
+    changes = Path[deb.dirname, deb.stem + ".changes"]
 
-    repo = Path["apt"].expand
-    deb = Path[repo, "#{zotero.config.package}_#{version}-#{arch}.deb"]
-    run "mkdir", ["-p", repo.to_s]
+    Keep << deb.basename
+    Keep << changes.basename
+
+    if [deb, changes].all?{|asset| File.exists?(asset)}
+      puts "*** retaining #{deb.basename} ***"
+      next
+    else
+      puts "*** rebuilding #{deb.basename} ***"
+    end
+
+    staged = zotero.stage
+    run "mkdir", ["-p", Repo.to_s]
     run "rm", ["-rf", deb.to_s]
 
     args = [
@@ -45,10 +59,11 @@ end
     args += ["--maintainer", "#{zotero.config.maintainer.name} <#{zotero.config.maintainer.email}>"]
     args += ["--category", zotero.config.client.section]
     args += ["--description", zotero.config.client.description]
-    args += [staged]
-    run "fpm", args
+    args += ["."]
+    chdir staged do
+      run "fpm", args
+    end
 
-    changes = Path[deb.dirname, deb.stem + ".changes"]
     File.open(changes.to_s, "w") do |f|
       f.puts "Format: 1.8"
       f.puts "Date: #{Time.local.to_s("%a, %d %b %Y %H:%M:%S %z")}"
@@ -72,5 +87,29 @@ end
       f.puts " #{hash(deb, "MD5")} #{File.size(deb.to_s)} #{deb}"
     end
     run "debsign", ["-k#{zotero.config.maintainer.gpgkey}", changes.to_s]
+  end
+end
+
+maintainer = Zotero.new("amd64", false).config.maintainer
+chdir Repo do
+  Dir.glob("*.*").sort.each do |asset|
+    next if !File.file?(asset) || Keep.includes?(asset)
+    File.delete(asset)
+  end
+
+  run "apt-ftparchive packages . | awk 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}' > Packages"
+
+  run "rm -rf by-hash"
+  run "bzip2 -kf Packages"
+  run "apt-ftparchive -o APT::FTPArchive::AlwaysStat=true -o APT::FTPArchive::Release::Codename=./ -o APT::FTPArchive::Release::Acquire-By-Hash=yes release . > Release"
+
+  run "gpg --yes -abs --local-user #{maintainer.gpgkey} -o Release.gpg --digest-algo sha256 Release"
+  run "gpg --yes -abs --local-user #{maintainer.gpgkey} --clearsign -o InRelease --digest-algo sha256 Release"
+
+  ["MD5Sum", "SHA1", "SHA256", "SHA512"].each do |hsh|
+    run "mkdir -p by-hash/#{hsh}"
+    ["Packages", "Packages.bz2"].each do |pkg|
+      run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
+    end
   end
 end
