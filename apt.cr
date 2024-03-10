@@ -29,14 +29,16 @@ def fetch(asset : Path)
     puts "attempting to download #{url} to #{asset}"
     HTTP::Client.get(url) do |response|
       if response.success?
+        puts "  got it"
         File.write(asset.to_s, response.body_io)
         return true
       else
-        puts "not found, response code #{response.status_code}"
+        puts "  not found, response code #{response.status_code}"
         return false
       end
     end
   rescue ex
+    puts "  something went wrong"
     return false
   end
 end
