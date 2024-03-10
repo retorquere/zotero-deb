@@ -17,7 +17,7 @@ def chdir(path : String | Path, &block)
 end
 
 def download(url : String, filename : String)
-  cmd = "curl #{Process.quote([ "-Lf", "-o", filename, url ])} || true"
+  cmd = "curl #{Process.quote([ "-qLf", "-o", filename, url ])} || true"
   puts cmd
   system cmd
 end
