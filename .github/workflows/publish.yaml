@@ -20,17 +20,17 @@ jobs:
     runs-on: ubuntu-latest
     # runs-on: ubuntu-20.04
     steps:
-    - name: Cancel Previous Runs
+    - name: cancel previous runs
       uses: styfle/cancel-workflow-action@0.12.1
       with:
         access_token: ${{ github.token }}
 
     - uses: actions/checkout@v4
 
-    - name: Install Crystal
+    - name: install Crystal
       uses: crystal-lang/install-crystal@v1
 
-    - name: Import GPG key
+    - name: import GPG key
       uses: retorquere/ghaction-import-gpg@master
       with:
         gpg_private_key: ${{ secrets.GPG_PRIVATE_KEY }}
@@ -62,13 +62,17 @@ jobs:
         download_url = https://zotero.retorque.re
         EOF
 
-    - name: Cache repo
+    - name: preserve folder structure in cache
+      run: touch folder.cache
+    - name: cache repo
       uses: actions/cache@v4
       env:
-        cache-name: v5
+        cache-name: v6
       with:
-        path: apt
-        key: repo-${{ env.cache-name }}-${{ hashFiles('apt.cr', 'staging.cr', 'zotero-releases.json', 'jurism-releases.json') }}
+        path: |
+          apt
+          folder.cache
+        key: repo-${{ env.cache-name }}-${{ hashFiles('apt.cr', 'staging.cr') }}
 
     - name: rebuild
       id: rebuild
