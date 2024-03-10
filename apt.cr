@@ -56,7 +56,6 @@ updated = false
       banner "fetched #{deb.basename} from repo"
       next
     else
-      puts "\n*** rebuilding #{deb.basename} ***\n"
       banner "rebuilding #{deb.basename}"
     end
 
