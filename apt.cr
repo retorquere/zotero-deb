@@ -25,11 +25,14 @@ Keep = [] of String
 
 def fetch(asset : Path)
   begin
-    HTTP::Client.get("https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}") do |response|
+    url = "https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}"
+    puts "attempting to download #{url} to #{asset}"
+    HTTP::Client.get(url) do |response|
       if response.success?
         File.write(asset.to_s, response.body_io)
         return true
       else
+        puts "not found, response code #{response.status_code}"
         return false
       end
     end
@@ -49,6 +52,7 @@ updated = false
     Keep << deb.basename
     Keep << changes.basename
 
+    puts ""
     if [deb, changes].all?{|asset| File.exists?(asset)}
       puts "*** retaining #{deb.basename} ***"
       next
