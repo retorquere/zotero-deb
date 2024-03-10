@@ -16,6 +16,10 @@ def chdir(path : String | Path, &block)
   Dir.cd(back)
 end
 
+def download(url : String, filename : String)
+  run "curl", [ "-Lf", "-o", filename ]
+end
+
 def run(cmd : String, args : Array(String) = [] of String)
   puts cmd = "#{cmd} #{Process.quote(args)}".strip
   return if system cmd
@@ -146,14 +150,9 @@ class Zotero
     run "rm", ["-rf", @config.staging]
 
     staging = self.mkdir(Path["usr/lib", @config.package])
-    HTTP::Client.get(@url) do |response|
-      raise "#{response.status_code}" unless response.success?
-      tarball = File.tempfile("#{@config.package}.tar.bz2").path
-      File.open(tarball, "wb") do |file|
-        IO.copy(response.body_io, file)
-      end
-      run "tar", ["-xjf", tarball, "-C", staging, "--strip-components=1"]
-    end
+    tarball = File.tempfile("#{@config.package}.tar.bz2").path
+    download @url, tarball
+    run "tar", ["-xjf", tarball, "-C", staging, "--strip-components=1"]
 
     # enable mozilla.cfg
     File.open(Path[self.mkdir(Path[staging, "defaults", "pref"]), "local_settings.js"], "a") do |f|

@@ -24,23 +24,8 @@ Repo = Path["apt"].expand.to_s
 Keep = [] of String
 
 def fetch(asset : Path)
-  begin
-    url = "https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}"
-    puts "attempting to download #{url} to #{asset}"
-    HTTP::Client.get(url) do |response|
-      if response.success?
-        puts "  got it"
-        File.write(asset.to_s, response.body_io)
-        return true
-      else
-        puts "  not found, response code #{response.status_code}"
-        return false
-      end
-    end
-  rescue ex
-    puts "  something went wrong"
-    return false
-  end
+  download "https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}", asset.to_s
+  return File.file?(asset.to_s)
 end
 
 updated = false
@@ -58,7 +43,7 @@ updated = false
     if [deb, changes].all?{|asset| File.exists?(asset)}
       puts "*** retaining #{deb.basename} ***"
       next
-    elsif fetch(deb) && fetch(changes)
+    elsif fetch(deb)
       puts "*** fetched #{deb.basename} from repo ***"
       next
     else
