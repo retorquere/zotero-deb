@@ -30,13 +30,12 @@ def fetch(asset : Path)
 end
 
 def banner(s : String)
-  puts ""
+  puts "\n\n"
   s = "*** #{s} ***"
   puts "*" * s.size
   puts s
   puts "*" * s.size
 end
-
 
 updated = false
 ["amd64", "i386"].each do |arch|
