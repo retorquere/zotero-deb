@@ -70,7 +70,7 @@ jobs:
         path: |
           apt
           rebuild-apt
-        key: repo-${{ env.cache-name }}-${{ hashFiles('apt.cr', 'staging.cr') }}
+        key: repo-${{ env.cache-name }}-${{ hashFiles('rebuild-apt.cr', 'staging.cr') }}
 
     - name: rebuild
       id: rebuild
