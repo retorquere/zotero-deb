@@ -72,9 +72,7 @@ jobs:
 
     - name: rebuild
       id: rebuild
-      run: |
-        ls
-        ./apt.cr
+      run: ./apt.cr
 
     - name: show status
       run: echo publish=${{ steps.rebuild.outputs.update }}
