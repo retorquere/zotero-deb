@@ -29,6 +29,15 @@ def fetch(asset : Path)
   return File.file?(asset.to_s)
 end
 
+def banner(s : String)
+  puts ""
+  s = "*** #{s} ***"
+  puts "*" * s.size
+  puts s
+  puts "*" * s.size
+end
+
+
 updated = false
 ["amd64", "i386"].each do |arch|
   [false, true].each do |beta|
@@ -42,13 +51,14 @@ updated = false
 
     puts ""
     if [deb, changes].all?{|asset| File.exists?(asset)}
-      puts "*** retaining #{deb.basename} ***"
+      banner "retaining #{deb.basename}"
       next
     elsif fetch(deb) && fetch(changes)
-      puts "*** fetched #{deb.basename} from repo ***"
+      banner "fetched #{deb.basename} from repo"
       next
     else
-      puts "*** rebuilding #{deb.basename} ***"
+      puts "\n*** rebuilding #{deb.basename} ***\n"
+      banner "rebuilding #{deb.basename}"
     end
 
     staged = zotero.stage
