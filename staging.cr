@@ -17,11 +17,14 @@ def chdir(path : String | Path, &block)
 end
 
 def download(url : String, filename : String)
-  run "curl", [ "-Lf", "-o", filename, url ]
+  cmd = "curl #{Process.quote([ "-Lf", "-o", filename, url ])} || true"
+  puts cmd
+  system cmd
 end
 
 def run(cmd : String, args : Array(String) = [] of String)
-  puts cmd = "#{cmd} #{Process.quote(args)}".strip
+  cmd = "#{cmd} #{Process.quote(args)}".strip
+  puts cmd
   return if system cmd
   Process.exit(1)
 end
