@@ -1,4 +1,4 @@
-repo: rebuil-apt
+repo: rebuild-apt
 	./rebuild-apt
 
 %: %.cr
