@@ -16,10 +16,12 @@ def chdir(path : String | Path, &block)
   Dir.cd(back)
 end
 
-def download(url : String, filename : String)
+def download(url : String, filename : String) : String
   cmd = "curl #{Process.quote([ "-sLf", "-o", filename, url ])} || true"
-  puts cmd
+  print cmd.split("||")[0].strip
   system cmd
+  puts File.file?(filename) ? ": succeeded" : ": failed"
+  return filename
 end
 
 def run(cmd : String, args : Array(String) = [] of String)
