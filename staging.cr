@@ -17,7 +17,7 @@ def chdir(path : String | Path, &block)
 end
 
 def download(url : String, filename : String)
-  run "curl", [ "-Lf", "-o", filename ]
+  run "curl", [ "-Lf", "-o", filename, url ]
 end
 
 def run(cmd : String, args : Array(String) = [] of String)
