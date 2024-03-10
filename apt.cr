@@ -20,6 +20,7 @@ def hash(filename : String | Path, algo : String) : String
 end
 
 Repo = Path["apt"].expand.to_s
+run "mkdir", ["-p", Repo.to_s]
 
 Keep = [] of String
 
@@ -43,7 +44,7 @@ updated = false
     if [deb, changes].all?{|asset| File.exists?(asset)}
       puts "*** retaining #{deb.basename} ***"
       next
-    elsif fetch(deb)
+    elsif fetch(deb) && fetch(staging)
       puts "*** fetched #{deb.basename} from repo ***"
       next
     else
@@ -51,7 +52,6 @@ updated = false
     end
 
     staged = zotero.stage
-    run "mkdir", ["-p", Repo.to_s]
     run "rm", ["-rf", deb.to_s]
 
     args = [
