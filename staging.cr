@@ -116,9 +116,9 @@ class Zotero
 
   property config : Config
 
-  property vendor : String
-  property license : String
-  property homepage : String
+  property vendor : String = ""
+  property license : String = ""
+  property homepage : String = ""
 
   def initialize(@arch : String, @beta=false)
     arch = case @arch
