@@ -48,7 +48,6 @@ updated = false
     Keep << deb.basename
     Keep << changes.basename
 
-    puts ""
     if [deb, changes].all?{|asset| File.exists?(asset)}
       banner "retaining #{deb.basename}"
       next
