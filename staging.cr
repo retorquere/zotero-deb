@@ -116,6 +116,10 @@ class Zotero
 
   property config : Config
 
+  property vendor : String
+  property license : String
+  property homepage : String
+
   def initialize(@arch : String, @beta=false)
     arch = case @arch
       when "amd64"
@@ -129,6 +133,10 @@ class Zotero
     @config = Config.load
 
     @bin = "zotero"
+
+    @vendor = "Zotero"
+    @licence = "GNU Affero General Public License (version 3)"
+    @homepage = "https://www.zotero.org/"
 
     if @beta
       @url = HTTP::Client.get("https://www.zotero.org/download/standalone/dl?platform=linux-#{arch}&channel=beta").headers["Location"]

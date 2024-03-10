@@ -79,6 +79,9 @@ updated = false
     args += ["--maintainer", "#{zotero.config.maintainer.name} <#{zotero.config.maintainer.email}>"]
     args += ["--category", zotero.config.client.section]
     args += ["--description", zotero.config.client.description]
+    args += ["--license", zotero.license]
+    args += ["--vendor", zotero.vendor]
+    args += ["--url", zotero.homepage]
     args += ["."]
     chdir staged do
       run "fpm", args
