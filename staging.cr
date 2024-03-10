@@ -20,7 +20,7 @@ def download(url : String, filename : String) : String
   cmd = "curl #{Process.quote([ "-sLf", "-o", filename, url ])} || true"
   print cmd.split("||")[0].strip
   system cmd
-  puts File.file?(filename) ? ": succeeded" : ": failed"
+  puts File.file?(filename) ? " : succeeded" : " : failed"
   return filename
 end
 

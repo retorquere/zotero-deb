@@ -25,7 +25,7 @@ run "mkdir", ["-p", Repo.to_s]
 Keep = [] of String
 
 def fetch(asset : Path)
-  download "https://zotero.retorque.re/file/apt-package-archive/#{asset.basename}", asset.to_s
+  download "https://zotero.retorque.re/file/apt-package-archive/#{URI.encode(asset.basename)}", asset.to_s
   return File.file?(asset.to_s)
 end
 
