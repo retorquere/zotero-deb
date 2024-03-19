@@ -9,6 +9,16 @@ case `uname -m` in
     ;;
 esac
 
+check_dir() {
+    dir=$1
+    if [ ! -d "$dir" ] || [ ! -w "$dir" ]; then
+        echo "Directory does not exist or is not writable: $dir"
+        exit 1
+    fi
+}
+check_dir /usr/share/keyrings
+check_dir /etc/apt/sources.list.d
+
 export GNUPGHOME="/dev/null"
 
 REPO=${1:-'https://zotero.retorque.re/file/apt-package-archive'}
@@ -26,7 +36,9 @@ fi
 
 sudo chmod 644 $KEYRING
 # old key with too broad reach
-sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
+if [ -f /etc/apt/trusted.gpg.d/zotero.gpg ]; then
+  sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
+fi
 
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
 deb [signed-by=$KEYRING by-hash=force] $REPO ./
