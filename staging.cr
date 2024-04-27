@@ -178,7 +178,7 @@ class Zotero
     @config.client.section = desktop["Desktop Entry"].fetch("Categories", "Science;Office;Education;Literature").rstrip(";")
     desktop["Desktop Entry"]["Exec"] = "/usr/lib/#{@config.package}/#{@bin} #{@beta ? "--class #{@config.package}" : ""} --url %u"
     desktop["Desktop Entry"]["Name"] = @name + (@beta ? " Beta" : "")
-    desktop["Desktop Entry"]["Description"] = "#{@name} is a free, easy-to-use tool to help you collect, organize, cite, and share research"
+    desktop["Desktop Entry"]["Comment"] = "#{@name} is a free, easy-to-use tool to help you collect, organize, cite, and share research"
     desktop["Desktop Entry"]["Icon"] = "#{Path["/usr/lib", @config.package, @beta ? "icons/icon128.png" : "chrome/icons/default/default256.png"]}"
     desktop["Desktop Entry"]["MimeType"] = [
       "x-scheme-handler/zotero",
