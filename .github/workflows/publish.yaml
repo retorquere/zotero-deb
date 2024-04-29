@@ -112,13 +112,14 @@ jobs:
         dpkg -l | grep zotero
 
         for c in zotero zotero-beta; do
-          echo binaries
+          echo ----------
+          echo $c binaries
           ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
           echo
-          echo Desktop file for $c
+          echo $c.desktop
           cat /usr/share/applications/$c.desktop
           echo
-          echo validate desktop file for $c
+          echo validate $c.desktop
           desktop-file-validate /usr/share/applications/$c.desktop && echo 'all clear!'
         done
 
