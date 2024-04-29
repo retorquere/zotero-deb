@@ -113,4 +113,7 @@ jobs:
 
         for c in zotero zotero-beta; do
           ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
+          cat /usr/share/applications/$c.desktop
+          desktop-file-validate /usr/share/applications/$c.desktop
         done
+
