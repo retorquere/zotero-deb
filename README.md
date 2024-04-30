@@ -47,6 +47,8 @@ They manage both desktop file registration and MimeType registration.
 
 ## Installing Zotero / Juris-M
 
+If you're previously used the tarball install, delete `~/.local/share/applications/zotero.desktop`.
+
 ### Installing Zotero
 
 To install Zotero, use the following commands:
