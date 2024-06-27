@@ -26,9 +26,9 @@ KEYNAME=zotero-archive-keyring.gpg
 GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
 KEYRING=/usr/share/keyrings/$KEYNAME
 if [ -x "$(command -v curl)" ]; then
-  sudo curl -L $GPGKEY -o $KEYRING
+  sudo -E curl -L $GPGKEY -o $KEYRING
 elif [ -x "$(command -v wget)" ]; then
-  sudo wget -O $KEYRING $GPGKEY
+  sudo -E wget -O $KEYRING $GPGKEY
 else
   echo "Error: need wget or curl installed." >&2
   exit 1
