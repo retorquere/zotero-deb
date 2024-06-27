@@ -160,7 +160,7 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
       index.puts("| --------- | ---- |")
 
       Dir.entries(".").select{|name| !(name =~ /^index[.][a-z]+$/) && File.file?(name) }.sort.each do |name|
-        index.puts("| [#{name}](#{name}) | #{human_readable(File.size(name))} |")
+        index.puts("| [#{name}](#{URI.encode_path(name)}) | #{human_readable(File.size(name))} |")
       end
     end
     run "pandoc", ["--standalone", "--css=index.css", "-i", "index.md", "-o", "index.html"]
