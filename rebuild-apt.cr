@@ -48,14 +48,16 @@ updated = false
     Keep << deb.basename
     Keep << changes.basename
 
-    if [deb, changes].all?{|asset| File.exists?(asset)}
+    if ENV.fetch("BUILD", "") == "true"
+      banner "rebuilding #{deb.basename}"
+    elsif [deb, changes].all?{|asset| File.exists?(asset)}
       banner "retaining #{deb.basename}"
       next
     elsif fetch(deb) && fetch(changes)
       banner "fetched #{deb.basename} from repo"
       next
     else
-      banner "rebuilding #{deb.basename}"
+      banner "building #{deb.basename}"
     end
 
     staged = zotero.stage
@@ -111,12 +113,24 @@ updated = false
   end
 end
 
-if updated
+def human_readable(size : Int64) : String
+  units = %w[B KiB MiB GiB TiB PiB EiB ZiB]
+  while size >= 1024 && units.size > 1
+    size /= 1024
+    units.shift
+  end
+  return "#{size.round(1)} #{units[0]}"
+end
+
+if updated || ENV.fetch("PUBLISH", "") == "true"
   maintainer = Zotero.new("amd64", false).config.maintainer
   chdir Repo do
     Dir.glob("*.*").sort.each do |asset|
-      next if !File.file?(asset) || Keep.includes?(asset)
-      File.delete(asset)
+      puts "asset #{asset}"
+      if File.file?(asset) && !Keep.includes?(asset)
+        puts "removing #{asset}"
+        File.delete(asset)
+      end
     end
 
     run "apt-ftparchive packages . | awk 'BEGIN{ok=1} { if ($0 ~ /^E: /) { ok = 0 }; print } END{exit !ok}' > Packages"
@@ -134,6 +148,22 @@ if updated
         run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
       end
     end
+
+    banner "building index"
+    File.open("index.md", "w") do |index|
+      index.puts("% Zotero packages for Debian-based systems")
+      index.puts(File.read("../README.md"))
+      index.puts("\n")
+
+      index.puts("| File name | Size |")
+      index.puts("| --------- | ---- |")
+
+      Dir.entries(".").select{|name| File.file?(name) }.sort.each do |name|
+        index.puts("| #{name} | #{human_readable(File.size(name))} |")
+      end
+    end
+    run "pandoc", ["-s", "-i", "index.md", "-o", "index.html"]
+    File.delete("index.md")
   end
 
   if ENV.fetch("GITHUB_ACTIONS", "") == "true"

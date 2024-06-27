@@ -75,6 +75,9 @@ jobs:
     - name: rebuild
       id: rebuild
       run: make
+      env:
+        BUILD: ${{ github.event.inputs.build }}
+        PUBLISH: ${{ github.event.inputs.publish }}
 
     - name: show status
       run: echo publish=${{ steps.rebuild.outputs.update }}
