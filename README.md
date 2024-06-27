@@ -178,5 +178,5 @@ sudo apt-get clean
 To rebuild this repo you need:
 
 * a deb-based system (I use Ubuntu)
-* Python 3.10
+* [Crystal](https://crystal-lang.org/)
 

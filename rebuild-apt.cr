@@ -159,10 +159,10 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
       index.puts("| --------- | ---- |")
 
       Dir.entries(".").select{|name| File.file?(name) }.sort.each do |name|
-        index.puts("| #{name} | #{human_readable(File.size(name))} |")
+        index.puts("| [#{name}](#{name}) | #{human_readable(File.size(name))} |")
       end
     end
-    run "pandoc", ["-s", "-i", "index.md", "-o", "index.html"]
+    run "pandoc", ["--embed-resources", "--standalone", "--css=../README.css", "-i", "index.md", "-o", "index.html"]
     File.delete("index.md")
   end
 
