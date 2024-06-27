@@ -150,6 +150,7 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
     end
 
     banner "building index"
+    File.copy("../README.css", "index.css")
     File.open("index.md", "w") do |index|
       index.puts("% Zotero packages for Debian-based systems")
       index.puts(File.read("../README.md"))
@@ -162,7 +163,7 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
         index.puts("| [#{name}](#{name}) | #{human_readable(File.size(name))} |")
       end
     end
-    run "pandoc", ["--embed-resources", "--standalone", "--css=../README.css", "-i", "index.md", "-o", "index.html"]
+    run "pandoc", ["--standalone", "--css=index.css", "-i", "index.md", "-o", "index.html"]
     File.delete("index.md")
   end
 
