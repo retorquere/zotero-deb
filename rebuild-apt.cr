@@ -159,7 +159,7 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
       index.puts("| File name | Size |")
       index.puts("| --------- | ---- |")
 
-      Dir.entries(".").select{|name| File.file?(name) }.sort.each do |name|
+      Dir.entries(".").select{|name| !(name =~ /^index[.][a-z]+$/) && File.file?(name) }.sort.each do |name|
         index.puts("| [#{name}](#{name}) | #{human_readable(File.size(name))} |")
       end
     end
