@@ -27,8 +27,9 @@ jobs:
 
     - uses: actions/checkout@v4
 
-    - name: install Crystal
-      uses: crystal-lang/install-crystal@v1
+#    - name: install Crystal
+#      uses: crystal-lang/install-crystal@v1
+    - run: curl -fsSL https://crystal-lang.org/install.sh | sudo bash
 
     - name: import GPG key
       uses: retorquere/ghaction-import-gpg@master
