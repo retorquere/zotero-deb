@@ -152,13 +152,15 @@ class Zotero
     else
       response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/release/updates-linux-#{arch}.json")
       raise "Could not get Zotero version" unless response.success?
-      versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}.sort{|v1, v2| v1.split(/[-.]/).map(&.to_i) <=> v2.split(/[-.]/).map(&.to_i) }
+      versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}
       if @legacy
         versions = versions.select{|v| v.starts_with? "6" }
+        versions << "6.0.35" // assure at least one version remains available
         @config.package = "zotero6"
       else
         @config.package = "zotero"
       end
+      versions = versions.sort{|v1, v2| v1.split(/[-.]/).map(&.to_i) <=> v2.split(/[-.]/).map(&.to_i) }
       @version = versions[-1]
       @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
     end
