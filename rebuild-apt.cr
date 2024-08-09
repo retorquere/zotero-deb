@@ -39,7 +39,7 @@ end
 
 updated = false
 ["amd64", "i386"].each do |arch|
-  ["release", "legacy"].each do |mode|
+  ["beta", "release", "legacy"].each do |mode|
     zotero = Zotero.new(arch, mode)
     version = zotero.config.client.version(zotero.version)
     deb = Path[Repo, "#{zotero.config.package}_#{version}_#{arch}.deb"]

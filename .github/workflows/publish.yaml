@@ -114,10 +114,10 @@ jobs:
         sudo apt -y install desktop-file-utils zotero zotero6 || true
         dpkg -l | grep zotero
 
-        for c in zotero zotero6; do
+        for c in zotero zotero6 zotero-beta; do
           echo ----------
           echo $c binaries
-          ls -lh /usr/lib/$c/${c/6*/} /usr/lib/$c/${c/6*/}-bin /usr/bin/$c
+          ls -lh /usr/lib/$c/zotero /usr/lib/$c/zotero-bin /usr/bin/$c
           echo
           echo $c.desktop
           cat /usr/share/applications/$c.desktop
