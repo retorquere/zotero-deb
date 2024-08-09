@@ -111,10 +111,10 @@ jobs:
       run: |
         sudo apt -y clean
         sudo apt -y update
-        sudo apt -y install desktop-file-utils zotero zotero-beta || true
+        sudo apt -y install desktop-file-utils zotero zotero6 || true
         dpkg -l | grep zotero
 
-        for c in zotero zotero-beta; do
+        for c in zotero zotero6; do
           echo ----------
           echo $c binaries
           ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
