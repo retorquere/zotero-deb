@@ -67,6 +67,7 @@ class Config
   property maintainer : Maintainer
   property common : Common
   property zotero : Client
+  property zotero6 : Client
   @[YAML::Field(key: "zotero-beta")]
   property zotero_beta : Client
 
@@ -81,6 +82,7 @@ class Config
     loaded = self.from_yaml(File.read("config.yml"))
     loaded.staging = "#{Path.new(loaded.staging).expand}"
     loaded.zotero.dependencies += loaded.common.dependencies
+    loaded.zotero6.dependencies += loaded.common.dependencies
     loaded.zotero_beta.dependencies += loaded.common.dependencies
     return loaded
   end
@@ -91,6 +93,8 @@ class Config
         @zotero
       when "zotero-beta"
         @zotero_beta
+      when "zotero6"
+        @zotero6
       else
         raise "Unkown package #{@package}"
     end
@@ -102,7 +106,8 @@ class Zotero
   property url : String
 
   property arch : String
-  property beta : Bool
+  property beta : Bool = false
+  property legacy : Bool = false
   property name : String = "Zotero"
 
   property config : Config
@@ -111,7 +116,18 @@ class Zotero
   property license : String = ""
   property homepage : String = ""
 
-  def initialize(@arch : String, @beta=false)
+  def initialize(@arch : String, mode : String)
+    case mode
+      when "beta"
+        @beta = true
+      when "legacy"
+        @legacy = true
+      when "release"
+        # pass
+      else
+        raise "unknown mode #{mode}"
+    end
+
     arch = case @arch
       when "amd64"
         "x86_64"
@@ -137,9 +153,14 @@ class Zotero
       response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/release/updates-linux-#{arch}.json")
       raise "Could not get Zotero version" unless response.success?
       versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}.sort{|v1, v2| v1.split(/[-.]/).map(&.to_i) <=> v2.split(/[-.]/).map(&.to_i) }
+      if @legacy
+        versions = versions.select{|v| v.starts_with? "6" }
+        @config.package = "zotero6"
+      else
+        @config.package = "zotero"
+      end
       @version = versions[-1]
       @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
-      @config.package = "zotero"
     end
   end
 
@@ -176,10 +197,14 @@ class Zotero
 
     desktop = INI.parse(File.read("#{Path[staging, "#{@bin}.desktop"]}"))
     @config.client.section = desktop["Desktop Entry"].fetch("Categories", "Science;Office;Education;Literature").rstrip(";")
-    desktop["Desktop Entry"]["Exec"] = "/usr/lib/#{@config.package}/#{@bin} #{@beta ? "--class #{@config.package}" : ""} --url %u"
-    desktop["Desktop Entry"]["Name"] = @name + (@beta ? " Beta" : "")
+    desktop["Desktop Entry"]["Exec"] = "/usr/lib/#{@config.package}/#{@bin} #{@beta || @legacy ? "--class #{@config.package}" : ""} --url %u"
+
+    desktop["Desktop Entry"]["Name"] = @name
+    desktop["Desktop Entry"]["Name"] += " Beta" if @beta
+    desktop["Desktop Entry"]["Name"] += " (Legacy)" if @legacy
+
     desktop["Desktop Entry"]["Comment"] = "#{@name} is a free, easy-to-use tool to help you collect, organize, cite, and share research"
-    desktop["Desktop Entry"]["Icon"] = "#{Path["/usr/lib", @config.package, @beta ? "icons/icon128.png" : "chrome/icons/default/default256.png"]}"
+    desktop["Desktop Entry"]["Icon"] = "#{Path["/usr/lib", @config.package, @legacy ? "chrome/icons/default/default256.png" : "icons/icon128.png"]}"
     desktop["Desktop Entry"]["MimeType"] = [
       "x-scheme-handler/zotero",
       "application/x-endnote-refer",

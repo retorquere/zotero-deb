@@ -39,8 +39,8 @@ end
 
 updated = false
 ["amd64", "i386"].each do |arch|
-  [false, true].each do |beta|
-    zotero = Zotero.new(arch, beta)
+  ["release", "legacy"].each do |mode|
+    zotero = Zotero.new(arch, mode)
     version = zotero.config.client.version(zotero.version)
     deb = Path[Repo, "#{zotero.config.package}_#{version}_#{arch}.deb"]
     changes = Path[deb.dirname, deb.stem + ".changes"]
@@ -123,7 +123,7 @@ def human_readable(size : Int64) : String
 end
 
 if updated || ENV.fetch("PUBLISH", "") == "true"
-  maintainer = Zotero.new("amd64", false).config.maintainer
+  maintainer = Zotero.new("amd64", "release").config.maintainer
   chdir Repo do
     Dir.glob("*.*").sort.each do |asset|
       puts "asset #{asset}"
@@ -148,6 +148,8 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
         run "cp #{pkg} by-hash/#{hsh}/#{hash(pkg, hsh.sub("Sum", ""))}"
       end
     end
+
+    File.copy("../zotero-archive-keyring.gpg", "zotero-archive-keyring.pgp")
 
     banner "building index"
     File.copy("../README.css", "index.css")
