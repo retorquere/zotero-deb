@@ -117,7 +117,7 @@ jobs:
         for c in zotero zotero6; do
           echo ----------
           echo $c binaries
-          ls -lh /usr/lib/$c/${c/-*/} /usr/lib/$c/${c/-*/}-bin /usr/bin/$c
+          ls -lh /usr/lib/$c/${c/6*/} /usr/lib/$c/${c/6*/}-bin /usr/bin/$c
           echo
           echo $c.desktop
           cat /usr/share/applications/$c.desktop
