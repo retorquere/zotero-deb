@@ -155,7 +155,7 @@ class Zotero
       versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}
       if @legacy
         versions = versions.select{|v| v.starts_with? "6" }
-        versions << "6.0.35" // assure at least one version remains available
+        versions << "6.0.35" # assure at least one version remains available
         @config.package = "zotero6"
       else
         @config.package = "zotero"
