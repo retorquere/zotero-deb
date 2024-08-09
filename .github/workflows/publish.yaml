@@ -111,7 +111,7 @@ jobs:
       run: |
         sudo apt -y clean
         sudo apt -y update
-        sudo apt -y install desktop-file-utils zotero zotero6 || true
+        sudo apt -y install desktop-file-utils zotero zotero6 zotero-beta || true
         dpkg -l | grep zotero
 
         for c in zotero zotero6 zotero-beta; do
