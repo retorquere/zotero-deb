@@ -39,6 +39,8 @@ zotero:
   dependencies:
     - libegl1|libwayland-egl1
     - libegl-mesa0
+  bump:
+    7.0: 1
 zotero6:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies: []
