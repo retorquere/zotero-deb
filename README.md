@@ -21,16 +21,6 @@ See `install.sh` explanation below and adjust URL accordingly
 * ~https://zotero-deb.mirror.ioperf.eu/~ down at the moment
 * https://mirror.mwt.me/zotero/deb
 
-## Deprecated sources, please change to the primary source.
-
-If you still use these, you will get errors -- apologies for this, but they had become so unreliable I cannot support them. Please re-install using [the instructions above](#PSA). The following are no longer supported:
-
-* [the downloads on this repo](https://github.com/retorquere/zotero-deb/releases/tag/apt-get)
-  * github has made changes to how they're hosting release files, which triggered a long-standing bug in `apt`.
-* sourceforge
-  * sourceforge uses a mirror system that updates haphazardly and which may redirect you to a mirror that is down.
-* deprecated URL on backblaze
-  * https://apt.retorque.re/file/zotero-apt
 ----
 
 This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them. It also offers the latest nightly zotero-beta.
