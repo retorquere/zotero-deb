@@ -41,6 +41,7 @@ zotero:
     - libegl-mesa0
   bump:
     7.0: 1
+    7.0.3: 1
 zotero6:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies: []
@@ -55,6 +56,7 @@ zotero-beta:
   bump:
     7.0.0.65+b047f3d90: 2
     7.0.0.76+91054acfe: 1
+    7.0.3.3+6f9abaaff: 1
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
