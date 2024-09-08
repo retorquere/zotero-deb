@@ -15,16 +15,15 @@ on:
         required: false
         default: ''
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   rebuild:
     runs-on: ubuntu-latest
     # runs-on: ubuntu-20.04
     steps:
-    - name: cancel previous runs
-      uses: styfle/cancel-workflow-action@0.12.1
-      with:
-        access_token: ${{ github.token }}
-
     - uses: actions/checkout@v4
 
     #- uses: crystal-lang/install-crystal@v1
@@ -125,4 +124,3 @@ jobs:
           echo validate $c.desktop
           desktop-file-validate /usr/share/applications/$c.desktop && echo 'all clear!'
         done
-
