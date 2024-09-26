@@ -226,9 +226,7 @@ class Zotero
     File.open(Path[applications, "#{@config.package}.desktop"], "w") do |f|
       INI.build(f, desktop)
     end
-    File.open(Path[staging, "#{@bin}.desktop"], "w") do |f|
-      INI.build(f, desktop)
-    end
+    File.delete(Path[staging, "#{@bin}.desktop"])
 
     File.copy("mime.xml", "#{Path[self.mkdir("usr/share/mime/packages"), "#{@config.package}.xml"]}")
 
