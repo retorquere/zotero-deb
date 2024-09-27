@@ -39,11 +39,11 @@ jobs:
         sudo apt-get -q update
         sudo apt-get -qy install devscripts fakeroot moreutils pandoc
 
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '3.3' # Not needed with a .ruby-version file
-        bundler-cache: true # runs 'bundle install' and caches installed gems automatically
-    - run: gem install fpm
+    - name: install nfpm
+      run: |
+        echo 'deb [trusted=yes] https://repo.goreleaser.com/apt/ /' | sudo tee /etc/apt/sources.list.d/goreleaser.list
+        sudo apt update
+        sudo apt install nfpm
 
     - name: install rclone
       run: curl https://rclone.org/install.sh | sudo bash
