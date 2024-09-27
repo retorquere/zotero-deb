@@ -4,3 +4,4 @@ apt
 rebuild-apt
 staged
 gpg
+nfpm.yaml

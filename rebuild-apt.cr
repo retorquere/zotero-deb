@@ -4,6 +4,7 @@ require "./staging"
 require "time"
 require "path"
 require "uri"
+require "yaml"
 
 require "openssl"
 
@@ -41,19 +42,18 @@ updated = false
 ["amd64", "i386"].each do |arch|
   ["beta", "release", "legacy"].each do |mode|
     zotero = Zotero.new(arch, mode)
-    version = zotero.config.client.version(zotero.version)
-    deb = Path[Repo, "#{zotero.config.package}_#{version}_#{arch}.deb"]
-    changes = Path[deb.dirname, deb.stem + ".changes"]
+    deb = Path[Repo, "#{zotero.config.package}_#{zotero.config.client.version(zotero.version)}_#{arch}.deb"]
+    #changes = Path[deb.dirname, deb.stem + ".changes"]
 
     Keep << deb.basename
-    Keep << changes.basename
+    #Keep << changes.basename
 
     if ENV.fetch("BUILD", "") == "true"
       banner "rebuilding #{deb.basename}"
-    elsif [deb, changes].all?{|asset| File.exists?(asset)}
+    elsif [deb].all?{|asset| File.exists?(asset)}
       banner "retaining #{deb.basename}"
       next
-    elsif fetch(deb) && fetch(changes)
+    elsif fetch(deb) #&& fetch(changes)
       banner "fetched #{deb.basename} from repo"
       next
     else
@@ -61,54 +61,82 @@ updated = false
     end
 
     staged = zotero.stage
-    run "rm", ["-rf", deb.to_s]
 
-    args = [
-      "-s", "dir", "-t", "deb",
-      "-C", staged,
-      "-p", deb.to_s,
-      "--version", version,
-      "--name", zotero.config.package
-    ]
-    zotero.config.client.dependencies.each do |dep|
-      args << "-d"
-      args << dep
-    end
-    args += ["--architecture", arch]
-    args += ["--maintainer", "#{zotero.config.maintainer.name} <#{zotero.config.maintainer.email}>"]
-    args += ["--category", zotero.config.client.section]
-    args += ["--description", zotero.config.client.description]
-    args += ["--license", zotero.license]
-    args += ["--vendor", zotero.vendor]
-    args += ["--url", zotero.homepage]
-    args += ["."]
-    chdir staged do
-      run "fpm", args
-    end
+    File.write("nfpm.yaml", YAML.build{|yaml|
+      yaml.mapping{
+        yaml.scalar "name"; yaml.scalar zotero.config.package
+        yaml.scalar "arch"; yaml.scalar arch
+        yaml.scalar "platform"; yaml.scalar "linux"
+        yaml.scalar "version"; yaml.scalar zotero.version
+        if zotero.release != 0
+          yaml.scalar "release"; yaml.scalar zotero.release
+        end
+        yaml.scalar "depends"; yaml.sequence{
+          zotero.config.client.dependencies.each{|dep|
+            yaml.scalar dep
+          }
+        }
+        yaml.scalar "maintainer"; yaml.scalar "#{zotero.config.maintainer.name} <#{zotero.config.maintainer.email}>"
+        yaml.scalar "description"; yaml.scalar zotero.config.client.description
+        yaml.scalar "section"; yaml.scalar zotero.config.client.section
+        yaml.scalar "homepage"; yaml.scalar zotero.homepage
+        yaml.scalar "license"; yaml.scalar zotero.license
+        yaml.scalar "vendor"; yaml.scalar zotero.vendor
+        # changelog: "changelog.yaml"
+        yaml.scalar "contents"; yaml.sequence{
+          yaml.mapping{
+            yaml.scalar "src"; yaml.scalar staged
+            yaml.scalar "dst"; yaml.scalar "#{Path["/usr/lib", zotero.config.package]}"
+            yaml.scalar "type"; yaml.scalar "tree"
+          }
+          yaml.mapping{
+            yaml.scalar "src"; yaml.scalar "#{Path[staged, "#{zotero.bin}.desktop"]}"
+            yaml.scalar "dst"; yaml.scalar "/usr/share/applications/#{zotero.config.package}.desktop"
+          }
+          yaml.mapping{
+            yaml.scalar "src"; yaml.scalar "mime.xml"
+            yaml.scalar "dst"; yaml.scalar "/usr/share/mime/packages/#{zotero.config.package}.xml"
+          }
+          yaml.mapping{
+            yaml.scalar "src"; yaml.scalar "/usr/lib/#{zotero.config.package}/#{zotero.bin}"
+            yaml.scalar "dst"; yaml.scalar "/usr/bin/#{zotero.config.package}"
+            yaml.scalar "type"; yaml.scalar "symlink"
+          }
+        }
+        yaml.scalar "deb"; yaml.mapping{
+          yaml.scalar "signature"; yaml.mapping{
+            yaml.scalar "method"; yaml.scalar "debsign"
+            yaml.scalar "key_id"; yaml.scalar "6B08A8822B395BCA067C88AAEB9B577A1C349BFC"
+            #yaml.scalar "key_file"; yaml.scalar zotero.config.maintainer.gpgkey
+          }
+        }
+      }
+    }.to_s)
+    run "nfpm", ["package", "-p", "deb", "-t", Repo]
 
-    File.open(changes.to_s, "w") do |f|
-      f.puts "Format: 1.8"
-      f.puts "Date: #{Time.local.to_s("%a, %d %b %Y %H:%M:%S %z")}"
-      f.puts "Source: #{zotero.config.package}"
-      f.puts "Binary: #{zotero.config.package}"
-      f.puts "Architecture: #{arch}"
-      f.puts "Version: #{version}"
-      f.puts "Distribution: unstable"
-      f.puts "Urgency: medium"
-      f.puts "Maintainer: #{zotero.config.maintainer.email}"
-      f.puts "Changed-By: #{zotero.config.maintainer.name}"
-      f.puts "Description:"
-      f.puts " #{zotero.config.package} - #{zotero.config.client.description}"
-      f.puts "Changes:
-      f.puts " #{zotero.config.package} (#{shlex_quote(version)}) unstable; urgency=low
-      f.puts " ."
-      f.puts "   * Version #{version}."
-      f.puts "Checksums-Sha1:"
-      f.puts " #{hash(deb, "SHA1")} #{File.size(deb.to_s)} {deb}"
-      f.puts "Files:"
-      f.puts " #{hash(deb, "MD5")} #{File.size(deb.to_s)} #{deb}"
-    end
-    run "debsign", ["-k#{zotero.config.maintainer.gpgkey}", changes.to_s]
+    #File.open(changes.to_s, "w") do |f|
+    #  f.puts "Format: 1.8"
+    #  f.puts "Date: #{Time.local.to_s("%a, %d %b %Y %H:%M:%S %z")}"
+    #  f.puts "Source: #{zotero.config.package}"
+    #  f.puts "Binary: #{zotero.config.package}"
+    #  f.puts "Architecture: #{arch}"
+    #  f.puts "Version: #{version}"
+    #  f.puts "Distribution: unstable"
+    #  f.puts "Urgency: medium"
+    #  f.puts "Maintainer: #{zotero.config.maintainer.email}"
+    #  f.puts "Changed-By: #{zotero.config.maintainer.name}"
+    #  f.puts "Description:"
+    #  f.puts " #{zotero.config.package} - #{zotero.config.client.description}"
+    #  f.puts "Changes:
+    #  f.puts " #{zotero.config.package} (#{shlex_quote(version)}) unstable; urgency=low
+    #  f.puts " ."
+    #  f.puts "   * Version #{version}."
+    #  f.puts "Checksums-Sha1:"
+    #  f.puts " #{hash(deb, "SHA1")} #{File.size(deb.to_s)} {deb}"
+    #  f.puts "Files:"
+    #  f.puts " #{hash(deb, "MD5")} #{File.size(deb.to_s)} #{deb}"
+    #end
+    #run "debsign", ["-k#{zotero.config.maintainer.gpgkey}", changes.to_s]
     updated = true
   end
 end

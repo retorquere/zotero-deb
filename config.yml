@@ -39,13 +39,13 @@ zotero:
   dependencies:
     - libegl1|libwayland-egl1
     - libegl-mesa0
-  bump:
+  release:
     7.0: 1
     7.0.3: 1
 zotero6:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies: []
-  bump:
+  release:
     1.0: 1
     6.0.35: 1
 zotero-beta:
@@ -53,16 +53,16 @@ zotero-beta:
   dependencies:
     - libegl1|libwayland-egl1
     - libegl-mesa0
-  bump:
+  release:
     7.0.0.65+b047f3d90: 2
     7.0.0.76+91054acfe: 1
     7.0.3.3+6f9abaaff: 1
-    7.0.6.2+b4239fd4c: 1
+    7.0.6.2+b4239fd4c: 2
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
     - default-jre
     - libreoffice-java-common
-  bump:
+  release:
     5.0.93m18: 4
 staging: staged

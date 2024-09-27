@@ -53,13 +53,13 @@ class Config
 
     property description : String = ""
     property dependencies : Array(String) = [] of String
-    property bump : Hash(String, Int32) = Hash(String, Int32).new
+    property release : Hash(String, Int32) = Hash(String, Int32).new
 
     @[YAML::Field(ignore: true)]
     property section : String = ""
 
     def version(v)
-      v += "-#{@bump[v]}" if @bump.has_key?(v)
+      v += "-#{@release[v]}" if @release.has_key?(v)
       return v
     end
   end
@@ -103,12 +103,14 @@ end
 
 class Zotero
   property version : String
+  property release : Int32
   property url : String
 
   property arch : String
   property beta : Bool = false
   property legacy : Bool = false
   property name : String = "Zotero"
+  property bin : String
 
   property config : Config
 
@@ -164,6 +166,8 @@ class Zotero
       @version = versions[-1]
       @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
     end
+
+    @release = @config.client.release.fetch(@version, 0)
   end
 
   def mkdir(d)
@@ -176,7 +180,7 @@ class Zotero
   def stage
     run "rm", ["-rf", @config.staging]
 
-    staging = self.mkdir(Path["usr/lib", @config.package])
+    staging = self.mkdir(@config.staging)
     tarball = File.tempfile("#{@config.package}.tar.bz2").path
     download @url, tarball
     run "tar", ["-xjf", tarball, "-C", staging, "--strip-components=1"]
@@ -222,15 +226,9 @@ class Zotero
       "application/vnd.citationstyles.style+xml"
     ].join(";")
 
-    applications = self.mkdir("usr/share/applications")
-    File.open(Path[applications, "#{@config.package}.desktop"], "w") do |f|
+    File.open("#{Path[staging, "#{@bin}.desktop"]}", "w") do |f|
       INI.build(f, desktop)
     end
-    File.delete(Path[staging, "#{@bin}.desktop"])
-
-    File.copy("mime.xml", "#{Path[self.mkdir("usr/share/mime/packages"), "#{@config.package}.xml"]}")
-
-    run "ln", ["-s", "/usr/lib/#{@config.package}/#{@bin}", Path[self.mkdir("usr/bin"), @config.package].to_s]
 
     return @config.staging
   end
