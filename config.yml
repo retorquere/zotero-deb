@@ -54,7 +54,7 @@ zotero-beta:
     - libegl1|libwayland-egl1
     - libegl-mesa0
   release:
-    7.0.0.65+b047f3d90: 2
+    7.0.0.65+b047f3d90: 1
     7.0.0.76+91054acfe: 1
     7.0.3.3+6f9abaaff: 1
     7.0.6.2+b4239fd4c: 2
