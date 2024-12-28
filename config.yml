@@ -13,7 +13,6 @@ common:
     - libdbus-glib-1-2
     - libfontconfig1
     - libfreetype6
-    - libgdk-pixbuf2.0-0
     - libglib2.0-0
     - libgtk-3-0
     - libharfbuzz0b
@@ -42,12 +41,13 @@ zotero:
   release:
     7.0: 1
     7.0.3: 1
+    7.0.11: 1
 zotero6:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies: []
   release:
     1.0: 1
-    6.0.35: 1
+    6.0.35: 2
 zotero-beta:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
@@ -58,6 +58,7 @@ zotero-beta:
     7.0.0.76+91054acfe: 1
     7.0.3.3+6f9abaaff: 1
     7.0.6.2+b4239fd4c: 2
+    7.0.12.1+31bbf2acf: 1
 jurism:
   description: Juris-M is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies:
