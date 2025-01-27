@@ -11,6 +11,13 @@ on:
         options: 
           - true
           - false
+      state:
+        type: choice
+        description: Run on issue state
+        options: 
+          - all
+          - open
+          - closed
 
 jobs:
   nag:
@@ -24,3 +31,4 @@ jobs:
           # verbose: '${{ github.event.inputs.verbose }}'
           verbose: 'true'
           assign: retorquere
+          state: '${{ github.event.inputs.state }}'
