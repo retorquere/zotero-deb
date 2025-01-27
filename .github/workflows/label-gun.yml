@@ -9,8 +9,8 @@ on:
         type: choice
         description: Log activity
         options: 
-        - true
-        - false
+          - true
+          - false
 
 jobs:
   nag:
