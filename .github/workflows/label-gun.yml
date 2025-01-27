@@ -22,4 +22,4 @@ jobs:
           label.awaiting: awaiting-user-feedback
           label.reopened: reopened
           verbose: '${{ github.event.inputs.verbose }}'
-          assignee: retorquere
+          assign: retorquere
