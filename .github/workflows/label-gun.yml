@@ -4,6 +4,13 @@ on:
   issues:
   issue_comment:
   workflow_dispatch:
+    inputs:
+      verbose:
+        type: choice
+        description: Log activity
+        options: 
+        - true
+        - false
 
 jobs:
   nag:
@@ -14,4 +21,4 @@ jobs:
           token: ${{ github.token }}
           label.awaiting: awaiting-user-feedback
           label.reopened: reopened
-          verbose: true
+          verbose: '${{ github.event.inputs.verbose }}'
