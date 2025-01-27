@@ -14,3 +14,4 @@ jobs:
           token: ${{ github.token }}
           label.awaiting: awaiting-user-feedback
           label.reopened: reopened
+          verbose: true
