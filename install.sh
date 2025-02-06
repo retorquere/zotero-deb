@@ -10,54 +10,98 @@ case `uname -m` in
 esac
 
 check_dir() {
-    dir=$1
-    if [ ! -d "$dir" ] || [ ! -w "$dir" ]; then
-        echo "Directory does not exist or is not writable: $dir"
-        exit 1
-    fi
+  dir=$1
+  if [ ! -d "$dir" ] || [ ! -w "$dir" ]; then
+    echo "Directory does not exist or is not writable: $dir"
+    exit 1
+  fi
 }
-check_dir /usr/share/keyrings
+
+download() {
+  local url="$1"
+  local filepath="$2"
+
+  # Check if wget or curl is installed
+  if command -v wget > /dev/null; then
+    if [ -z "$filepath" ]; then
+      wget -qO- "$url"
+    else
+      wget -qO "$filepath" "$url"
+    fi
+  elif command -v curl > /dev/null; then
+    if [ -z "$filepath" ]; then
+      curl -s "$url"
+    else
+      curl -s -o "$filepath" "$url"
+    fi
+  else
+    echo "Error: Neither wget nor curl is installed." >&2
+    return 1
+  fi
+}
+
 check_dir /etc/apt/sources.list.d
 
 export GNUPGHOME="/dev/null"
 
-REPO=${1:-'https://zotero.retorque.re/file/apt-package-archive'}
-KEYNAME=zotero-archive-keyring.gpg
-GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
-KEYRING=/usr/share/keyrings/$KEYNAME
-if [ -x "$(command -v curl)" ]; then
-  sudo -E curl -L $GPGKEY -o $KEYRING
-elif [ -x "$(command -v wget)" ]; then
-  sudo -E wget -O $KEYRING $GPGKEY
-else
-  echo "Error: need wget or curl installed." >&2
-  exit 1
-fi
+REPO="https://zotero.retorque.re/file/apt-package-archive"
+FORMAT="list"
 
-sudo chmod 644 $KEYRING
+while getopts ":r:8" opt; do
+  case $opt in
+    r)
+      REPO=$OPTARG
+      ;;
+    8)
+      FORMAT=sources
+      ;;
+    ?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      ;;
+  esac
+done
+
 # old key with too broad reach
 if [ -f /etc/apt/trusted.gpg.d/zotero.gpg ]; then
   sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
 fi
 
+KEYBASE=https://raw.githubusercontent.com/retorquere/zotero-deb/master
+KEYNAME=zotero-archive-keyring.gpg
+KEYRING="/usr/share/keyrings/$KEYNAME"
+LIST=/etc/apt/sources.list.d/zotero.list
+SOURCES=/etc/apt/sources.list.d/zotero.sources
+
+if [ "$FORMAT" = "list" ]; then
+
+check_dir /usr/share/keyrings
+rm -f $SOURCES
+
+download "$KEYBASE/$KEYNAME" "$KEYRING"
+sudo chmod 644 $KEYRING
 cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
 deb [signed-by=$KEYRING by-hash=force] $REPO ./
 EOF
 
-KEYNAME=zotero-archive-keyring.asc
-GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
-if [ -x "$(command -v curl)" ]; then
-  GPGKEY=$(curl -sL $GPGKEY | sed 's/^$/./' | sed 's/^/ /')
-elif [ -x "$(command -v wget)" ]; then
-  GPGKEY=$(wget -qO- $GPGKEY | sed 's/^$/./' | sed 's/^/ /')
-fi
-cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.sources
+else
+
+rm -f $KEYRING $LIST
+
+KEYNAME="${KEYNAME/.gpg/.asc}"
+GPGKEY=$(download "$KEYBASE/$KEYNAME" | sed 's/^$/./' | sed 's/^/ /')
+cat << EOF | sudo tee $SOURCES
 Types: deb
-URIs: https://zotero.retorque.re/file/apt-package-archive
+URIs: $REPO
 Suites: ./
 Options: by-hash=force
 Signed-By:
 $GPGKEY
 EOF
+
+fi
 
 sudo apt-get clean
