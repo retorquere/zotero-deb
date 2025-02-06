@@ -47,7 +47,7 @@ EOF
 KEYNAME=zotero-archive-keyring.asc
 GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
 if [ -x "$(command -v curl)" ]; then
-  GPGKEY=$(curl -L $GPGKEY | sed 's/^$/./' | sed 's/^/ /')
+  GPGKEY=$(curl -sL $GPGKEY | sed 's/^$/./' | sed 's/^/ /')
 elif [ -x "$(command -v wget)" ]; then
   GPGKEY=$(wget -qO- $GPGKEY | sed 's/^$/./' | sed 's/^/ /')
 fi
