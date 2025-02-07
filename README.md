@@ -95,10 +95,10 @@ wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install
 
 ## Instructions for installation using the new deb822 repo pointer format
 
-add the `-8` flag to the install script to install the new deb822 repo pointer format:
+add the `-m sources` flag to the install script to install the new deb822 repo pointer format:
 
 ```
-curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash -s -- -8
+curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash -s -- -m sources
 ```
 
 ## Instructions for installation on Crostini-capable Chromebooks

@@ -45,15 +45,15 @@ check_dir /etc/apt/sources.list.d
 export GNUPGHOME="/dev/null"
 
 REPO="https://zotero.retorque.re/file/apt-package-archive"
-FORMAT="list"
+MODE="list"
 
-while getopts ":r:8" opt; do
+while getopts ":r:m:" opt; do
   case $opt in
     r)
       REPO=$OPTARG
       ;;
-    8)
-      FORMAT=sources
+    m)
+      MODE=$OPTARG
       ;;
     ?)
       echo "Invalid option: -$OPTARG" >&2
@@ -76,7 +76,7 @@ KEYRING="/usr/share/keyrings/$KEYNAME"
 LIST=/etc/apt/sources.list.d/zotero.list
 SOURCES=/etc/apt/sources.list.d/zotero.sources
 
-if [ "$FORMAT" = "list" ]; then
+if [ "$MODE" = "list" ]; then
 
 check_dir /usr/share/keyrings
 rm -f $SOURCES

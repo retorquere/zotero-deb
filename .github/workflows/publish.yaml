@@ -90,11 +90,15 @@ jobs:
         rclone sync apt b2-apt-package-archive:apt-package-archive -v
         rclone cleanup b2-apt-package-archive:apt-package-archive -v
 
-  list:
+  install:
+    needs: rebuild
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [ 'list', 'sources' ]
     outputs:
       status: success
-    needs: rebuild
     steps:
     - name: allow cloudflare CDN time to settle
       run: sleep 60
@@ -103,49 +107,11 @@ jobs:
       run: |
         export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh
         echo INSTALLSH=$INSTALLSH
-        curl -sL $INSTALLSH | tee install.sh | sudo bash
+        curl -sL $INSTALLSH | tee install.sh | sudo bash -s -- -m ${{ matrix.mode }}
         echo ==== install.sh ===
         cat install.sh
         echo ==== zotero.list ===
         cat /etc/apt/sources.list.d/zotero.list
-
-    - name: install from backblaze repo
-      run: |
-        sudo apt -y clean
-        sudo apt -y update
-        sudo apt -y install desktop-file-utils zotero zotero6 zotero-beta || true
-        dpkg -l | grep zotero
-
-        for c in zotero zotero6 zotero-beta; do
-          echo ----------
-          echo $c binaries
-          ls -lh /usr/lib/$c/zotero /usr/lib/$c/zotero-bin /usr/bin/$c
-          echo
-          echo $c.desktop
-          cat /usr/share/applications/$c.desktop
-          echo
-          echo validate $c.desktop
-          desktop-file-validate /usr/share/applications/$c.desktop && echo 'all clear!'
-        done
-
-  sources:
-    runs-on: ubuntu-latest
-    outputs:
-      status: success
-    needs: rebuild
-    steps:
-    - name: allow cloudflare CDN time to settle
-      run: sleep 60
-
-    - name: install apt repo
-      run: |
-        export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh
-        echo INSTALLSH=$INSTALLSH
-        curl -sL $INSTALLSH | tee install.sh | sudo bash -s -- -8
-        echo ==== install.sh ===
-        cat install.sh
-        echo ==== zotero.sources ===
-        cat /etc/apt/sources.list.d/zotero.sources
 
     - name: install from backblaze repo
       run: |
