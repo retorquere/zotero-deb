@@ -114,62 +114,7 @@ sudo apt-get purge zotero
 
 ## What goes on under the hood in `install.sh`
 
-The install.sh is convenient, but there's a risk to running random scripts from the internet as root. What the script does, and what you could manually do yourself, is:
-
-Check whether you are installing on a supported architecture:
-
-```
-case `uname -m` in
-  "i386" | "i686" | "x86_64")
-    ;;
-  *)
-    echo "Zotero is only available for architectures i686 and x86_64"
-    exit
-    ;;
-esac
-```
-
-Set up some basic information about the repo and your environment:
-
-```
-KEYNAME=zotero-archive-keyring.gpg
-GPGKEY=https://raw.githubusercontent.com/retorquere/zotero-deb/master/$KEYNAME
-KEYRING=/usr/share/keyrings/$KEYNAME
-```
-
-checks whether you have `curl` or `wget` and use that to download the public key for signature verification
-
-```
-if [ -x "$(command -v curl)" ]; then
-  sudo curl -L $GPGKEY -o $KEYRING
-elif [ -x "$(command -v wget)" ]; then
-  sudo wget -O $KEYRING $GPGKEY
-else
-  echo "Error: need wget or curl installed." >&2
-  exit 1
-fi
-sudo chmod 644 $KEYRING
-```
-
-remove old key with too broad reach if present
-
-```
-sudo rm -f /etc/apt/trusted.gpg.d/zotero.gpg
-```
-
-install repo pointer
-
-```
-cat << EOF | sudo tee /etc/apt/sources.list.d/zotero.list
-deb [signed-by=$KEYRING by-hash=force] https://zotero.retorque.re/file/apt-package-archive ./
-EOF
-```
-
-clean up remnants from previous use of another mirror, if any
-
-```
-sudo apt-get clean
-```
+The install.sh is convenient, but there's a risk to running random scripts from the internet as root. The script is fairly simple though, and the actions can be done by hand fairly easily. In the end it installs either `/etc/apt/sources.list.d/zotero.list` or `/etc/apt/sources.list.d/zotero.sources` and the regular apt infrastructure is used from that point on.
 
 # Developers
 
