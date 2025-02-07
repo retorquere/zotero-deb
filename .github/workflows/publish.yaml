@@ -111,7 +111,7 @@ jobs:
         echo ==== install.sh ===
         cat install.sh
         echo ==== zotero.list ===
-        cat /etc/apt/sources.list.d/zotero.list
+        cat /etc/apt/sources.list.d/zotero.${{ matrix.mode }}
 
     - name: install from backblaze repo
       run: |
