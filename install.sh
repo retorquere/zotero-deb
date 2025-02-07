@@ -98,8 +98,7 @@ Types: deb
 URIs: $REPO
 Suites: ./
 Options: by-hash=force
-Signed-By:
-$GPGKEY
+Signed-By:$GPGKEY
 EOF
 
 fi
