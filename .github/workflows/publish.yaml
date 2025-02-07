@@ -110,7 +110,7 @@ jobs:
         curl -sL $INSTALLSH | tee install.sh | sudo bash -s -- -m ${{ matrix.mode }}
         echo ==== install.sh ===
         cat install.sh
-        echo ==== zotero.list ===
+        echo ==== zotero.${{ matrix.mode }} ===
         cat /etc/apt/sources.list.d/zotero.${{ matrix.mode }}
 
     - name: install from backblaze repo
