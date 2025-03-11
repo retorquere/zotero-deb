@@ -1,34 +1,66 @@
-name: 'Manage issues and nag about debug logs'
-
+name: Manage issues and nag about debug logs
 on:
-  issues:
-  issue_comment:
+  issue_comment: null
+  issues: null
   workflow_dispatch:
     inputs:
-      verbose:
-        type: choice
-        description: Log activity
-        options: 
-          - true
-          - false
       state:
-        type: choice
         description: Run on issue state
-        options: 
-          - all
-          - open
-          - closed
-
+        options:
+        - all
+        - open
+        - closed
+        type: choice
+      verbose:
+        description: Log activity
+        options:
+        - true
+        - false
+        type: choice
 jobs:
   nag:
     runs-on: ubuntu-latest
     steps:
-      - uses: retorquere/label-gun@project
-        with:
-          token: ${{ github.token }}
-          label.awaiting: awaiting-user-feedback
-          label.reopened: reopened
-          # verbose: '${{ github.event.inputs.verbose }}'
-          verbose: 'true'
-          assign: retorquere
-          state: '${{ github.event.inputs.state }}'
+    - id: labelgun
+      uses: retorquere/label-gun@main
+      with:
+        assign: true
+        close.message: Thanks for the feedback! Just so you know, GitHub doesn't let
+          me control who can close issues, and @retorquere likes to leave bug reports
+          and enhancements open as a nudge to merge them into the next release.
+        label.awaiting: awaiting-user-feedback
+        label.canclose: question
+        label.reopened: reopened
+        token: ${{ github.token }}
+        verbose: true
+    - if: ${{ steps.labelgun.outputs.status != '' }}
+      uses: actions/add-to-project@v1.0.2
+      with:
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        project-url: https://github.com/users/retorquere/projects/5
+    - if: ${{ steps.labelgun.outputs.status != '' }}
+      name: Set status
+      uses: nipe0324/update-project-v2-item-field@v2.0.2
+      with:
+        field-name: Status
+        field-value: ${{ steps.labelgun.outputs.status }}
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        project-url: https://github.com/users/retorquere/projects/5
+    - if: ${{ steps.labelgun.outputs.status != '' && steps.labelgun.outputs.lastactive
+        != '' }}
+      name: Set end date
+      uses: nipe0324/update-project-v2-item-field@v2.0.2
+      with:
+        field-name: End date
+        field-value: ${{ steps.labelgun.outputs.lastactive }}
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        project-url: https://github.com/users/retorquere/projects/5
+    - if: ${{ steps.labelgun.outputs.status != '' && steps.actor.outputs.users !=
+        '' }}
+      name: Set users
+      uses: nipe0324/update-project-v2-item-field@v2.0.2
+      with:
+        field-name: Users
+        field-value: ${{ steps.actor.outputs.users }}
+        github-token: ${{ secrets.PROJECT_TOKEN }}
+        project-url: https://github.com/users/retorquere/projects/5
