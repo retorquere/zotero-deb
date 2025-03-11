@@ -97,7 +97,7 @@ cat << EOF | sudo tee $SOURCES
 Types: deb
 URIs: $REPO
 Suites: ./
-Options: by-hash=force
+By-Hash: force
 Signed-By:$GPGKEY
 EOF
 
