@@ -55,8 +55,7 @@ jobs:
         field-value: ${{ steps.labelgun.outputs.lastactive }}
         github-token: ${{ secrets.PROJECT_TOKEN }}
         project-url: https://github.com/users/retorquere/projects/5
-    - if: ${{ steps.labelgun.outputs.status != '' && steps.actor.outputs.users !=
-        '' }}
+    - if: ${{ steps.labelgun.outputs.status != '' && steps.actor.outputs.users != '' }}
       name: Set users
       uses: nipe0324/update-project-v2-item-field@v2.0.2
       with:
