@@ -147,25 +147,24 @@ class Zotero
     @licence = "GNU Affero General Public License (version 3)"
     @homepage = "https://www.zotero.org/"
 
-    if @beta
-      @url = HTTP::Client.get("https://www.zotero.org/download/standalone/dl?platform=linux-#{arch}&channel=beta").headers["Location"]
-      @version = URI.decode(@url.split("/")[5]).sub("-beta", "")
+    response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json")
+    raise "Could not get Zotero version" unless response.success?
+    versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}
+    if @legacy
+      versions = versions.select{|v| v.starts_with? "6" }
+      versions << "6.0.35" # assure at least one version remains available
+      @config.package = "zotero6"
+    elsif @beta
       @config.package = "zotero-beta"
     else
-      response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/release/updates-linux-#{arch}.json")
-      raise "Could not get Zotero version" unless response.success?
-      versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}
-      if @legacy
-        versions = versions.select{|v| v.starts_with? "6" }
-        versions << "6.0.35" # assure at least one version remains available
-        @config.package = "zotero6"
-      else
-        @config.package = "zotero"
-      end
-      versions = versions.sort{|v1, v2| v1.split(/[-.]/).map(&.to_i) <=> v2.split(/[-.]/).map(&.to_i) }
-      @version = versions[-1]
-      @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
+      @config.package = "zotero"
     end
+    vtuple = ->(v : String) { v.split(/[-.]/).map{|part| part =~ /^\d+$/ ? part.to_i : 0 } }
+    versions = versions.sort{|v1, v2| vtuple.call(v1) <=> vtuple.call(v2) }
+    @version = versions[-1]
+    print @version, " from ", versions
+    puts
+    @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
 
     @release = @config.client.release.fetch(@version, 0)
   end
