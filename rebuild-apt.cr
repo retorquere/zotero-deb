@@ -49,7 +49,7 @@ updated = false
     #Keep << changes.basename
 
     if ENV.fetch("BUILD", "") == "true"
-      banner "rebuilding #{deb.basename}"
+      banner "rebuilding #{deb.basename} from " + zotero.versions.join(" / ")
     elsif [deb].all?{|asset| File.exists?(asset)}
       banner "retaining #{deb.basename}"
       next
