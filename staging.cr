@@ -149,7 +149,7 @@ class Zotero
 
     response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json")
     raise "Could not get Zotero version" unless response.success?
-    versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s}
+    versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s }
     if @legacy
       versions = versions.select{|v| v.starts_with? "6" }
       versions << "6.0.35" # assure at least one version remains available
@@ -162,9 +162,12 @@ class Zotero
     vtuple = ->(v : String) { v.split(/[-.]/).map{|part| part =~ /^\d+$/ ? part.to_i : 0 } }
     versions = versions.sort{|v1, v2| vtuple.call(v1) <=> vtuple.call(v2) }
     @version = versions[-1]
-    print @version, " from ", versions
+
     puts
-    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{URI.encode_path(@version)}/Zotero-#{URI.encode_path(@version)}_linux-#{arch}.tar.bz2"
+    print @version, " from ", versions
+    urlv = URI.encode_path(@version)
+    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.bz2"
+    @version = @version.sub(/-beta/, "")
 
     @release = @config.client.release.fetch(@version, 0)
   end
