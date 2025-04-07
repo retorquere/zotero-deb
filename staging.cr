@@ -164,7 +164,7 @@ class Zotero
     @version = versions[-1]
     print @version, " from ", versions
     puts
-    @url = "https://download.zotero.org/client/release/#{@version}/Zotero-#{@version}_linux-#{arch}.tar.bz2"
+    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{URI.encode_path(@version)}/Zotero-#{URI.encode_path(@version)}_linux-#{arch}.tar.bz2"
 
     @release = @config.client.release.fetch(@version, 0)
   end
