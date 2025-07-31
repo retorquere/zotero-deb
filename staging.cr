@@ -164,8 +164,10 @@ class Zotero
     @versions = @versions.sort{|v1, v2| vtuple.call(v1) <=> vtuple.call(v2) }
     @version = @versions[-1]
 
+    @ext = @version >= "8" ? "xz" : "bz2"
+
     urlv = URI.encode_path(@version)
-    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.bz2"
+    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.#{@ext}"
     @version = @version.sub(/-beta/, "")
 
     @release = @config.client.release.fetch(@version, 0)
@@ -182,9 +184,9 @@ class Zotero
     run "rm", ["-rf", @config.staging]
 
     staging = self.mkdir(@config.staging)
-    tarball = File.tempfile("#{@config.package}.tar.bz2").path
+    tarball = File.tempfile("#{@config.package}.tar.#{@ext}").path
     download @url, tarball
-    run "tar", ["-xjf", tarball, "-C", staging, "--strip-components=1"]
+    run "tar", ["-x#{@ext == "bz2" ? "j" : "J"}f", tarball, "-C", staging, "--strip-components=1"]
 
     # enable mozilla.cfg
     File.open(Path[self.mkdir(Path[staging, "defaults", "pref"]), "local_settings.js"], "a") do |f|
