@@ -1,10 +1,10 @@
 # https://wiki.debian.org/DebianRepository/UseThirdParty
 
 case `uname -m` in
-  "i386" | "i686" | "x86_64")
+  "arm64" | "i386" | "i686" | "x86_64")
     ;;
   *)
-    echo "Zotero is only available for architectures i686 and x86_64"
+    echo "Zotero is only available for architectures arm64, i686 and x86_64"
     exit
     ;;
 esac
