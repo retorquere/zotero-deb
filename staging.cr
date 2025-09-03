@@ -136,6 +136,8 @@ class Zotero
         "x86_64"
       when "i386"
         "i686"
+      when "arm64"
+        "arm64"
       else
         raise "unknown architecture #{arch}"
     end
@@ -148,12 +150,13 @@ class Zotero
     @licence = "GNU Affero General Public License (version 3)"
     @homepage = "https://www.zotero.org/"
 
-    response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json")
+    updates = "https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json"
+    puts "Getting updates from #{updates}"
+    response = HTTP::Client.get(updates)
     raise "Could not get Zotero version" unless response.success?
     @versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s }
     if @legacy
       @versions = @versions.select{|v| v.starts_with? "6" }
-      @versions << "6.0.35" # assure at least one version remains available
       @config.package = "zotero6"
     elsif @beta
       @config.package = "zotero-beta"
@@ -162,6 +165,12 @@ class Zotero
     end
     vtuple = ->(v : String) { v.split(/[-.]/).map{|part| part =~ /^\d+$/ ? part.to_i : 0 } }
     @versions = @versions.sort{|v1, v2| vtuple.call(v1) <=> vtuple.call(v2) }
+    puts "Available versions: #{@versions}"
+
+    if @versions.size == 0
+      @version = ""
+      return
+    end
     @version = @versions[-1]
 
     @ext = @version >= "8" ? "xz" : "bz2"
