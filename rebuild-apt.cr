@@ -39,9 +39,13 @@ def banner(s : String)
 end
 
 updated = false
-["amd64", "i386"].each do |arch|
+["arm64", "amd64", "i386"].each do |arch|
   ["beta", "release", "legacy"].each do |mode|
     zotero = Zotero.new(arch, mode)
+    if zotero.version == ""
+      next
+    end
+
     deb = Path[Repo, "#{zotero.config.package}_#{zotero.config.client.version(zotero.version)}_#{arch}.deb"]
     #changes = Path[deb.dirname, deb.stem + ".changes"]
 

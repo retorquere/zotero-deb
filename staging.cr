@@ -136,6 +136,8 @@ class Zotero
         "x86_64"
       when "i386"
         "i686"
+      when "arm64"
+        "arm64"
       else
         raise "unknown architecture #{arch}"
     end
@@ -148,12 +150,13 @@ class Zotero
     @licence = "GNU Affero General Public License (version 3)"
     @homepage = "https://www.zotero.org/"
 
-    response = HTTP::Client.get("https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json")
+    updates = "https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json"
+    puts "Getting updates from #{updates}"
+    response = HTTP::Client.get(updates)
     raise "Could not get Zotero version" unless response.success?
     @versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s }
     if @legacy
       @versions = @versions.select{|v| v.starts_with? "6" }
-      @versions << "6.0.35" # assure at least one version remains available
       @config.package = "zotero6"
     elsif @beta
       @config.package = "zotero-beta"
@@ -162,10 +165,18 @@ class Zotero
     end
     vtuple = ->(v : String) { v.split(/[-.]/).map{|part| part =~ /^\d+$/ ? part.to_i : 0 } }
     @versions = @versions.sort{|v1, v2| vtuple.call(v1) <=> vtuple.call(v2) }
+    puts "Available versions: #{@versions}"
+
+    if @versions.size == 0
+      @version = ""
+      return
+    end
     @version = @versions[-1]
 
+    @ext = @version >= "8" ? "xz" : "bz2"
+
     urlv = URI.encode_path(@version)
-    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.bz2"
+    @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.#{@ext}"
     @version = @version.sub(/-beta/, "")
 
     @release = @config.client.release.fetch(@version, 0)
@@ -182,9 +193,9 @@ class Zotero
     run "rm", ["-rf", @config.staging]
 
     staging = self.mkdir(@config.staging)
-    tarball = File.tempfile("#{@config.package}.tar.bz2").path
+    tarball = File.tempfile("#{@config.package}.tar.#{@ext}").path
     download @url, tarball
-    run "tar", ["-xjf", tarball, "-C", staging, "--strip-components=1"]
+    run "tar", ["-x#{@ext == "bz2" ? "j" : "J"}f", tarball, "-C", staging, "--strip-components=1"]
 
     # enable mozilla.cfg
     File.open(Path[self.mkdir(Path[staging, "defaults", "pref"]), "local_settings.js"], "a") do |f|
