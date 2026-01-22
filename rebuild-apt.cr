@@ -159,7 +159,7 @@ end
 if updated || ENV.fetch("PUBLISH", "") == "true"
   maintainer = Zotero.new("amd64", "release").config.maintainer
   chdir Repo do
-    banner("Rebuilding repo, keep #{Keep}", '=')
+    banner("Rebuilding repo, keep #{Keep}", "=")
     Dir.glob("*.*").sort.each do |asset|
       puts "asset #{asset}"
       if File.file?(asset) && !Keep.includes?(asset)
@@ -186,7 +186,7 @@ if updated || ENV.fetch("PUBLISH", "") == "true"
 
     File.copy("../zotero-archive-keyring.gpg", "zotero-archive-keyring.pgp")
 
-    banner "building index"
+    banner("building index", "=")
     File.copy("../README.css", "index.css")
     File.open("index.md", "w") do |index|
       index.puts("% Zotero packages for Debian-based systems")
