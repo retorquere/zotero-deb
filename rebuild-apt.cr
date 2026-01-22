@@ -30,12 +30,12 @@ def fetch(asset : Path)
   return File.file?(asset.to_s)
 end
 
-def banner(s : String)
+def banner(s : String, c : Char = '*')
   puts "\n\n"
-  s = "*** #{s} ***"
-  puts "*" * s.size
+  s = "#{c}#{c}#{c} #{s} #{c}#{c}#{c}"
+  puts c * s.size
   puts s
-  puts "*" * s.size
+  puts c * s.size
 end
 
 updated = false
@@ -159,6 +159,7 @@ end
 if updated || ENV.fetch("PUBLISH", "") == "true"
   maintainer = Zotero.new("amd64", "release").config.maintainer
   chdir Repo do
+    banner("Rebuilding repo, keep #{Keep}", '=')
     Dir.glob("*.*").sort.each do |asset|
       puts "asset #{asset}"
       if File.file?(asset) && !Keep.includes?(asset)

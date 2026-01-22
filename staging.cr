@@ -151,7 +151,7 @@ class Zotero
     @homepage = "https://www.zotero.org/"
 
     updates = "https://www.zotero.org/download/client/manifests/#{ @beta ? "beta" : "release" }/updates-linux-#{arch}.json"
-    puts "Getting updates from #{updates}"
+    puts "Getting #{mode} #{arch} updates from #{updates}"
     response = HTTP::Client.get(updates)
     raise "Could not get Zotero version" unless response.success?
     @versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s }
