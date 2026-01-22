@@ -46,7 +46,7 @@ updated = false
       puts "No versions found for #{arch} #{mode}"
       next
     else
-      puts "Building #{arch} #{mode}"
+      puts "Building #{arch} #{mode} #{zotero.version}"
     end
 
     deb = Path[Repo, "#{zotero.config.package}_#{zotero.config.client.version(zotero.version)}_#{arch}.deb"]
