@@ -161,6 +161,8 @@ class Zotero
     elsif @beta
       @config.package = "zotero-beta"
     else
+      puts "TEMPORARY FIX TO FORCE RELEASE TO 7"
+      @versions = @versions.select{|v| v.starts_with? "7" }
       @config.package = "zotero"
     end
     vtuple = ->(v : String) { v.split(/[-.]/).map{|part| part =~ /^\d+$/ ? part.to_i : 0 } }

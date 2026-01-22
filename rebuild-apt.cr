@@ -40,7 +40,8 @@ end
 
 updated = false
 ["arm64", "amd64", "i386"].each do |arch|
-  ["beta", "release", "legacy"].each do |mode|
+  # ["beta", "release", "legacy"].each do |mode|
+  ["beta", "release" ].each do |mode|
     zotero = Zotero.new(arch, mode)
     if zotero.version == ""
       banner "No versions found for #{arch} #{mode}"
