@@ -40,10 +40,13 @@ end
 
 updated = false
 ["arm64", "amd64", "i386"].each do |arch|
-  ["beta", "release", "legacy"].each do |mode|
+  ["beta", "release"].each do |mode|
     zotero = Zotero.new(arch, mode)
     if zotero.version == ""
+      puts "No versions found for #{arch} #{mode}"
       next
+    else
+      puts "Building #{arch} #{mode}"
     end
 
     deb = Path[Repo, "#{zotero.config.package}_#{zotero.config.client.version(zotero.version)}_#{arch}.deb"]
