@@ -156,8 +156,8 @@ class Zotero
     raise "Could not get Zotero version" unless response.success?
     @versions = JSON.parse(response.body).as_a.map{|v| v["version"].as_s }
     if @legacy
-      @versions = @versions.select{|v| v.starts_with? "6" }
-      @config.package = "zotero6"
+      @versions = @versions.select{|v| v.starts_with? "7" }
+      @config.package = "zotero7"
     elsif @beta
       @config.package = "zotero-beta"
     else
