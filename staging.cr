@@ -177,7 +177,8 @@ class Zotero
 
     urlv = URI.encode_path(@version)
     @url = "https://download.zotero.org/client/#{ @beta ? "beta" : "release" }/#{urlv}/Zotero-#{urlv}_linux-#{arch}.tar.#{@ext}"
-    @version = @version.sub(/-beta/, "")
+
+    @version = @version.sub(/-beta/, "").gsub(/^\d+\.\d+$/, "\\0.0")
 
     @release = @config.client.release.fetch(@version, 0)
   end

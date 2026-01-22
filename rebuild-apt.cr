@@ -118,7 +118,7 @@ updated = false
         }
       }
     }.to_s)
-    puts File.read("nfpm.yaml")
+    #puts File.read("nfpm.yaml")
     run "nfpm", ["package", "-p", "deb", "-t", Repo]
 
     #File.open(changes.to_s, "w") do |f|
