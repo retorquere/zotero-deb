@@ -43,10 +43,8 @@ updated = false
   ["beta", "release"].each do |mode|
     zotero = Zotero.new(arch, mode)
     if zotero.version == ""
-      puts "No versions found for #{arch} #{mode}"
+      banner "No versions found for #{arch} #{mode}"
       next
-    else
-      puts "Building #{arch} #{mode} #{zotero.version}"
     end
 
     deb = Path[Repo, "#{zotero.config.package}_#{zotero.config.client.version(zotero.version)}_#{arch}.deb"]
@@ -55,16 +53,17 @@ updated = false
     Keep << deb.basename
     #Keep << changes.basename
 
+    prefix = "#{arch} #{mode} #{zotero.version}"
     if ENV.fetch("BUILD", "") == "true"
-      banner "rebuilding #{deb.basename} from " + zotero.versions.join(" / ")
+      banner "#{prefix}: rebuilding #{deb.basename} from " + zotero.versions.join(" / ")
     elsif [deb].all?{|asset| File.exists?(asset)}
-      banner "retaining #{deb.basename}"
+      banner "#{prefix}: retaining #{deb.basename}"
       next
     elsif fetch(deb) #&& fetch(changes)
-      banner "fetched #{deb.basename} from repo"
+      banner "#{prefix}: fetched #{deb.basename} from repo"
       next
     else
-      banner "building #{deb.basename}"
+      banner "#{prefix}: building #{deb.basename}"
     end
 
     staged = zotero.stage
