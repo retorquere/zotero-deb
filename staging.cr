@@ -67,7 +67,7 @@ class Config
   property maintainer : Maintainer
   property common : Common
   property zotero : Client
-  property zotero6 : Client
+  property zotero7 : Client
   @[YAML::Field(key: "zotero-beta")]
   property zotero_beta : Client
 
@@ -82,7 +82,7 @@ class Config
     loaded = self.from_yaml(File.read("config.yml"))
     loaded.staging = "#{Path.new(loaded.staging).expand}"
     loaded.zotero.dependencies += loaded.common.dependencies
-    loaded.zotero6.dependencies += loaded.common.dependencies
+    loaded.zotero7.dependencies += loaded.common.dependencies
     loaded.zotero_beta.dependencies += loaded.common.dependencies
     return loaded
   end
@@ -93,8 +93,8 @@ class Config
         @zotero
       when "zotero-beta"
         @zotero_beta
-      when "zotero6"
-        @zotero6
+      when "zotero7"
+        @zotero7
       else
         raise "Unkown package #{@package}"
     end

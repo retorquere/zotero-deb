@@ -42,7 +42,7 @@ zotero:
     7.0: 1
     7.0.3: 1
     7.0.11: 1
-zotero6:
+zotero7:
   description: Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share research
   dependencies: []
   release:
