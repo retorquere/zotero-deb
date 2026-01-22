@@ -30,9 +30,9 @@ def fetch(asset : Path)
   return File.file?(asset.to_s)
 end
 
-def banner(s : String, c : Char = '*')
+def banner(s : String, c : String = "*")
   puts "\n\n"
-  s = "#{c}#{c}#{c} #{s} #{c}#{c}#{c}"
+  s = "#{c * 3} #{s} #{c * 3}"
   puts c * s.size
   puts s
   puts c * s.size
