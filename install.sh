@@ -4,7 +4,7 @@ case `uname -m` in
   "aarch64" | "arm64" | "i386" | "i686" | "x86_64")
     ;;
   *)
-    echo "Zotero is only available for architectures arm64, i386, i686 and x86_64; you are on" `uname -m`
+    echo "Zotero is only available for architectures aarch64/arm64, i386, i686 and x86_64; you are on" `uname -m`
     exit
     ;;
 esac
