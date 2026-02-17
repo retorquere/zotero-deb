@@ -23,19 +23,19 @@ See `install.sh` explanation below and adjust URL accordingly
 
 ----
 
-This repository contains packaged releases of [Zotero](https://www.zotero.org) and [Juris-M](https://juris-m.github.io) for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them. It also offers the latest nightly zotero-beta.
+This repository contains packaged releases of [Zotero](https://www.zotero.org) <!-- and [Juris-M](https://juris-m.github.io) --> for Debian-based Linux systems and Crostini-enabled chromebooks, and the script used to build them. It also offers the latest nightly zotero-beta.
 
-This repository updates to new releases of Zotero and Juris-M within 2 hours, usually faster.
+This repository updates to new releases of Zotero <!-- and Juris-M --> within 2 hours, usually faster.
 
 ## Contents of the packages
 
-The packages include the whole Zotero/Juris-M binaries, as built by Zotero / Juris-M teams themselves.
+The packages include the whole Zotero<!-- /Juris-M --> binaries, as built by Zotero <!-- / Juris-M --> teams themselves.
 
 The packages provide a system-wide installation (into the `/usr/lib` directory), as opposed to a single-user installation (e.g. in your `HOME` directory).
 
 They manage both desktop file registration and MimeType registration.
 
-## Installing Zotero / Juris-M
+## Installing Zotero <!-- / Juris-M -->
 
 If you're previously used the tarball install, delete `~/.local/share/applications/zotero.desktop`.
 
@@ -49,6 +49,7 @@ sudo apt update
 sudo apt install zotero
 ```
 
+<!--
 ### Installing Juris-M
 
 To install Juris-M, use the following commands:
@@ -58,6 +59,7 @@ wget -qO- https://raw.githubusercontent.com/retorquere/zotero-deb/master/install
 sudo apt update
 sudo apt install jurism
 ```
+-->
 
 **Note**
 
@@ -66,9 +68,9 @@ You can use `curl` instead of `wget` by typing
 curl -sL https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh | sudo bash
 ```
 
-## Updating Zotero / Juris-M
+## Updating Zotero <!-- / Juris-M -->
 
-The Zotero / Juris-M programs provided by this repository have their self-update facility disabled.
+The Zotero <!-- / Juris-M --> programs provided by this repository have their self-update facility disabled.
 
 Simply rely on on your system's package manager to give you update notifications when a new version comes out.
 
@@ -83,7 +85,7 @@ install.sh will ask for sudo permissions to install the pointer to the apt repo,
 
 ## Beta packages
 
-This repo also has the nightly beta's, installable as the `zotero-beta` and `jurism-beta` packages. You can install these alongside the regular packages.
+This repo also has the nightly beta's, installable as the `zotero-beta` <!-- and `jurism-beta` --> package<!-- s -->. You can install these alongside the regular packages.
 
 ## Package signing errors in Debian/Ubuntu/...
 
