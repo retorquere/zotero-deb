@@ -2,7 +2,7 @@
 
 # PSA
 
-The `zotero` package is now **Zotero 7**. If you want Zotero 6, install the `zotero6` package. These can be installed side-by-side, even if you can only have one of them running at any given time.
+The `zotero` package is now **Zotero 8**. If you want Zotero 7, install the `zotero7` package. These can be installed side-by-side, even if you can only have one of them running at any given time.
 
 # Primary source:
 
