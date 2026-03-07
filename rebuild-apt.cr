@@ -39,8 +39,8 @@ def banner(s : String, c : String = "*")
 end
 
 updated = false
-["arm64", "amd64", "i386"].each do |arch|
-  ["beta", "release", "legacy"].each do |mode|
+["arm64", "amd64"].each do |arch|
+  ["beta", "release"].each do |mode|
     if arch == "i386" && mode == "beta"
       next
     end
