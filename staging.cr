@@ -222,6 +222,28 @@ class Zotero
     desktop["Desktop Entry"]["Name"] += " Beta" if @beta
     desktop["Desktop Entry"]["Name"] += " (Legacy)" if @legacy
 
+    if @beta
+      filename = "#{Path[@config.staging, "icons/icon128.png"]}"
+      run "magick" [filename,
+        "-font", "DejaVu-Sans-Bold",
+        "-pointsize", "40",
+        "-gravity", "NorthWest",
+        "-fill", "red",
+        "-stroke", "black",
+        "-strokewidth", "2",
+        "-annotate", "+10+6", "β",
+        filename
+      ]
+
+      filename = "#{Path[staging, "app", "application.ini"]}"
+      appini = INI.parse(File.read(filename))
+      appini["App"]["Name"] = "Zotero-beta"
+      appini["App"]["ID"] = "zotero-beta@zotero.org"
+      File.open(filename, "w") do |f|
+        INI.build(f, appini)
+      end
+    end
+
     desktop["Desktop Entry"]["Comment"] = "#{@name} is a free, easy-to-use tool to help you collect, organize, cite, and share research"
     desktop["Desktop Entry"]["Icon"] = "#{Path["/usr/lib", @config.package, @legacy ? "chrome/icons/default/default256.png" : "icons/icon128.png"]}"
     desktop["Desktop Entry"]["MimeType"] = [
