@@ -224,7 +224,7 @@ class Zotero
 
     if @beta
       filename = "#{Path[@config.staging, "icons/icon128.png"]}"
-      run "magick" [filename,
+      run "magick", [filename,
         "-font", "DejaVu-Sans-Bold",
         "-pointsize", "40",
         "-gravity", "NorthWest",
