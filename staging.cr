@@ -223,8 +223,7 @@ class Zotero
     desktop["Desktop Entry"]["Name"] += " (Legacy)" if @legacy
 
     if @beta
-      filename = "#{Path[@config.staging, "icons/icon128.png"]}"
-      run "magick", [filename,
+      run "mogrify", [
         "-font", "DejaVu-Sans-Bold",
         "-pointsize", "40",
         "-gravity", "NorthWest",
@@ -232,7 +231,7 @@ class Zotero
         "-stroke", "black",
         "-strokewidth", "2",
         "-annotate", "+10+6", "β",
-        filename
+        "#{Path[@config.staging, "icons/icon128.png"]}"
       ]
 
       filename = "#{Path[staging, "app", "application.ini"]}"
