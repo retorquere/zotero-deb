@@ -24,7 +24,7 @@ jobs:
     runs-on: ubuntu-latest
     # runs-on: ubuntu-20.04
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
 
     #- run: curl -fsSL https://crystal-lang.org/install.sh | sudo bash
     - run: |
@@ -102,6 +102,8 @@ jobs:
     steps:
     - name: allow cloudflare CDN time to settle
       run: sleep 60
+
+    - uses: actions/checkout@v6
 
     - name: install python
       uses: actions/setup-python@v6
