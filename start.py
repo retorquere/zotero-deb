@@ -8,7 +8,7 @@ log = f'{exe}.log'
 if os.path.exists(log):
   os.remove(log)
 
-start = time.time()
+elapsed = time.time()
 with Xvfb(), open(log, 'wb') as f:
   print('starting', exe)
   p = subprocess.Popen(
@@ -20,6 +20,7 @@ with Xvfb(), open(log, 'wb') as f:
   time.sleep(20)
   print('stopping', exe)
   os.killpg(os.getpgid(p.pid), signal.SIGTERM)
+  elapsed = time.time() - elapsed
 
   time.sleep(5)
   if p.poll() is None:
@@ -29,5 +30,5 @@ with Xvfb(), open(log, 'wb') as f:
   p.wait()
 
 if 'Asynchronously opening database' not in open(log).read():
-  print(f'Failed after {time.time() - start:.2f} seconds')
+  print(f'{exe} failed to start within {elapsed:.2f} seconds')
   sys.exit(1)
