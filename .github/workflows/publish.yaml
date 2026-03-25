@@ -121,8 +121,9 @@ jobs:
         echo ==== zotero.${{ matrix.mode }} ===
         cat /etc/apt/sources.list.d/zotero.${{ matrix.mode }}
 
-    - name: install from backblaze repo
+    - name: install all the things
       run: |
+        pip install -r requirements.txt
         sudo apt -y clean
         sudo apt -y update
         sudo apt -y install desktop-file-utils zotero zotero-beta xvfb
