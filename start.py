@@ -11,10 +11,7 @@ if os.path.exists(log):
 elapsed = time.time()
 with Xvfb(), open(log, 'wb') as f:
   print('starting', exe)
-  p = subprocess.Popen(
-    [f'/usr/lib/{exe}/zotero', '-P', 'BBTTEST', '-jsconsole', '-purgecaches', '-ZoteroDebugText'],
-    stdout=f, stderr=subprocess.STDOUT, start_new_session=True
-  )
+  p = subprocess.Popen([f'/usr/lib/{exe}/zotero', '-ZoteroDebugText'], stdout=f, stderr=subprocess.STDOUT, start_new_session=True)
   print('started', exe)
   
   time.sleep(20)
