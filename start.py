@@ -29,6 +29,8 @@ with Xvfb(), open(log, 'wb') as f:
 
   p.wait()
 
-if 'Asynchronously opening database' not in open(log).read():
+log = open(log).read()
+if 'Asynchronously opening database' not in log:
   print(f'{exe} failed to start within {elapsed:.2f} seconds')
+  print(log)
   sys.exit(1)
