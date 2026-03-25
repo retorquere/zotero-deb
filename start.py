@@ -15,19 +15,21 @@ with Xvfb(), open(log, 'wb') as f:
   print('started', exe)
   
   time.sleep(20)
-  print('stopping', exe)
+  print('  stopping', exe)
   os.killpg(os.getpgid(p.pid), signal.SIGTERM)
   elapsed = time.time() - elapsed
 
   time.sleep(5)
   if p.poll() is None:
-    print('killing', exe)
+    print('  !! killing', exe)
     os.killpg(os.getpgid(p.pid), signal.SIGKILL)
 
   p.wait()
 
 log = open(log).read()
 if 'Asynchronously opening database' not in log:
-  print(f'{exe} failed to start within {elapsed:.2f} seconds')
+  print(f'  {exe} failed to start within {elapsed:.2f} seconds')
   print(log)
   sys.exit(1)
+else:
+  print('  zotero started normally')
