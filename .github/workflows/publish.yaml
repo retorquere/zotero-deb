@@ -103,6 +103,14 @@ jobs:
     - name: allow cloudflare CDN time to settle
       run: sleep 60
 
+    - name: install python
+      uses: actions/setup-python@v6
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+    - name: install xvfbwrapper
+      run: pip install xvfbwrapper
+
     - name: install apt repo
       run: |
         export INSTALLSH=https://raw.githubusercontent.com/retorquere/zotero-deb/master/install.sh
@@ -117,17 +125,10 @@ jobs:
       run: |
         sudo apt -y clean
         sudo apt -y update
-        sudo apt -y install desktop-file-utils zotero zotero-beta || true
+        sudo apt -y install desktop-file-utils zotero zotero-beta xvfb
         dpkg -l | grep zotero
 
         for c in zotero zotero-beta; do
-          echo ----------
-          echo $c binaries
-          ls -lh /usr/lib/$c/zotero /usr/lib/$c/zotero-bin /usr/bin/$c
-          echo
-          echo $c.desktop
-          cat /usr/share/applications/$c.desktop
-          echo
-          echo validate $c.desktop
+          ./start.py $c
           desktop-file-validate /usr/share/applications/$c.desktop && echo 'all clear!'
         done
