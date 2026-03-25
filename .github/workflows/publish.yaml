@@ -125,7 +125,7 @@ jobs:
         pip install -r requirements.txt
         sudo apt -y clean
         sudo apt -y update
-        sudo apt -y install desktop-file-utils zotero zotero-beta xvfb
+        sudo apt -y install desktop-file-utils zotero zotero-beta xvfb libegl1-mesa libgl1-mesa-dri libdbus-glib-1-2
         dpkg -l | grep zotero
 
         for c in zotero zotero-beta; do
